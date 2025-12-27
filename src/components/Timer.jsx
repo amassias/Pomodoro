@@ -1,180 +1,213 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ALARM_SOUNDS, TICKING_SOUNDS } from '../utils/sounds';
 
 const Timer = ({ settings }) => {
-    const [minutes, setMinutes] = useState(settings.focusDuration);
-    const [seconds, setSeconds] = useState(0);
-    const [isActive, setIsActive] = useState(false);
-    const [mode, setMode] = useState('focus'); // focus, shortBreak, longBreak
+  const [minutes, setMinutes] = useState(settings.focusDuration);
+  const [seconds, setSeconds] = useState(0);
+  const [isActive, setIsActive] = useState(false);
+  const [mode, setMode] = useState('focus'); // focus, shortBreak, longBreak
+  const [pomodorosCompleted, setPomodorosCompleted] = useState(0);
 
-    // Sound mapping (using online URLs for demo purposes)
-    const sounds = {
-        beep: 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg',
-        bell: 'https://cdn.freesound.org/previews/221/221683_1079366-lq.mp3', // Simple bell sound (placeholder)
-        alarm: 'https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg',
-        'lofi-hum': 'https://actions.google.com/sounds/v1/ambiences/humming_fan.ogg'
+  const tickingAudioRef = useRef(null);
+
+  useEffect(() => {
+    const handleToggle = () => toggleTimer();
+    const handleReset = () => resetTimer();
+
+    window.addEventListener('timer-toggle', handleToggle);
+    window.addEventListener('timer-reset', handleReset);
+
+    return () => {
+      window.removeEventListener('timer-toggle', handleToggle);
+      window.removeEventListener('timer-reset', handleReset);
     };
+  }, [isActive, mode, minutes, seconds]); // Dependencies needed if toggle/reset use state closures? 
+  // toggleTimer uses setIsActive(!isActive), so it needs isActive dependency or functional update.
+  // Let's check toggleTimer definition.
 
-    useEffect(() => {
-        // Sync time when settings or mode change IF not active to prevent jumping
-        if (!isActive) {
-            if (mode === 'focus') setMinutes(settings.focusDuration);
-            else if (mode === 'shortBreak') setMinutes(settings.shortBreakDuration);
-            else if (mode === 'longBreak') setMinutes(settings.longBreakDuration);
-            setSeconds(0);
-        }
-    }, [settings, mode]); // isActive excluded to avoid reset during countdown if settings panel is opened
+  useEffect(() => {
+    // Sync time when settings or mode change IF not active to prevent jumping
+    if (!isActive) {
+      if (mode === 'focus') setMinutes(settings.focusDuration);
+      else if (mode === 'shortBreak') setMinutes(settings.shortBreakDuration);
+      else if (mode === 'longBreak') setMinutes(settings.longBreakDuration);
+      setSeconds(0);
+    }
+  }, [settings, mode]); // isActive excluded to avoid reset during countdown if settings panel is opened
 
-    useEffect(() => {
-        let interval = null;
-        if (isActive) {
-            interval = setInterval(() => {
-                if (seconds === 0) {
-                    if (minutes === 0) {
-                        clearInterval(interval);
-                        setIsActive(false);
-                        
-                        // Play alarm sound with repeat
-                        const playAlarm = (times = 1) => {
-                            if (times <= 0) return;
-                            const audio = new Audio(sounds[settings.sound] || sounds.beep);
-                            audio.volume = (settings.alarmVolume || 70) / 100; // Convert to 0-1 range
-                            audio.onended = () => {
-                                if (times > 1) {
-                                    setTimeout(() => playAlarm(times - 1), 500); // Repeat with 500ms delay
-                                }
-                            };
-                            audio.play().catch(e => console.log('Audio play failed', e));
-                        };
-                        
-                        playAlarm(settings.alarmRepeat || 1);
-                        
-                        // Emit pomodoro completion event
-                        if (mode === 'focus') {
-                            window.dispatchEvent(new CustomEvent('pomodoroCompleted', {
-                                detail: { duration: settings.focusDuration }
-                            }));
-                        }
-
-                        // Auto start next timer
-                        setTimeout(() => {
-                            if (mode === 'focus' && settings.autoStartBreaks) {
-                                setMode('shortBreak');
-                                setMinutes(settings.shortBreakDuration);
-                                setSeconds(0);
-                                setIsActive(true);
-                            } else if ((mode === 'shortBreak' || mode === 'longBreak') && settings.autoStartPomodoros) {
-                                setMode('focus');
-                                setMinutes(settings.focusDuration);
-                                setSeconds(0);
-                                setIsActive(true);
-                            }
-                        }, 1000);
-                    } else {
-                        setMinutes(minutes - 1);
-                        setSeconds(59);
-                    }
-                } else {
-                    setSeconds(seconds - 1);
-                    
-                    // Play ticking sound if enabled
-                    if (settings.tickingSound && settings.tickingSound !== 'none') {
-                        const tickingSounds = {
-                            'soft': 'https://actions.google.com/sounds/v1/ui/prompt_dismiss.ogg',
-                            'regular': 'https://actions.google.com/sounds/v1/ui/selection_click.ogg',
-                            'loud': 'https://actions.google.com/sounds/v1/ui/positive_ping.ogg'
-                        };
-                        
-                        // Play tick sound every second (but keep volume low)
-                        const tickAudio = new Audio(tickingSounds[settings.tickingSound]);
-                        tickAudio.volume = (settings.tickingVolume || 50) / 100 * 0.3; // Reduce volume to 30% of set volume
-                        tickAudio.play().catch(e => console.log('Tick sound failed', e));
-                    }
-                }
-            }, 1000);
-        } else if (!isActive && seconds !== 0) {
+  useEffect(() => {
+    let interval = null;
+    if (isActive) {
+      interval = setInterval(() => {
+        if (seconds === 0) {
+          if (minutes === 0) {
             clearInterval(interval);
+            setIsActive(false);
+
+            // Play alarm sound with repeat
+            // Play alarm sound with repeat
+            const playAlarm = (times = 1) => {
+              if (times <= 0) return;
+              const audio = new Audio(ALARM_SOUNDS[settings.sound] || ALARM_SOUNDS.beep);
+              audio.volume = (settings.alarmVolume || 70) / 100; // Convert to 0-1 range
+              audio.onended = () => {
+                if (times > 1) {
+                  setTimeout(() => playAlarm(times - 1), 500); // Repeat with 500ms delay
+                }
+              };
+              audio.play().catch(e => console.log('Audio play failed', e));
+            };
+
+            playAlarm(settings.alarmRepeat || 1);
+
+            // Emit pomodoro completion event
+            if (mode === 'focus') {
+              window.dispatchEvent(new CustomEvent('pomodoroCompleted', {
+                detail: { duration: settings.focusDuration }
+              }));
+            }
+
+            // Auto start next timer
+            setTimeout(() => {
+              if (mode === 'focus') {
+                const newCompleted = pomodorosCompleted + 1;
+                setPomodorosCompleted(newCompleted);
+
+                if (newCompleted % 4 === 0) {
+                  setMode('longBreak');
+                  setMinutes(settings.longBreakDuration);
+                  setSeconds(0);
+                  if (settings.autoStartBreaks) setIsActive(true);
+                } else {
+                  setMode('shortBreak');
+                  setMinutes(settings.shortBreakDuration);
+                  setSeconds(0);
+                  if (settings.autoStartBreaks) setIsActive(true);
+                }
+              } else if (mode === 'shortBreak' || mode === 'longBreak') {
+                setMode('focus');
+                setMinutes(settings.focusDuration);
+                setSeconds(0);
+                if (settings.autoStartPomodoros) setIsActive(true);
+              }
+            }, 1000);
+          } else {
+            setMinutes(minutes - 1);
+            setSeconds(59);
+          }
+        } else {
+          setSeconds(seconds - 1);
+
+          // Play ticking sound if enabled
+          // Play ticking sound if enabled
+          if (settings.tickingSound && settings.tickingSound !== 'none') {
+            const soundUrl = TICKING_SOUNDS[settings.tickingSound];
+            if (soundUrl) {
+              if (!tickingAudioRef.current || tickingAudioRef.current.src !== soundUrl) {
+                tickingAudioRef.current = new Audio(soundUrl);
+              }
+
+              // Reset and play
+              tickingAudioRef.current.currentTime = 0;
+              tickingAudioRef.current.volume = ((settings.tickingVolume || 50) / 100) * 0.3; // Reduce volume to 30% of set volume
+              tickingAudioRef.current.play().catch(e => console.log('Tick sound failed', e));
+            }
+          }
         }
-        return () => clearInterval(interval);
-    }, [isActive, seconds, minutes, settings, mode]);
+      }, 1000);
+    } else if (!isActive && seconds !== 0) {
+      clearInterval(interval);
+      document.title = 'Pomodoro Focus';
+    }
 
-    const playClickSound = () => {
-        // Create a simple click sound using Web Audio API
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.value = 800; // Frequency in Hz
-        oscillator.type = 'sine';
-        
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.1);
-    };
+    // Update Title
+    if (isActive) {
+      const timeString = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      const modeString = mode === 'focus' ? 'Focus' : 'Break';
+      document.title = `${timeString} - ${modeString}`;
+    }
 
-    const toggleTimer = () => {
-        playClickSound();
-        setIsActive(!isActive);
-    };
+    return () => clearInterval(interval);
+  }, [isActive, seconds, minutes, settings, mode]);
 
-    const resetTimer = () => {
-        setIsActive(false);
-        if (mode === 'focus') setMinutes(settings.focusDuration);
-        else if (mode === 'shortBreak') setMinutes(settings.shortBreakDuration);
-        else if (mode === 'longBreak') setMinutes(settings.longBreakDuration);
-        setSeconds(0);
-    };
+  const playClickSound = () => {
+    // Create a simple click sound using Web Audio API
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
 
-    const setTimerMode = (newMode) => {
-        setMode(newMode);
-        setIsActive(false);
-        setSeconds(0);
-        if (newMode === 'focus') setMinutes(settings.focusDuration);
-        else if (newMode === 'shortBreak') setMinutes(settings.shortBreakDuration);
-        else if (newMode === 'longBreak') setMinutes(settings.longBreakDuration);
-    };
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
 
-    return (
-        <div className="timer-container glass-panel">
-            <div className="timer-modes">
-                <button
-                    className={mode === 'focus' ? 'active' : ''}
-                    onClick={() => setTimerMode('focus')}
-                >
-                    Focus
-                </button>
-                <button
-                    className={mode === 'shortBreak' ? 'active' : ''}
-                    onClick={() => setTimerMode('shortBreak')}
-                >
-                    Short
-                </button>
-                <button
-                    className={mode === 'longBreak' ? 'active' : ''}
-                    onClick={() => setTimerMode('longBreak')}
-                >
-                    Long
-                </button>
-            </div>
+    oscillator.frequency.value = 800; // Frequency in Hz
+    oscillator.type = 'sine';
 
-            <div className="time-display">
-                {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
-            </div>
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
 
-            <div className="timer-controls">
-                <button className="primary-btn" onClick={toggleTimer}>
-                    {isActive ? 'PAUSE' : 'START'}
-                </button>
-                <button className="reset-btn" onClick={resetTimer} title="Reset">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74-2.74L3 12" /></svg>
-                </button>
-            </div>
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.1);
+  };
 
-            <style jsx>{`
+  const toggleTimer = () => {
+    playClickSound();
+    setIsActive(!isActive);
+  };
+
+  const resetTimer = () => {
+    setIsActive(false);
+    if (mode === 'focus') setMinutes(settings.focusDuration);
+    else if (mode === 'shortBreak') setMinutes(settings.shortBreakDuration);
+    else if (mode === 'longBreak') setMinutes(settings.longBreakDuration);
+    setSeconds(0);
+  };
+
+  const setTimerMode = (newMode) => {
+    setMode(newMode);
+    setIsActive(false);
+    setSeconds(0);
+    if (newMode === 'focus') setMinutes(settings.focusDuration);
+    else if (newMode === 'shortBreak') setMinutes(settings.shortBreakDuration);
+    else if (newMode === 'longBreak') setMinutes(settings.longBreakDuration);
+  };
+
+  return (
+    <div className="timer-container glass-panel">
+      <div className="timer-modes">
+        <button
+          className={mode === 'focus' ? 'active' : ''}
+          onClick={() => setTimerMode('focus')}
+        >
+          Focus
+        </button>
+        <button
+          className={mode === 'shortBreak' ? 'active' : ''}
+          onClick={() => setTimerMode('shortBreak')}
+        >
+          Short
+        </button>
+        <button
+          className={mode === 'longBreak' ? 'active' : ''}
+          onClick={() => setTimerMode('longBreak')}
+        >
+          Long
+        </button>
+      </div>
+
+      <div className="time-display">
+        {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+      </div>
+
+      <div className="timer-controls">
+        <button className="primary-btn" onClick={toggleTimer}>
+          {isActive ? 'PAUSE' : 'START'}
+        </button>
+        <button className="reset-btn" onClick={resetTimer} title="Reset">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74-2.74L3 12" /></svg>
+        </button>
+      </div>
+
+      <style jsx>{`
         .timer-container {
           padding: 3rem;
           display: flex;
@@ -242,8 +275,8 @@ const Timer = ({ settings }) => {
           color: #fff;
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 };
 
 export default Timer;

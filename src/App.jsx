@@ -24,13 +24,28 @@ function App() {
   });
 
   useEffect(() => {
-    const handleEsc = (e) => {
+    const handleKeyDown = (e) => {
+      // Ignore if typing in an input
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
       if (e.key === 'Escape' && showSettings) {
         setShowSettings(false);
+      } else if (e.code === 'Space') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('timer-toggle'));
+      } else if (e.key.toLowerCase() === 'r') {
+        window.dispatchEvent(new CustomEvent('timer-reset'));
+      } else if (e.key.toLowerCase() === 'm') {
+        // Toggle Mute: Toggle between 0 and defaults (70/50)
+        setSettings(prev => {
+          const newAlarmVol = prev.alarmVolume === 0 ? 70 : 0;
+          const newTickVol = prev.tickingVolume === 0 ? 50 : 0;
+          return { ...prev, alarmVolume: newAlarmVol, tickingVolume: newTickVol };
+        });
       }
     };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showSettings]);
 
   // Exhaustive list of video streams with categories

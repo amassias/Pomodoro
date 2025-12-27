@@ -1,12 +1,26 @@
 import React from 'react';
+import { ALARM_SOUNDS, TICKING_SOUNDS } from '../utils/sounds';
 
 const SettingsModal = ({ settings, updateSettings, onClose }) => {
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
+        const newValue = type === 'checkbox' ? checked : (name.includes('Volume') || name.includes('Repeat') ? Number(value) : value);
+
         updateSettings({
             ...settings,
-            [name]: type === 'checkbox' ? checked : (name.includes('Volume') || name.includes('Repeat') ? Number(value) : value)
+            [name]: newValue
         });
+
+        // Play preview for sound selection
+        if (name === 'sound' && ALARM_SOUNDS[newValue]) {
+            const audio = new Audio(ALARM_SOUNDS[newValue]);
+            audio.volume = (settings.alarmVolume || 70) / 100;
+            audio.play().catch(e => console.log('Preview failed', e));
+        } else if (name === 'tickingSound' && TICKING_SOUNDS[newValue]) {
+            const audio = new Audio(TICKING_SOUNDS[newValue]);
+            audio.volume = ((settings.tickingVolume || 50) / 100) * 0.3; // Match timer volume logic
+            audio.play().catch(e => console.log('Preview failed', e));
+        }
     };
 
     return (
@@ -81,7 +95,7 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
 
                 <div className="setting-group">
                     <h3>Sound</h3>
-                    
+
                     <div className="sound-section">
                         <label>Alarm Sound</label>
                         <select
@@ -95,7 +109,7 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
                             <option value="alarm">Classic Alarm</option>
                             <option value="lofi-hum">Soft Hum</option>
                         </select>
-                        
+
                         <div className="slider-group">
                             <label>Volume</label>
                             <input
@@ -137,7 +151,7 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
                             <option value="regular">Regular Tick</option>
                             <option value="loud">Loud Tick</option>
                         </select>
-                        
+
                         <div className="slider-group">
                             <label>Volume</label>
                             <input
