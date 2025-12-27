@@ -4,8 +4,10 @@ import Timer from './components/Timer';
 import CitySelector from './components/CitySelector';
 import TaskList from './components/TaskList';
 import LofiPlayer from './components/LofiPlayer';
+import SpotifyPlayer from './components/SpotifyPlayer';
 import Report from './components/Report';
 import SettingsModal from './components/SettingsModal';
+import { getTokenFromUrl } from './utils/spotify';
 
 function App() {
   const [city, setCity] = useState('seoul_hangang');
@@ -20,8 +22,57 @@ function App() {
     tickingSound: 'none',
     tickingVolume: 50,
     autoStartBreaks: false,
-    autoStartPomodoros: false
+    autoStartPomodoros: false,
+    musicProvider: 'lofi', // lofi | spotify
+    spotifyClientId: localStorage.getItem('spotifyClientId') || 'c017309c2bfc4c9f9c6794e18c79f250',
+    spotifyToken: localStorage.getItem('spotifyToken') || null
   });
+
+  useEffect(() => {
+    // 1. Check if we are the Popup Window returning with a token
+    const hash = getTokenFromUrl();
+    const _token = hash.access_token;
+
+    if (_token && window.opener) {
+      // We are in the popup, send token to main app and close
+      window.opener.postMessage({ type: 'SPOTIFY_TOKEN', token: _token }, window.location.origin);
+      window.close();
+      return;
+    }
+
+    // 2. Check if we are the Main App receiving the token
+    const handleMessage = (event) => {
+      // Validate origin for security
+      if (event.origin !== window.location.origin) return;
+
+      if (event.data.type === 'SPOTIFY_TOKEN' && event.data.token) {
+        const newToken = event.data.token;
+        setSettings(prev => ({ ...prev, spotifyToken: newToken }));
+        localStorage.setItem('spotifyToken', newToken);
+
+        // Clear hash if any
+        window.location.hash = "";
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    // 3. Check for existing token in URL (fallback if opened directly or redirect)
+    if (_token && !window.opener) {
+      setSettings(prev => ({ ...prev, spotifyToken: _token }));
+      localStorage.setItem('spotifyToken', _token);
+      window.location.hash = "";
+    }
+
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  // Persist Spotify Client ID
+  useEffect(() => {
+    if (settings.spotifyClientId) {
+      localStorage.setItem('spotifyClientId', settings.spotifyClientId);
+    }
+  }, [settings.spotifyClientId]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -126,7 +177,12 @@ function App() {
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
       </button>
-      <LofiPlayer />
+
+      {settings.musicProvider === 'spotify' ? (
+        <SpotifyPlayer token={settings.spotifyToken} playing={false} />
+      ) : (
+        <LofiPlayer />
+      )}
 
       {showSettings && (
         <SettingsModal

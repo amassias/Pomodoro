@@ -1,5 +1,5 @@
-import React from 'react';
 import { ALARM_SOUNDS, TICKING_SOUNDS } from '../utils/sounds';
+import { getLoginUrl } from '../utils/spotify';
 
 const SettingsModal = ({ settings, updateSettings, onClose }) => {
     const handleChange = (e) => {
@@ -91,6 +91,46 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
                             />
                         </div>
                     </div>
+                </div>
+
+                <div className="setting-group">
+                    <h3>Music Provider</h3>
+                    <div className="toggle-group">
+                        <label className="toggle-label provider-toggle">
+                            <span className={settings.musicProvider === 'spotify' ? '' : 'active'}>Lofi</span>
+                            <div className="switch" onClick={() => updateSettings({ ...settings, musicProvider: settings.musicProvider === 'spotify' ? 'lofi' : 'spotify' })}>
+                                <div className={`slider-round ${settings.musicProvider === 'spotify' ? 'right' : 'left'}`}></div>
+                            </div>
+                            <span className={settings.musicProvider === 'spotify' ? 'active' : ''}>Spotify</span>
+                        </label>
+                    </div>
+
+                    {settings.musicProvider === 'spotify' && (
+                        <div className="spotify-settings">
+                            {/* Client ID hidden as requested */}
+                            <div className="connect-wrapper">
+                                <button
+                                    className="connect-btn"
+                                    onClick={() => {
+                                        if (settings.spotifyClientId) {
+                                            const url = getLoginUrl(settings.spotifyClientId);
+                                            const width = 450;
+                                            const height = 730;
+                                            const left = (window.screen.width / 2) - (width / 2);
+                                            const top = (window.screen.height / 2) - (height / 2);
+                                            window.open(url, 'Spotify Login', `width=${width},height=${height},left=${left},top=${top}`);
+                                        } else {
+                                            alert('Please enter a Client ID first');
+                                        }
+                                    }}
+                                >
+                                    Connect to Spotify
+                                </button>
+                                {settings.spotifyToken && <span className="status-connected">Connected ✓</span>}
+                            </div>
+                            <p className="help-text">Requires Spotify Premium. You need to create an app in Spotify Developer Dashboard and add this URL to Redirect URIs.</p>
+                        </div>
+                    )}
                 </div>
 
                 <div className="setting-group">
@@ -391,6 +431,89 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
                         width: 100% !important;
                         padding: 0.8rem !important;
                         margin-bottom: 1rem;
+                    }
+
+                    .provider-toggle {
+                        justify-content: space-between;
+                        background: rgba(255,255,255,0.05);
+                        padding: 0.5rem 1rem;
+                        border-radius: 12px;
+                        cursor: default;
+                    }
+
+                    .provider-toggle span {
+                        font-weight: 500;
+                        opacity: 0.5;
+                        transition: opacity 0.2s;
+                    }
+                    
+                    .provider-toggle span.active {
+                        opacity: 1;
+                        color: var(--accent-color);
+                    }
+
+                    .switch {
+                        width: 50px;
+                        height: 26px;
+                        background: rgba(255,255,255,0.2);
+                        border-radius: 13px;
+                        position: relative;
+                        cursor: pointer;
+                    }
+
+                    .slider-round {
+                        width: 22px;
+                        height: 22px;
+                        background: white;
+                        border-radius: 50%;
+                        position: absolute;
+                        top: 2px;
+                        transition: left 0.3s;
+                    }
+
+                    .slider-round.left { left: 2px; }
+                    .slider-round.right { left: 26px; background: #1cb954; }
+
+                    .spotify-settings {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 1rem;
+                        margin-top: 1rem;
+                        padding: 1rem;
+                        background: rgba(30, 215, 96, 0.1);
+                        border-radius: 12px;
+                        border: 1px solid rgba(30, 215, 96, 0.2);
+                    }
+
+                    .connect-btn {
+                        background: #1cb954;
+                        color: white;
+                        border: none;
+                        padding: 0.8rem;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        width: 100%;
+                        transition: background 0.2s;
+                    }
+
+                    .connect-btn:hover {
+                        background: #1ed760;
+                    }
+
+                    .help-text {
+                        font-size: 0.75rem;
+                        color: rgba(255,255,255,0.5);
+                        margin: 0;
+                    }
+                    
+                    .status-connected {
+                        color: #1ed760;
+                        font-size: 0.9rem;
+                        font-weight: 600;
+                        margin-top: 0.5rem;
+                        display: block;
+                        text-align: center;
                     }
                 `}</style>
             </div>

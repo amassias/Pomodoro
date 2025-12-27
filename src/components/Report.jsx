@@ -6,9 +6,11 @@ const Report = ({ onPomodoroComplete }) => {
     totalHours: 0,
     pomodorosCompleted: 0,
     currentStreak: 0,
-    weeklyData: []
+    weeklyData: [],
+    archivedTasks: []
   });
   const [timeRange, setTimeRange] = useState('week'); // week, month, year
+  const [selectedDay, setSelectedDay] = useState(null);
 
   // Load stats from localStorage
   useEffect(() => {
@@ -22,6 +24,13 @@ const Report = ({ onPomodoroComplete }) => {
       return () => window.removeEventListener('pomodoroCompleted', handlePomodoroComplete);
     }
   }, []);
+
+  useEffect(() => {
+    if (showReport) {
+      loadStats();
+      setSelectedDay(null);
+    }
+  }, [showReport]);
 
   useEffect(() => {
     const handleEsc = (e) => {
@@ -88,6 +97,7 @@ const Report = ({ onPomodoroComplete }) => {
 
   const loadStats = () => {
     const history = JSON.parse(localStorage.getItem('pomodoroHistory') || '{}');
+    const tasks = JSON.parse(localStorage.getItem('pomodoro-archived-tasks') || '[]');
 
     let totalMinutes = 0;
     let totalPomodoros = 0;
@@ -125,7 +135,8 @@ const Report = ({ onPomodoroComplete }) => {
       totalHours: (totalMinutes / 60).toFixed(1),
       pomodorosCompleted: totalPomodoros,
       currentStreak,
-      weeklyData
+      weeklyData,
+      archivedTasks: tasks
     });
   };
 
@@ -141,15 +152,54 @@ const Report = ({ onPomodoroComplete }) => {
         const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
         const dayNum = date.getDate();
         const key = `${dayName} ${dayNum}`;
-        data[`${dayName}, ${dayNum}/${String(date.getMonth() + 1).padStart(2, '0')}`] = stats.weeklyData[key] || 0;
+        data[dateStr] = {
+          label: `${dayName}, ${dayNum}`,
+          value: stats.weeklyData[key] || 0
+        };
       }
     }
 
     return data;
   };
 
-  const maxHours = Math.max(...Object.values(getChartData()), 1);
+  const maxHours = Math.max(...Object.values(getChartData()).map(d => d.value), 1);
   const chartData = getChartData();
+
+  const getTasksForDate = (dateStr) => {
+    return stats.archivedTasks.filter(task => {
+      if (!task.archivedAt) return false;
+      return task.archivedAt.startsWith(dateStr);
+    });
+  };
+
+  const renderTasks = () => {
+    if (!selectedDay) return null;
+
+    const tasksForDay = getTasksForDate(selectedDay.date);
+    const dateObj = new Date(selectedDay.date);
+    const formattedDate = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+    return (
+      <div className="daily-tasks-section">
+        <h3>Tasks Completed on {formattedDate}</h3>
+        {tasksForDay.length === 0 ? (
+          <p className="no-tasks">No tasks completed on this day.</p>
+        ) : (
+          <ul className="completed-task-list">
+            {tasksForDay.map(task => (
+              <li key={task.id} className="completed-task-item">
+                <span className="check-icon">✓</span>
+                <span className="task-text">{task.text}</span>
+                <span className="task-time">
+                  {new Date(task.archivedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -214,26 +264,30 @@ const Report = ({ onPomodoroComplete }) => {
 
             <div className="chart-container">
               <div className="chart">
-                {Object.entries(chartData).map(([day, hours]) => (
-                  <div key={day} className="chart-bar-wrapper">
-                    <div className="chart-bar-label">{day}</div>
+                {Object.entries(chartData).map(([dateStr, data]) => (
+                  <div key={dateStr} className="chart-bar-wrapper">
+                    <div className="chart-bar-label">{data.label.split(',')[0]}</div>
                     <div className="chart-bar-container">
                       <div
-                        className="chart-bar"
-                        style={{ height: `${(hours / maxHours) * 120}px` }}
-                        title={`${hours.toFixed(1)}h`}
+                        className={`chart-bar ${selectedDay?.date === dateStr ? 'selected' : ''}`}
+                        style={{ height: `${(data.value / maxHours) * 120}px` }}
+                        title={`${data.value.toFixed(1)}h`}
+                        onClick={() => setSelectedDay({ date: dateStr })}
                       />
                     </div>
-                    <div className="chart-bar-value">{hours.toFixed(1)}h</div>
+                    <div className="chart-bar-value">{data.value.toFixed(1)}h</div>
                   </div>
                 ))}
               </div>
             </div>
 
+            {renderTasks()}
+
             <div className="report-actions">
               <button className="reset-btn" onClick={() => {
                 if (confirm('Reset all data?')) {
                   localStorage.removeItem('pomodoroHistory');
+                  localStorage.removeItem('pomodoro-archived-tasks');
                   loadStats();
                 }
               }}>
@@ -509,6 +563,72 @@ const Report = ({ onPomodoroComplete }) => {
           background: rgba(107, 180, 255, 0.3);
           border-color: rgba(107, 180, 255, 0.5);
         }
+
+          .chart-bar.selected {
+             background: linear-gradient(180deg, #ff6b6b, #ff8787);
+             box-shadow: 0 0 15px rgba(255, 107, 107, 0.6);
+          }
+
+          .daily-tasks-section {
+              background: rgba(255, 255, 255, 0.03);
+              border-radius: 12px;
+              padding: 1.5rem;
+              animation: fadeIn 0.3s ease;
+          }
+          
+          @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+          }
+
+          .daily-tasks-section h3 {
+              font-size: 0.95rem;
+              font-weight: 500;
+              margin-top: 0;
+              margin-bottom: 1rem;
+              color: var(--text-secondary);
+          }
+
+          .no-tasks {
+              color: rgba(255,255,255,0.4);
+              font-style: italic;
+              text-align: center;
+              padding: 1rem;
+          }
+
+          .completed-task-list {
+              list-style: none;
+              padding: 0;
+              margin: 0;
+              display: flex;
+              flex-direction: column;
+              gap: 0.8rem;
+          }
+
+          .completed-task-item {
+              display: flex;
+              align-items: center;
+              gap: 1rem;
+              padding: 0.8rem;
+              background: rgba(0,0,0,0.2);
+              border-radius: 8px;
+              border-left: 3px solid var(--accent-color);
+          }
+
+          .check-icon {
+              color: #4ade80;
+              font-weight: bold;
+          }
+
+          .task-text {
+              flex: 1;
+              color: rgba(255,255,255,0.9);
+          }
+
+          .task-time {
+              font-size: 0.8rem;
+              color: rgba(255,255,255,0.4);
+          }
 
         @media (max-width: 768px) {
           .report-modal {
