@@ -1,16 +1,73 @@
-# React + Vite
+# World Focus 🌍⚡
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**World Focus** is a premium, immersive Pomodoro application designed to boost your productivity with stunning live backgrounds and high-quality audio features. Built with modern web technologies, it transforms your workspace into a focused environment—whether you're studying in a rainy Tokyo street or working from a quiet cabin in Norway.
 
-Currently, two official plugins are available:
+## ✨ Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### ⏱️ Smart Timer
+- **Customizable Intervals:** Adjustable Focus, Short Break, and Long Break durations.
+- **Auto-Transition:** Option to auto-start breaks and focus sessions.
+- **Audio Feedback:** Pleasant distinct sounds for timer completion and ticking (optional).
 
-## React Compiler
+### 🌆 Live Backgrounds
+- **Immersive Atmosphere:** Choose from a curated list of live video feeds including:
+  - **Urban Night:** Tokyo (Shibuya, Shinjuku), NYC, Seoul, Hong Kong.
+  - **Urban Day:** Paris, London, Venice, Santorini.
+  - **Nature:** Namibia, Kenya, Maldives, Northern Lights.
+  - **Focus:** Space (ISS), Lofi Girl, Synthwave, Norway Train.
+- **Glassmorphism UI:** A sleek, semi-transparent interface that blends beautifully with the background.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 🎵 Lofi Player
+- **Integrated Radio:** Built-in "Lofi Girl" radio player.
+- **Draggable Widget:** Move the player anywhere on your screen.
+- **Compact Design:** Designed to stay out of your way while keeping the vibes going.
 
-## Expanding the ESLint configuration
+### 📊 Productivity Tracking
+- **Detailed Reports:** Meaningful statistics including Total Hours, Pomodoros Completed, and Current Streak.
+- **Visual Charts:** Weekly activity charts to track your consistency.
+- **Task Management:** A built-in task list to organize your session goals.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🛠️ Tech Stack
+
+- **Frontend Framework:** [React 19](https://react.dev/)
+- **Build Tool:** [Vite](https://vitejs.dev/)
+- **Styling:** Vanilla CSS (Glassmorphism, Responsive Grid)
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (Latest LTS recommended)
+- npm or yarn
+
+### Installation
+
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/yourusername/pomodoro-app.git
+    cd pomodoro-app
+    ```
+
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+
+3.  Run the development server:
+    ```bash
+    npm run dev
+    ```
+
+4.  Open your browser at `http://localhost:5173` (or the port shown in your terminal).
+
+## ⌨️ Keyboard Shortcuts
+
+| Key | Action |
+| :--- | :--- |
+| **Space** | Start/Pause Timer |
+| **R** | Reset Timer |
+| **M** | Mute/Unmute All Sounds |
+| **Esc** | Close Settings/Report Modals |
+
+## 📄 License
+
+This project is available under the MIT License.
