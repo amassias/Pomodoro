@@ -32,8 +32,21 @@ const Timer = ({ settings }) => {
                     if (minutes === 0) {
                         clearInterval(interval);
                         setIsActive(false);
-                        const audio = new Audio(sounds[settings.sound] || sounds.beep);
-                        audio.play().catch(e => console.log('Audio play failed', e));
+                        
+                        // Play alarm sound with repeat
+                        const playAlarm = (times = 1) => {
+                            if (times <= 0) return;
+                            const audio = new Audio(sounds[settings.sound] || sounds.beep);
+                            audio.volume = (settings.alarmVolume || 70) / 100; // Convert to 0-1 range
+                            audio.onended = () => {
+                                if (times > 1) {
+                                    setTimeout(() => playAlarm(times - 1), 500); // Repeat with 500ms delay
+                                }
+                            };
+                            audio.play().catch(e => console.log('Audio play failed', e));
+                        };
+                        
+                        playAlarm(settings.alarmRepeat || 1);
                         
                         // Emit pomodoro completion event
                         if (mode === 'focus') {
@@ -41,19 +54,48 @@ const Timer = ({ settings }) => {
                                 detail: { duration: settings.focusDuration }
                             }));
                         }
+
+                        // Auto start next timer
+                        setTimeout(() => {
+                            if (mode === 'focus' && settings.autoStartBreaks) {
+                                setMode('shortBreak');
+                                setMinutes(settings.shortBreakDuration);
+                                setSeconds(0);
+                                setIsActive(true);
+                            } else if ((mode === 'shortBreak' || mode === 'longBreak') && settings.autoStartPomodoros) {
+                                setMode('focus');
+                                setMinutes(settings.focusDuration);
+                                setSeconds(0);
+                                setIsActive(true);
+                            }
+                        }, 1000);
                     } else {
                         setMinutes(minutes - 1);
                         setSeconds(59);
                     }
                 } else {
                     setSeconds(seconds - 1);
+                    
+                    // Play ticking sound if enabled
+                    if (settings.tickingSound && settings.tickingSound !== 'none') {
+                        const tickingSounds = {
+                            'soft': 'https://actions.google.com/sounds/v1/ui/prompt_dismiss.ogg',
+                            'regular': 'https://actions.google.com/sounds/v1/ui/selection_click.ogg',
+                            'loud': 'https://actions.google.com/sounds/v1/ui/positive_ping.ogg'
+                        };
+                        
+                        // Play tick sound every second (but keep volume low)
+                        const tickAudio = new Audio(tickingSounds[settings.tickingSound]);
+                        tickAudio.volume = (settings.tickingVolume || 50) / 100 * 0.3; // Reduce volume to 30% of set volume
+                        tickAudio.play().catch(e => console.log('Tick sound failed', e));
+                    }
                 }
             }, 1000);
         } else if (!isActive && seconds !== 0) {
             clearInterval(interval);
         }
         return () => clearInterval(interval);
-    }, [isActive, seconds, minutes, settings.sound, settings.focusDuration, mode]);
+    }, [isActive, seconds, minutes, settings, mode]);
 
     const playClickSound = () => {
         // Create a simple click sound using Web Audio API

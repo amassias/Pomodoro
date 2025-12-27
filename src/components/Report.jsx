@@ -23,6 +23,16 @@ const Report = ({ onPomodoroComplete }) => {
     }
   }, []);
 
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape' && showReport) {
+        setShowReport(false);
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [showReport]);
+
   const handlePomodoroComplete = (event) => {
     const { duration } = event.detail;
     savePomodoroData(duration);
@@ -32,17 +42,17 @@ const Report = ({ onPomodoroComplete }) => {
   const savePomodoroData = (durationMinutes) => {
     const today = new Date().toISOString().split('T')[0];
     const history = JSON.parse(localStorage.getItem('pomodoroHistory') || '{}');
-    
+
     if (!history[today]) {
       history[today] = [];
     }
-    
+
     history[today].push({
       duration: durationMinutes,
       timestamp: new Date().toISOString(),
       completed: true
     });
-    
+
     localStorage.setItem('pomodoroHistory', JSON.stringify(history));
   };
 
@@ -53,12 +63,12 @@ const Report = ({ onPomodoroComplete }) => {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
-      
+
       const history = JSON.parse(localStorage.getItem('pomodoroHistory') || '{}');
       if (!history[dateStr]) {
         history[dateStr] = [];
       }
-      
+
       // Add random pomodoros
       const count = Math.floor(Math.random() * 4) + 1;
       for (let j = 0; j < count; j++) {
@@ -68,17 +78,17 @@ const Report = ({ onPomodoroComplete }) => {
           completed: true
         });
       }
-      
+
       localStorage.setItem('pomodoroHistory', JSON.stringify(history));
     }
-    
+
     loadStats();
     console.log('Test data added!');
   };
 
   const loadStats = () => {
     const history = JSON.parse(localStorage.getItem('pomodoroHistory') || '{}');
-    
+
     let totalMinutes = 0;
     let totalPomodoros = 0;
     let weeklyData = {};
@@ -89,7 +99,7 @@ const Report = ({ onPomodoroComplete }) => {
       const dayMinutes = sessions.reduce((sum, s) => sum + (s.duration || 25), 0);
       totalMinutes += dayMinutes;
       totalPomodoros += sessions.length;
-      
+
       // Weekly data
       const dateObj = new Date(date);
       const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
@@ -103,7 +113,7 @@ const Report = ({ onPomodoroComplete }) => {
       const checkDate = new Date(today);
       checkDate.setDate(checkDate.getDate() - i);
       const dateStr = checkDate.toISOString().split('T')[0];
-      
+
       if (history[dateStr]) {
         currentStreak++;
       } else if (i > 0) {
@@ -143,7 +153,7 @@ const Report = ({ onPomodoroComplete }) => {
 
   return (
     <>
-      <button 
+      <button
         className="report-btn"
         onClick={() => setShowReport(true)}
         title="View statistics"
@@ -182,19 +192,19 @@ const Report = ({ onPomodoroComplete }) => {
             </div>
 
             <div className="report-timerange">
-              <button 
+              <button
                 className={`range-btn ${timeRange === 'week' ? 'active' : ''}`}
                 onClick={() => setTimeRange('week')}
               >
                 Week
               </button>
-              <button 
+              <button
                 className={`range-btn ${timeRange === 'month' ? 'active' : ''}`}
                 onClick={() => setTimeRange('month')}
               >
                 Month
               </button>
-              <button 
+              <button
                 className={`range-btn ${timeRange === 'year' ? 'active' : ''}`}
                 onClick={() => setTimeRange('year')}
               >
@@ -208,7 +218,7 @@ const Report = ({ onPomodoroComplete }) => {
                   <div key={day} className="chart-bar-wrapper">
                     <div className="chart-bar-label">{day}</div>
                     <div className="chart-bar-container">
-                      <div 
+                      <div
                         className="chart-bar"
                         style={{ height: `${(hours / maxHours) * 120}px` }}
                         title={`${hours.toFixed(1)}h`}
