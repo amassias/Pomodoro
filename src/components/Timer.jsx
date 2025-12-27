@@ -34,6 +34,13 @@ const Timer = ({ settings }) => {
                         setIsActive(false);
                         const audio = new Audio(sounds[settings.sound] || sounds.beep);
                         audio.play().catch(e => console.log('Audio play failed', e));
+                        
+                        // Emit pomodoro completion event
+                        if (mode === 'focus') {
+                            window.dispatchEvent(new CustomEvent('pomodoroCompleted', {
+                                detail: { duration: settings.focusDuration }
+                            }));
+                        }
                     } else {
                         setMinutes(minutes - 1);
                         setSeconds(59);
@@ -46,9 +53,29 @@ const Timer = ({ settings }) => {
             clearInterval(interval);
         }
         return () => clearInterval(interval);
-    }, [isActive, seconds, minutes, settings.sound]);
+    }, [isActive, seconds, minutes, settings.sound, settings.focusDuration, mode]);
+
+    const playClickSound = () => {
+        // Create a simple click sound using Web Audio API
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800; // Frequency in Hz
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.1);
+    };
 
     const toggleTimer = () => {
+        playClickSound();
         setIsActive(!isActive);
     };
 

@@ -4,6 +4,7 @@ import Timer from './components/Timer';
 import CitySelector from './components/CitySelector';
 import TaskList from './components/TaskList';
 import LofiPlayer from './components/LofiPlayer';
+import Report from './components/Report';
 import SettingsModal from './components/SettingsModal';
 
 function App() {
@@ -89,6 +90,7 @@ function App() {
         </footer>
       </div>
 
+      <Report />
       <LofiPlayer />
 
       {showSettings && (
