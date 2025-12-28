@@ -21,5 +21,5 @@ export const getTokenFromUrl = () => {
 
 export const getLoginUrl = (clientId) => {
     const redirectUri = window.location.origin + '/';
-    return `${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join("%20")}&response_type=token&show_dialog=true`;
+    return `${authEndpoint}?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes.join(" "))}&response_type=token&show_dialog=true`;
 };

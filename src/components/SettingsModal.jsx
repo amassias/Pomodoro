@@ -118,7 +118,10 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
                                             const height = 730;
                                             const left = (window.screen.width / 2) - (width / 2);
                                             const top = (window.screen.height / 2) - (height / 2);
-                                            window.open(url, 'Spotify Login', `width=${width},height=${height},left=${left},top=${top}`);
+                                            const popup = window.open(url, 'Spotify Login', `width=${width},height=${height},left=${left},top=${top}`);
+                                            if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+                                                alert("Popup was blocked! Please allow popups for this website to connect to Spotify.");
+                                            }
                                         } else {
                                             alert('Please enter a Client ID first');
                                         }

@@ -202,8 +202,8 @@ const Timer = ({ settings }) => {
         <button className="primary-btn" onClick={toggleTimer}>
           {isActive ? 'PAUSE' : 'START'}
         </button>
-        <button className="reset-btn" onClick={resetTimer} title="Reset">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74-2.74L3 12" /></svg>
+        <button className="reset-btn" onClick={resetTimer}>
+          RESET
         </button>
       </div>
 
@@ -262,17 +262,18 @@ const Timer = ({ settings }) => {
         }
         .reset-btn {
           background: transparent;
-          color: var(--text-secondary);
-          padding: 0.8rem;
-          border-radius: 50%;
-          border: 1px solid rgba(255,255,255,0.1);
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          color: rgba(255, 255, 255, 0.5);
+          padding: 0 1rem;
+          border: none;
+          font-weight: 600;
+          letter-spacing: 2px;
+          font-size: 0.9rem;
+          cursor: pointer;
+          transition: all 0.2s;
         }
         .reset-btn:hover {
-          background: rgba(255,255,255,0.1);
           color: #fff;
+          transform: translateY(-1px);
         }
       `}</style>
     </div>
