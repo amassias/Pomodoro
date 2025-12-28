@@ -252,29 +252,36 @@ function App() {
       <style jsx>{`
         .app-container {
           position: relative;
-          width: 100vw;
-          height: 100vh;
+          width: 100%;
+          min-height: 100vh;
+          height: auto;
+        }
+        @supports (min-height: 100dvh) {
+          .app-container {
+            min-height: 100dvh;
+          }
         }
         .overlay {
-          position: absolute;
-          top: 0;
-          left: 0;
+          position: relative;
           width: 100%;
-          height: 100%;
+          min-height: 100vh;
           display: flex;
           flex-direction: column;
           /* justify-content: space-between; Removed to allow absolute header */
           align-items: center;
-          padding: 2rem;
+          padding: clamp(0.75rem, 3vw, 2rem);
           z-index: 10;
         }
+        @supports (min-height: 100dvh) {
+          .overlay {
+            min-height: 100dvh;
+          }
+        }
         .top-bar {
-          position: absolute; /* Taken out of flow */
-          top: 0;
-          left: 0;
-          right: 0;
-          margin: 0 auto; /* Center horizontal if max-width applies */
-          padding: 1rem 2rem;
+          position: sticky;
+          top: calc(env(safe-area-inset-top, 0px) + 0.5rem);
+          margin: 0 auto;
+          padding: 1rem clamp(1rem, 4vw, 2rem);
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -282,26 +289,44 @@ function App() {
           width: 90%; /* bit less than 100 to show floating effect */
           max-width: 1200px;
           z-index: 100;
-          
-          /* Auto-hide logic */
-          transform: translateY(calc(-100% + 18px)); /* Show only a small handle strip */
-          opacity: 0.25; /* Dim it */
-          transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+          transition: all 0.2s ease;
           border-bottom-left-radius: 24px;
           border-bottom-right-radius: 24px;
           border-top-left-radius: 0; /* Attach to top */
           border-top-right-radius: 0;
         }
-        .top-bar:hover {
-          transform: translateY(0);
-          opacity: 1;
+
+        /* Desktop-only auto-hide (hover-capable pointers) */
+        @media (hover: hover) and (pointer: fine) {
+          .top-bar {
+            transform: translateY(calc(-100% + 18px));
+            opacity: 0.25;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+          }
+          .top-bar:hover {
+            transform: translateY(0);
+            opacity: 1;
+          }
+
+          /* Add a visual hint handle at the bottom */
+          .top-bar::after {
+            content: '';
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 4px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 2px;
+          }
         }
         
         /* Settings Button */
         .settings-btn {
           position: fixed;
-          top: 5.5rem;
-          right: 2rem;
+          top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
+          right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
           background: rgba(255, 255, 255, 0.1);
           border: 1px solid rgba(255, 255, 255, 0.2);
           color: #fff;
@@ -325,19 +350,6 @@ function App() {
         
         .settings-btn:active {
           transform: scale(0.95);
-        }
-        
-        /* Add a visual hint handle at the bottom */
-        .top-bar::after {
-            content: '';
-            position: absolute;
-            bottom: 5px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 40px;
-            height: 4px;
-            background: rgba(255,255,255,0.3);
-            border-radius: 2px;
         }
         .top-bar h1 {
           font-weight: 300;
@@ -385,6 +397,17 @@ function App() {
            .top-bar h1 {
                text-align: left;
            }
+        }
+
+        @media (max-width: 768px) {
+          .main-grid {
+            flex-direction: column;
+            align-items: stretch;
+            width: 100%;
+          }
+          .top-bar {
+            width: 100%;
+          }
         }
       `}</style>
     </div>

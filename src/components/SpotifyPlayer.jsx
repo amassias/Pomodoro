@@ -39,7 +39,7 @@ const SpotifyWebPlayer = ({ token, playing, uri }) => {
             <style jsx>{`
                 .spotify-player-wrapper {
                    position: fixed;
-                   bottom: 2rem;
+                   bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem);
                    left: 50%;
                    transform: translateX(-50%);
                    width: 90%;

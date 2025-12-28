@@ -302,18 +302,27 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
                         justify-content: center;
                         align-items: center;
                         z-index: 100;
-                        padding: 2rem;
+                        padding: calc(1rem + env(safe-area-inset-top, 0px))
+                                 calc(1rem + env(safe-area-inset-right, 0px))
+                                 calc(1rem + env(safe-area-inset-bottom, 0px))
+                                 calc(1rem + env(safe-area-inset-left, 0px));
                         box-sizing: border-box;
                     }
                     .modal-content {
                         width: 100%;
                         max-width: 450px;
-                        max-height: 90vh;
+                        max-height: calc(100vh - 2rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
                         padding: 2rem;
                         background: rgba(20, 20, 20, 0.95);
                         border-radius: 16px;
                         overflow-y: auto;
+                        -webkit-overflow-scrolling: touch;
                         box-sizing: border-box;
+                    }
+                    @supports (max-height: 100dvh) {
+                        .modal-content {
+                            max-height: calc(100dvh - 2rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+                        }
                     }
                     .modal-header {
                         display: flex;
@@ -471,6 +480,20 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
                         padding: 0.6rem !important;
                         text-align: center;
                         font-weight: 600;
+                    }
+
+                    @media (max-width: 600px) {
+                        .modal-content {
+                            max-width: none;
+                            padding: 1.25rem;
+                        }
+                        .inputs-row {
+                            flex-wrap: wrap;
+                        }
+                        .playlist-select {
+                            min-width: 0;
+                            width: 100%;
+                        }
                     }
 
                     .playlist-picker {

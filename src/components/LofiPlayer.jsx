@@ -145,9 +145,9 @@ const LofiPlayer = () => {
       <style jsx>{`
         .lofi-player {
           position: fixed;
-          bottom: 2rem;
-          left: 2rem;
-          width: 300px; /* Compact width */
+          bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem);
+          left: calc(env(safe-area-inset-left, 0px) + 0.75rem);
+          width: min(300px, calc(100vw - 1.5rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
           height: 80px;
           padding: 0;
           display: flex;
@@ -159,6 +159,14 @@ const LofiPlayer = () => {
           overflow: hidden;
           border-radius: 12px;
           /* Removed specific background to inherit glass-panel styles */
+        }
+
+        @media (max-width: 600px) {
+          .lofi-player {
+            left: calc(env(safe-area-inset-left, 0px) + 0.75rem);
+            right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
+            width: auto;
+          }
         }
 
         .art-container {

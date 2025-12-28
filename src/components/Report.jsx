@@ -373,8 +373,8 @@ const Report = ({ onPomodoroComplete }) => {
       <style jsx>{`
         .report-btn {
           position: fixed;
-          top: 2rem;
-          right: 2rem;
+          top: calc(env(safe-area-inset-top, 0px) + 0.75rem + 48px);
+          right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
           background: rgba(255, 255, 255, 0.1);
           border: 1px solid rgba(255, 255, 255, 0.2);
           color: #fff;
@@ -409,15 +409,42 @@ const Report = ({ onPomodoroComplete }) => {
 
         .report-modal {
           width: 95%;
-          height: 90vh;
+          max-height: calc(100vh - 2rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
           max-width: 1200px;
-          padding: 3rem;
+          padding: clamp(1rem, 3vw, 3rem);
           border-radius: 24px;
           overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
           animation: slideIn 0.3s ease-out;
           display: flex;
           flex-direction: column;
           gap: 2rem;
+        }
+
+        @supports (max-height: 100dvh) {
+          .report-modal {
+            max-height: calc(100dvh - 2rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+          }
+        }
+
+        @media (max-width: 768px) {
+          .report-modal {
+            width: 100%;
+            border-radius: 16px;
+          }
+          .report-header h2 {
+            font-size: 1.8rem;
+          }
+          .range-btn {
+            padding: 0.7rem 1rem;
+          }
+          .chart-container {
+            min-height: 220px;
+            padding: 1rem;
+          }
+          .chart {
+            gap: 0.75rem;
+          }
         }
 
         @keyframes slideIn {

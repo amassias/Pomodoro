@@ -275,6 +275,40 @@ const Timer = ({ settings }) => {
           color: #fff;
           transform: translateY(-1px);
         }
+
+        @media (max-width: 768px) {
+          .timer-container {
+            width: 100%;
+            min-width: 0;
+            padding: 1.5rem;
+            gap: 1.25rem;
+          }
+          .time-display {
+            font-size: clamp(3.25rem, 14vw, 5rem);
+          }
+          .timer-controls {
+            width: 100%;
+            gap: 0.75rem;
+          }
+          .primary-btn {
+            flex: 1;
+            padding: 0.9rem 1rem;
+            letter-spacing: 1px;
+          }
+        }
+
+        @media (max-width: 420px) {
+          .timer-controls {
+            flex-direction: column;
+            align-items: stretch;
+          }
+          .primary-btn {
+            width: 100%;
+          }
+          .reset-btn {
+            padding: 0.75rem 1rem;
+          }
+        }
       `}</style>
     </div>
   );

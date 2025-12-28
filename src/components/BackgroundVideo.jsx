@@ -16,11 +16,16 @@ const BackgroundVideo = ({ videoId }) => {
           position: fixed;
           top: 0;
           left: 0;
-          width: 100vw;
+          width: 100%;
           height: 100vh;
           z-index: -1;
           pointer-events: none; /* Prevent interaction with video */
           overflow: hidden;
+        }
+        @supports (height: 100dvh) {
+          .video-background {
+            height: 100dvh;
+          }
         }
         .video-overlay {
           position: absolute;
@@ -32,7 +37,7 @@ const BackgroundVideo = ({ videoId }) => {
           z-index: 1;
         }
         iframe {
-          width: 100vw;
+          width: 100%;
           height: 56.25vw; /* Given a 16:9 aspect ratio, 9/16*100 = 56.25 */
           min-height: 100vh;
           min-width: 177.77vh; /* Given a 16:9 aspect ratio, 16/9*100 = 177.77 */
@@ -40,6 +45,11 @@ const BackgroundVideo = ({ videoId }) => {
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
+        }
+        @supports (min-height: 100dvh) {
+          iframe {
+            min-height: 100dvh;
+          }
         }
       `}</style>
     </div>

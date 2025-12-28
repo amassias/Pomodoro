@@ -19,8 +19,25 @@ body {
   font-family: var(--font-family);
   background-color: #000;
   color: var(--text-primary);
-  overflow: hidden;
-  /* Video background needs this */
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  /* Video background is fixed, so we can allow page scroll */
+}
+
+html,
+body {
+  height: 100%;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+@supports (min-height: 100dvh) {
+  #root {
+    min-height: 100dvh;
+  }
 }
 
 /* Glassmorphism Utilities */

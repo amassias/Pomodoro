@@ -263,6 +263,7 @@ const TaskList = () => {
                     max-width: 350px;
                     max-height: 400px;
                     overflow-y: auto;
+                    -webkit-overflow-scrolling: touch;
                     display: flex;
                     flex-direction: column;
                     gap: 1rem;
@@ -406,6 +407,12 @@ const TaskList = () => {
                     transition: all 0.2s;
                 }
 
+                /* Larger tap-target without changing the visual checkbox size */
+                .checkbox-wrapper {
+                    padding: 12px;
+                    margin: -12px;
+                }
+
                 .checkbox-wrapper:hover {
                     border-color: rgba(255,255,255,0.5);
                 }
@@ -434,7 +441,10 @@ const TaskList = () => {
                     align-items: center;
                     justify-content: center;
                     z-index: 1000;
-                    padding: 2rem;
+                    padding: calc(1rem + env(safe-area-inset-top, 0px))
+                             calc(1rem + env(safe-area-inset-right, 0px))
+                             calc(1rem + env(safe-area-inset-bottom, 0px))
+                             calc(1rem + env(safe-area-inset-left, 0px));
                     box-sizing: border-box;
                     animation: fadeIn 0.2s ease-out;
                 }
@@ -449,12 +459,11 @@ const TaskList = () => {
                 }
 
                 .archive-modal {
-                    width: 98vw;
+                    width: min(98vw, 980px);
                     max-width: none;
-                    height: 95vh;
-                    max-height: none;
+                    max-height: calc(100vh - 2rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
                     border-radius: 24px;
-                    padding: 3rem;
+                    padding: clamp(1rem, 3vw, 3rem);
                     display: flex;
                     flex-direction: column;
                     gap: 2rem;
@@ -463,6 +472,12 @@ const TaskList = () => {
                     overflow: hidden;
                     background: rgba(20, 20, 20, 0.95);
                     border: 1px solid rgba(255, 255, 255, 0.1);
+                }
+
+                @supports (max-height: 100dvh) {
+                    .archive-modal {
+                        max-height: calc(100dvh - 2rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+                    }
                 }
 
                 @keyframes slideUp {
@@ -515,6 +530,7 @@ const TaskList = () => {
                     flex-direction: column;
                     gap: 1rem;
                     overflow-y: auto;
+                    -webkit-overflow-scrolling: touch;
                     flex: 1;
                     min-height: 0;
                     padding-right: 0.5rem;
@@ -712,6 +728,37 @@ const TaskList = () => {
                     padding: 3rem 2rem;
                     font-style: italic;
                     font-size: 1.05rem;
+                }
+
+                @media (max-width: 768px) {
+                    .task-list-container {
+                        max-width: none;
+                        max-height: none;
+                        overflow-y: visible;
+                    }
+                    .add-btn {
+                        width: 44px;
+                        height: 44px;
+                    }
+                    .task-input {
+                        padding: 0.75rem 1rem;
+                    }
+                    .archive-toolbar {
+                        flex-direction: column;
+                        align-items: stretch;
+                    }
+                    .bulk-actions {
+                        justify-content: space-between;
+                        flex-wrap: wrap;
+                    }
+                    .selected-count {
+                        min-width: 0;
+                        text-align: left;
+                    }
+                    .archived-item {
+                        gap: 1rem;
+                        padding: 1rem;
+                    }
                 }
             `}</style>
         </div>
