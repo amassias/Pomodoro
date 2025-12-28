@@ -7,9 +7,15 @@ import LofiPlayer from './components/LofiPlayer';
 import SpotifyPlayer from './components/SpotifyPlayer';
 import Report from './components/Report';
 import SettingsModal from './components/SettingsModal';
-import { getTokenFromUrl } from './utils/spotify';
+import { isTokenExpired, refreshAccessToken } from './utils/spotify';
 
 function App() {
+  const savedSpotifyClientId = localStorage.getItem('spotifyClientId') || import.meta.env.VITE_SPOTIFY_CLIENT_ID || 'c017309c2bfc4c9f9c6794e18c79f250';
+  const savedSpotifyToken = localStorage.getItem('spotifyToken');
+  const savedSpotifyRefreshToken = localStorage.getItem('spotifyRefreshToken');
+  const savedSpotifyExpiresAt = localStorage.getItem('spotifyTokenExpiresAt');
+  const savedSpotifySelectedPlaylistUri = localStorage.getItem('spotifySelectedPlaylistUri') || 'spotify:playlist:0vvXsWCC9xrXsKd4JyS05a';
+
   const [city, setCity] = useState('seoul_hangang');
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState({
@@ -24,46 +30,51 @@ function App() {
     autoStartBreaks: false,
     autoStartPomodoros: false,
     musicProvider: 'lofi', // lofi | spotify
-    spotifyClientId: localStorage.getItem('spotifyClientId') || 'c017309c2bfc4c9f9c6794e18c79f250',
-    spotifyToken: localStorage.getItem('spotifyToken') || null
+    spotifyClientId: savedSpotifyClientId,
+    spotifyToken: savedSpotifyToken || null,
+    spotifyRefreshToken: savedSpotifyRefreshToken || null,
+    spotifyTokenExpiresAt: savedSpotifyExpiresAt ? Number(savedSpotifyExpiresAt) : null,
+    spotifySelectedPlaylistUri: savedSpotifySelectedPlaylistUri
   });
 
-  useEffect(() => {
-    // 1. Check if we are the Popup Window returning with a token
-    const hash = getTokenFromUrl();
-    const _token = hash.access_token;
+  const persistSpotifyTokens = ({ token, refreshToken, expiresAt, expiresIn }) => {
+    const resolvedExpiresAt = expiresAt || (expiresIn ? Date.now() + expiresIn * 1000 : null);
 
-    if (_token && window.opener) {
-      // We are in the popup, send token to main app and close
-      window.opener.postMessage({ type: 'SPOTIFY_TOKEN', token: _token }, window.location.origin);
-      window.close();
-      return;
+    setSettings(prev => ({
+      ...prev,
+      spotifyToken: token || prev.spotifyToken,
+      spotifyRefreshToken: refreshToken || prev.spotifyRefreshToken,
+      spotifyTokenExpiresAt: resolvedExpiresAt || prev.spotifyTokenExpiresAt
+    }));
+
+    if (token) {
+      localStorage.setItem('spotifyToken', token);
     }
+    if (refreshToken) {
+      localStorage.setItem('spotifyRefreshToken', refreshToken);
+    }
+    if (resolvedExpiresAt) {
+      localStorage.setItem('spotifyTokenExpiresAt', String(resolvedExpiresAt));
+    }
+  };
 
-    // 2. Check if we are the Main App receiving the token
+  useEffect(() => {
     const handleMessage = (event) => {
-      // Validate origin for security
       if (event.origin !== window.location.origin) return;
 
       if (event.data.type === 'SPOTIFY_TOKEN' && event.data.token) {
-        const newToken = event.data.token;
-        setSettings(prev => ({ ...prev, spotifyToken: newToken }));
-        localStorage.setItem('spotifyToken', newToken);
-
-        // Clear hash if any
-        window.location.hash = "";
+        persistSpotifyTokens({
+          token: event.data.token,
+          refreshToken: event.data.refreshToken,
+          expiresAt: event.data.expiresAt
+        });
+      }
+      if (event.data.type === 'SPOTIFY_AUTH_ERROR') {
+        console.warn('Spotify auth error', event.data.error);
       }
     };
 
     window.addEventListener('message', handleMessage);
-
-    // 3. Check for existing token in URL (fallback if opened directly or redirect)
-    if (_token && !window.opener) {
-      setSettings(prev => ({ ...prev, spotifyToken: _token }));
-      localStorage.setItem('spotifyToken', _token);
-      window.location.hash = "";
-    }
-
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
@@ -73,6 +84,48 @@ function App() {
       localStorage.setItem('spotifyClientId', settings.spotifyClientId);
     }
   }, [settings.spotifyClientId]);
+
+  // Persist Spotify selected playlist
+  useEffect(() => {
+    if (settings.spotifySelectedPlaylistUri) {
+      localStorage.setItem('spotifySelectedPlaylistUri', settings.spotifySelectedPlaylistUri);
+    }
+  }, [settings.spotifySelectedPlaylistUri]);
+
+  // Refresh token when near expiry
+  useEffect(() => {
+    let cancelled = false;
+
+    const maybeRefresh = async () => {
+      if (!settings.spotifyRefreshToken || !settings.spotifyClientId) return;
+      if (!isTokenExpired(settings.spotifyTokenExpiresAt)) return;
+
+      try {
+        const response = await refreshAccessToken({
+          clientId: settings.spotifyClientId,
+          refreshToken: settings.spotifyRefreshToken
+        });
+
+        if (!cancelled) {
+          persistSpotifyTokens({
+            token: response.access_token,
+            refreshToken: response.refresh_token || settings.spotifyRefreshToken,
+            expiresIn: response.expires_in
+          });
+        }
+      } catch (err) {
+        console.error('Spotify token refresh failed', err);
+      }
+    };
+
+    const intervalId = setInterval(maybeRefresh, 60000);
+    maybeRefresh();
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [settings.spotifyRefreshToken, settings.spotifyTokenExpiresAt, settings.spotifyClientId]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -179,7 +232,11 @@ function App() {
       </button>
 
       {settings.musicProvider === 'spotify' ? (
-        <SpotifyPlayer token={settings.spotifyToken} playing={false} />
+        <SpotifyPlayer
+          token={settings.spotifyToken}
+          playing={false}
+          uri={settings.spotifySelectedPlaylistUri}
+        />
       ) : (
         <LofiPlayer />
       )}
@@ -227,8 +284,8 @@ function App() {
           z-index: 100;
           
           /* Auto-hide logic */
-          transform: translateY(-85%); /* Hide most of it by default */
-          opacity: 0.3; /* Dim it */
+          transform: translateY(calc(-100% + 18px)); /* Show only a small handle strip */
+          opacity: 0.25; /* Dim it */
           transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
           border-bottom-left-radius: 24px;
           border-bottom-right-radius: 24px;

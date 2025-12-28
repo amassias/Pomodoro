@@ -140,9 +140,27 @@ const Report = ({ onPomodoroComplete }) => {
     });
   };
 
+  useEffect(() => {
+    setSelectedDay(null);
+  }, [timeRange]);
+
+  const getDailyHoursMap = () => {
+    const history = JSON.parse(localStorage.getItem('pomodoroHistory') || '{}');
+    const dailyHours = {};
+
+    Object.entries(history).forEach(([date, sessions]) => {
+      const minutes = (sessions || []).reduce((sum, s) => sum + (s.duration || 25), 0);
+      dailyHours[date] = minutes / 60;
+    });
+
+    return dailyHours;
+  };
+
   const getChartData = () => {
     const today = new Date();
     const data = {};
+
+    const dailyHours = getDailyHoursMap();
 
     if (timeRange === 'week') {
       for (let i = 6; i >= 0; i--) {
@@ -151,10 +169,58 @@ const Report = ({ onPomodoroComplete }) => {
         const dateStr = date.toISOString().split('T')[0];
         const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
         const dayNum = date.getDate();
-        const key = `${dayName} ${dayNum}`;
         data[dateStr] = {
           label: `${dayName}, ${dayNum}`,
-          value: stats.weeklyData[key] || 0
+          value: dailyHours[dateStr] || 0
+        };
+      }
+    }
+
+    if (timeRange === 'month') {
+      // Last 4 weeks (28 days), grouped by week to keep the chart readable.
+      const buckets = [0, 0, 0, 0];
+      for (let daysAgo = 0; daysAgo < 28; daysAgo++) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - daysAgo);
+        const dateStr = d.toISOString().split('T')[0];
+        const bucketIndex = Math.floor((27 - daysAgo) / 7); // 0=oldest, 3=newest
+        buckets[bucketIndex] += dailyHours[dateStr] || 0;
+      }
+
+      for (let i = 0; i < 4; i++) {
+        const startDaysAgo = 27 - i * 7;
+        const start = new Date(today);
+        start.setDate(start.getDate() - startDaysAgo);
+        const key = start.toISOString().split('T')[0];
+        const monthLabel = start.toLocaleDateString('en-US', { month: 'short' });
+        const dayLabel = start.getDate();
+
+        data[key] = {
+          label: `Week of ${monthLabel} ${dayLabel}`,
+          value: buckets[i]
+        };
+      }
+    }
+
+    if (timeRange === 'year') {
+      // Last 12 months, grouped by month.
+      const monthTotals = {};
+      Object.entries(dailyHours).forEach(([dateStr, hours]) => {
+        const monthKey = dateStr.slice(0, 7); // YYYY-MM
+        monthTotals[monthKey] = (monthTotals[monthKey] || 0) + (hours || 0);
+      });
+
+      for (let offset = 11; offset >= 0; offset--) {
+        const monthDate = new Date(today.getFullYear(), today.getMonth() - offset, 1);
+        const year = monthDate.getFullYear();
+        const month = String(monthDate.getMonth() + 1).padStart(2, '0');
+        const monthKey = `${year}-${month}`;
+        const key = `${monthKey}-01`;
+        const label = monthDate.toLocaleDateString('en-US', { month: 'short' });
+
+        data[key] = {
+          label,
+          value: monthTotals[monthKey] || 0
         };
       }
     }
@@ -269,10 +335,13 @@ const Report = ({ onPomodoroComplete }) => {
                     <div className="chart-bar-label">{data.label.split(',')[0]}</div>
                     <div className="chart-bar-container">
                       <div
-                        className={`chart-bar ${selectedDay?.date === dateStr ? 'selected' : ''}`}
+                        className={`chart-bar ${(timeRange === 'week' && selectedDay?.date === dateStr) ? 'selected' : ''}`}
                         style={{ height: `${(data.value / maxHours) * 120}px` }}
                         title={`${data.value.toFixed(1)}h`}
-                        onClick={() => setSelectedDay({ date: dateStr })}
+                        onClick={() => {
+                          if (timeRange !== 'week') return;
+                          setSelectedDay({ date: dateStr });
+                        }}
                       />
                     </div>
                     <div className="chart-bar-value">{data.value.toFixed(1)}h</div>

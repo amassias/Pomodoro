@@ -59,6 +59,15 @@
 
 4.  Open your browser at `http://localhost:5173` (or the port shown in your terminal).
 
+### Spotify Setup (optional)
+
+- In the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/), create an app and note the Client ID.
+- Add these Redirect URIs to the app settings:
+    - `http://localhost:5173/spotify-callback` (development)
+    - `https://pomodoro-khaki-one.vercel.app/spotify-callback` (production)
+- Paste the Client ID in Settings → Music Provider → Spotify, then click **Connect to Spotify**.
+- Ensure “Web Playback SDK” is enabled and that your Spotify account is Premium.
+
 ## ⌨️ Keyboard Shortcuts
 
 | Key | Action |

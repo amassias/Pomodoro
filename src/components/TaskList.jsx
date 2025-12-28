@@ -13,6 +13,7 @@ const TaskList = () => {
     const [newTask, setNewTask] = useState('');
     const [showArchive, setShowArchive] = useState(false);
     const [animatingTaskId, setAnimatingTaskId] = useState(null);
+    const [selectedArchivedIds, setSelectedArchivedIds] = useState(() => new Set());
 
     useEffect(() => {
         localStorage.setItem('pomodoro-tasks', JSON.stringify(tasks));
@@ -30,6 +31,12 @@ const TaskList = () => {
         };
         window.addEventListener('keydown', handleEsc);
         return () => window.removeEventListener('keydown', handleEsc);
+    }, [showArchive]);
+
+    useEffect(() => {
+        if (!showArchive && selectedArchivedIds.size > 0) {
+            setSelectedArchivedIds(new Set());
+        }
     }, [showArchive]);
 
     const addTask = (e) => {
@@ -75,6 +82,52 @@ const TaskList = () => {
 
     const deleteTask = (id) => {
         setArchivedTasks(archivedTasks.filter(t => t.id !== id));
+        if (selectedArchivedIds.has(id)) {
+            setSelectedArchivedIds(prev => {
+                const next = new Set(prev);
+                next.delete(id);
+                return next;
+            });
+        }
+    };
+
+    const toggleArchivedSelection = (id) => {
+        setSelectedArchivedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
+
+    const selectAllArchived = () => {
+        setSelectedArchivedIds(prev => {
+            if (archivedTasks.length > 0 && prev.size === archivedTasks.length) {
+                return new Set();
+            }
+            return new Set(archivedTasks.map(t => t.id));
+        });
+    };
+
+    const restoreSelectedArchived = () => {
+        const ids = Array.from(selectedArchivedIds);
+        if (ids.length === 0) return;
+
+        const toRestore = archivedTasks
+            .filter(t => ids.includes(t.id))
+            .map(({ archivedAt, ...restoredTask }) => ({ ...restoredTask, completed: false }));
+
+        setArchivedTasks(prev => prev.filter(t => !ids.includes(t.id)));
+        setTasks(prev => [...prev, ...toRestore]);
+        setSelectedArchivedIds(new Set());
+    };
+
+    const deleteSelectedArchived = () => {
+        const ids = Array.from(selectedArchivedIds);
+        if (ids.length === 0) return;
+
+        setArchivedTasks(prev => prev.filter(t => !ids.includes(t.id)));
+        setSelectedArchivedIds(new Set());
     };
 
     return (
@@ -122,13 +175,57 @@ const TaskList = () => {
                             <h2>Archived Tasks</h2>
                             <button className="close-btn" onClick={() => setShowArchive(false)}>✕</button>
                         </div>
+                        {archivedTasks.length > 0 && (
+                            <div className="archive-toolbar">
+                                <label className="select-all">
+                                    <input
+                                        type="checkbox"
+                                        checked={archivedTasks.length > 0 && selectedArchivedIds.size === archivedTasks.length}
+                                        onChange={selectAllArchived}
+                                    />
+                                    <span>Select all</span>
+                                </label>
+                                <div className="bulk-actions">
+                                    <span className="selected-count">{selectedArchivedIds.size > 0 ? `${selectedArchivedIds.size} selected` : ''}</span>
+                                    <button
+                                        className="bulk-btn"
+                                        disabled={selectedArchivedIds.size === 0}
+                                        onClick={restoreSelectedArchived}
+                                        title="Restore selected"
+                                    >
+                                        Restore selected
+                                    </button>
+                                    <button
+                                        className="bulk-btn danger"
+                                        disabled={selectedArchivedIds.size === 0}
+                                        onClick={deleteSelectedArchived}
+                                        title="Delete selected"
+                                    >
+                                        Delete selected
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                         {archivedTasks.length === 0 ? (
                             <p className="empty-message">No archived tasks</p>
                         ) : (
                             <ul className="archived-list">
                                 {archivedTasks.map(task => (
-                                    <li key={task.id} className="archived-item">
-                                        <span className="task-text">{task.text}</span>
+                                    <li
+                                        key={task.id}
+                                        className={`archived-item ${selectedArchivedIds.has(task.id) ? 'selected' : ''}`}
+                                    >
+                                        <div className="archived-left">
+                                            <button
+                                                type="button"
+                                                className={`select-box ${selectedArchivedIds.has(task.id) ? 'checked' : ''}`}
+                                                onClick={() => toggleArchivedSelection(task.id)}
+                                                title={selectedArchivedIds.has(task.id) ? 'Unselect' : 'Select'}
+                                            >
+                                                {selectedArchivedIds.has(task.id) ? '✓' : ''}
+                                            </button>
+                                            <span className="task-text">{task.text}</span>
+                                        </div>
                                         <div className="archived-actions">
                                             <button
                                                 className="icon-btn restore-btn"
@@ -418,8 +515,71 @@ const TaskList = () => {
                     flex-direction: column;
                     gap: 1rem;
                     overflow-y: auto;
-                    max-height: 55vh;
+                    flex: 1;
+                    min-height: 0;
                     padding-right: 0.5rem;
+                }
+
+                .archive-toolbar {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    gap: 1rem;
+                }
+
+                .select-all {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.6rem;
+                    color: rgba(255,255,255,0.7);
+                    font-size: 0.95rem;
+                    user-select: none;
+                }
+
+                .select-all input {
+                    width: 18px;
+                    height: 18px;
+                    accent-color: var(--accent-color);
+                }
+
+                .bulk-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.8rem;
+                }
+
+                .selected-count {
+                    color: rgba(255,255,255,0.5);
+                    font-size: 0.9rem;
+                    min-width: 90px;
+                    text-align: right;
+                }
+
+                .bulk-btn {
+                    background: rgba(255,255,255,0.1);
+                    border: 1px solid rgba(255,255,255,0.15);
+                    color: rgba(255,255,255,0.85);
+                    padding: 0.55rem 0.9rem;
+                    border-radius: 10px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    font-size: 0.95rem;
+                }
+
+                .bulk-btn:hover {
+                    background: rgba(255,255,255,0.15);
+                    border-color: rgba(255,255,255,0.25);
+                }
+
+                .bulk-btn:disabled {
+                    opacity: 0.4;
+                    cursor: not-allowed;
+                }
+
+                .bulk-btn.danger:hover {
+                    color: #f87171;
+                    background: rgba(248, 113, 113, 0.12);
+                    border-color: rgba(248, 113, 113, 0.25);
                 }
                 
                 .archived-list::-webkit-scrollbar {
@@ -450,6 +610,46 @@ const TaskList = () => {
                     border-radius: 12px;
                     transition: all 0.2s;
                     border: 1px solid rgba(255,255,255,0.05);
+                }
+
+                .archived-item.selected {
+                    border-color: rgba(255,255,255,0.18);
+                    background: rgba(0,0,0,0.38);
+                }
+
+                .archived-left {
+                    display: flex;
+                    align-items: center;
+                    gap: 1rem;
+                    flex: 1;
+                    min-width: 0;
+                }
+
+                .select-box {
+                    width: 24px;
+                    height: 24px;
+                    border: 2px solid rgba(255,255,255,0.25);
+                    border-radius: 8px;
+                    background: transparent;
+                    color: #fff;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    flex-shrink: 0;
+                    transition: all 0.2s;
+                    font-size: 0.95rem;
+                    line-height: 1;
+                }
+
+                .select-box:hover {
+                    border-color: rgba(255,255,255,0.45);
+                    background: rgba(255,255,255,0.06);
+                }
+
+                .select-box.checked {
+                    border-color: var(--accent-color);
+                    background: rgba(255,255,255,0.06);
                 }
 
                 .archived-item:hover {

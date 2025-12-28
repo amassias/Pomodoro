@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import SpotifyPlayer from 'react-spotify-web-playback';
 
-const SpotifyWebPlayer = ({ token, playing }) => {
+const DEFAULT_URI = 'spotify:playlist:0vvXsWCC9xrXsKd4JyS05a';
+
+const SpotifyWebPlayer = ({ token, playing, uri }) => {
     const [play, setPlay] = useState(false);
 
     useEffect(() => {
@@ -10,16 +12,19 @@ const SpotifyWebPlayer = ({ token, playing }) => {
 
     if (!token) return null;
 
+    const selectedUri = uri || DEFAULT_URI;
+
     return (
         <div className="spotify-player-wrapper glass-panel">
             <SpotifyPlayer
+                key={selectedUri}
                 token={token}
                 showSaveIcon
                 callback={state => {
                     if (!state.isPlaying) setPlay(false);
                 }}
                 play={play}
-                uris={['spotify:playlist:0vvXsWCC9xrXsKd4JyS05a']} // Lofi Girl Playlist
+                uris={[selectedUri]}
                 styles={{
                     activeColor: '#fff',
                     bgColor: 'transparent',

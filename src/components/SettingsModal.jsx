@@ -1,7 +1,12 @@
+import { useState } from 'react';
 import { ALARM_SOUNDS, TICKING_SOUNDS } from '../utils/sounds';
-import { getLoginUrl } from '../utils/spotify';
+import { fetchUserPlaylists, getLoginUrl } from '../utils/spotify';
 
 const SettingsModal = ({ settings, updateSettings, onClose }) => {
+    const [connecting, setConnecting] = useState(false);
+    const [playlists, setPlaylists] = useState([]);
+    const [loadingPlaylists, setLoadingPlaylists] = useState(false);
+    const [playlistError, setPlaylistError] = useState('');
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
         const newValue = type === 'checkbox' ? checked : (name.includes('Volume') || name.includes('Repeat') ? Number(value) : value);
@@ -111,9 +116,16 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
                             <div className="connect-wrapper">
                                 <button
                                     className="connect-btn"
-                                    onClick={() => {
-                                        if (settings.spotifyClientId) {
-                                            const url = getLoginUrl(settings.spotifyClientId);
+                                    disabled={connecting}
+                                    onClick={async () => {
+                                        if (!settings.spotifyClientId) {
+                                            alert('Please enter a Client ID first');
+                                            return;
+                                        }
+
+                                        setConnecting(true);
+                                        try {
+                                            const url = await getLoginUrl(settings.spotifyClientId);
                                             const width = 450;
                                             const height = 730;
                                             const left = (window.screen.width / 2) - (width / 2);
@@ -122,16 +134,82 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
                                             if (!popup || popup.closed || typeof popup.closed === 'undefined') {
                                                 alert("Popup was blocked! Please allow popups for this website to connect to Spotify.");
                                             }
-                                        } else {
-                                            alert('Please enter a Client ID first');
+                                        } catch (err) {
+                                            console.error('Spotify auth start failed', err);
+                                            alert('Could not start Spotify login. Please try again.');
+                                        } finally {
+                                            setConnecting(false);
                                         }
                                     }}
                                 >
-                                    Connect to Spotify
+                                    {connecting ? 'Opening…' : 'Connect to Spotify'}
                                 </button>
                                 {settings.spotifyToken && <span className="status-connected">Connected ✓</span>}
                             </div>
-                            <p className="help-text">Requires Spotify Premium. You need to create an app in Spotify Developer Dashboard and add this URL to Redirect URIs.</p>
+
+                            {settings.spotifyToken && (
+                                <div className="playlist-picker">
+                                    <div className="playlist-picker-row">
+                                        <button
+                                            className="playlist-btn"
+                                            disabled={loadingPlaylists}
+                                            onClick={async () => {
+                                                setPlaylistError('');
+                                                setLoadingPlaylists(true);
+                                                try {
+                                                    const result = await fetchUserPlaylists({ token: settings.spotifyToken });
+                                                    setPlaylists(result);
+                                                    if (result.length > 0 && !settings.spotifySelectedPlaylistUri) {
+                                                        updateSettings({
+                                                            ...settings,
+                                                            spotifySelectedPlaylistUri: result[0].uri
+                                                        });
+                                                    }
+                                                } catch (err) {
+                                                    console.error('Failed to load playlists', err);
+                                                    const message = String(err?.message || err);
+                                                    if (message === 'unauthorized') {
+                                                        setPlaylistError('Session expired. Please reconnect to Spotify.');
+                                                    } else if (message === 'forbidden') {
+                                                        setPlaylistError('Playlist access not granted. Reconnect to Spotify to allow playlist access.');
+                                                    } else {
+                                                        setPlaylistError('Could not load playlists. Try reconnecting to Spotify.');
+                                                    }
+                                                } finally {
+                                                    setLoadingPlaylists(false);
+                                                }
+                                            }}
+                                        >
+                                            {loadingPlaylists ? 'Loading…' : 'Load my playlists'}
+                                        </button>
+
+                                        <select
+                                            className="playlist-select"
+                                            value={settings.spotifySelectedPlaylistUri || 'spotify:playlist:0vvXsWCC9xrXsKd4JyS05a'}
+                                            onChange={(e) => {
+                                                updateSettings({
+                                                    ...settings,
+                                                    spotifySelectedPlaylistUri: e.target.value
+                                                });
+                                            }}
+                                            disabled={playlists.length === 0}
+                                            title={playlists.length === 0 ? 'Load playlists first' : 'Choose playlist'}
+                                        >
+                                            {playlists.length === 0 ? (
+                                                <option value={settings.spotifySelectedPlaylistUri || 'spotify:playlist:0vvXsWCC9xrXsKd4JyS05a'}>
+                                                    {loadingPlaylists ? 'Loading…' : 'Load playlists to choose'}
+                                                </option>
+                                            ) : (
+                                                playlists.map(p => (
+                                                    <option key={p.id} value={p.uri}>{p.name}</option>
+                                                ))
+                                            )}
+                                        </select>
+                                    </div>
+                                    {playlistError && <p className="playlist-error">{playlistError}</p>}
+                                </div>
+                            )}
+                            <p className="help-text">Requires Spotify Premium. Add your app Redirect URI in the Spotify Developer Dashboard (default is your site root `/`, or you can use `/spotify-callback`).</p>
                         </div>
                     )}
                 </div>
@@ -393,6 +471,64 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
                         padding: 0.6rem !important;
                         text-align: center;
                         font-weight: 600;
+                    }
+
+                    .playlist-picker {
+                        margin-top: 1rem;
+                        padding: 1rem;
+                        border-radius: 12px;
+                        background: rgba(0,0,0,0.2);
+                        border: 1px solid rgba(255,255,255,0.08);
+                    }
+
+                    .playlist-picker-row {
+                        display: flex;
+                        gap: 0.8rem;
+                        align-items: center;
+                        flex-wrap: wrap;
+                    }
+
+                    .playlist-btn {
+                        background: rgba(255,255,255,0.1);
+                        border: 1px solid rgba(255,255,255,0.2);
+                        color: rgba(255,255,255,0.85);
+                        padding: 0.6rem 0.9rem;
+                        border-radius: 10px;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                        font-size: 0.95rem;
+                        white-space: nowrap;
+                    }
+
+                    .playlist-btn:hover {
+                        background: rgba(255,255,255,0.15);
+                        border-color: rgba(255,255,255,0.35);
+                    }
+
+                    .playlist-btn:disabled {
+                        opacity: 0.5;
+                        cursor: not-allowed;
+                    }
+
+                    .playlist-select {
+                        flex: 1;
+                        min-width: 220px;
+                        background: rgba(255,255,255,0.1);
+                        border: 1px solid rgba(255,255,255,0.2);
+                        padding: 0.6rem 0.9rem;
+                        border-radius: 10px;
+                        color: #fff;
+                        font-family: inherit;
+                    }
+
+                    .playlist-select:disabled {
+                        opacity: 0.5;
+                    }
+
+                    .playlist-error {
+                        margin: 0.7rem 0 0;
+                        color: rgba(255,255,255,0.7);
+                        font-size: 0.9rem;
                     }
 
                     /* Input Styles */
