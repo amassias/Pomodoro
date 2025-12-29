@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ALARM_SOUNDS, TICKING_SOUNDS } from '../utils/sounds';
 import { fetchUserPlaylists, getLoginUrl } from '../utils/spotify';
 
 const SettingsModal = ({ settings, updateSettings, onClose }) => {
+    const modalContentRef = useRef(null);
     const [connecting, setConnecting] = useState(false);
     const [playlists, setPlaylists] = useState([]);
     const [loadingPlaylists, setLoadingPlaylists] = useState(false);
@@ -71,8 +72,16 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
     };
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content glass-panel">
+        <div
+            className="modal-overlay"
+            onPointerDown={(e) => {
+                if (!modalContentRef.current) return;
+                if (!modalContentRef.current.contains(e.target)) {
+                    onClose?.();
+                }
+            }}
+        >
+            <div ref={modalContentRef} className="modal-content glass-panel">
                 <div className="modal-header">
                     <h2>Settings</h2>
                     <button className="close-btn" onClick={onClose}>×</button>
@@ -550,9 +559,6 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
                             max-width: none;
                             padding: 1.25rem;
                         }
-                        .inputs-row {
-                            flex-wrap: wrap;
-                        }
                         .playlist-select {
                             min-width: 0;
                             width: 100%;
@@ -621,12 +627,14 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
                     .inputs-row {
                         display: flex;
                         gap: 1rem;
+                        flex-direction: column;
                     }
                     .input-wrapper {
                         display: flex;
                         flex-direction: column;
                         gap: 0.5rem;
-                        flex: 1;
+                        flex: 0 0 auto;
+                        width: 100%;
                     }
                     .input-wrapper label {
                         font-size: 0.8rem;
