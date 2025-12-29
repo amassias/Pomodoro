@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ALARM_SOUNDS, TICKING_SOUNDS } from '../utils/sounds';
 import { fetchUserPlaylists, getLoginUrl } from '../utils/spotify';
 
@@ -7,6 +7,18 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
     const [playlists, setPlaylists] = useState([]);
     const [loadingPlaylists, setLoadingPlaylists] = useState(false);
     const [playlistError, setPlaylistError] = useState('');
+    const modalContentRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (modalContentRef.current && !modalContentRef.current.contains(e.target)) {
+                onClose();
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [onClose]);
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
         const newValue = type === 'checkbox' ? checked : (name.includes('Volume') || name.includes('Repeat') ? Number(value) : value);
@@ -30,7 +42,7 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
 
     return (
         <div className="modal-overlay">
-            <div className="modal-content glass-panel">
+            <div className="modal-content glass-panel" ref={modalContentRef}>
                 <div className="modal-header">
                     <h2>Settings</h2>
                     <button className="close-btn" onClick={onClose}>×</button>
