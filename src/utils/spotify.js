@@ -2,7 +2,7 @@ const AUTH_ENDPOINT = "https://accounts.spotify.com/authorize";
 const TOKEN_ENDPOINT = "https://accounts.spotify.com/api/token";
 const PKCE_VERIFIER_KEY = "spotify_pkce_verifier";
 const PKCE_STATE_KEY = "spotify_auth_state";
-const DEFAULT_REDIRECT_PATH = "/";
+const DEFAULT_REDIRECT_PATH = "/spotify-callback";
 
 export const scopes = [
     "streaming",

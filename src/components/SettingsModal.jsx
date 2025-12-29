@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ALARM_SOUNDS, TICKING_SOUNDS } from '../utils/sounds';
-import { fetchUserPlaylists, getLoginUrl } from '../utils/spotify';
+import { fetchUserPlaylists, getLoginUrl, getRedirectUri } from '../utils/spotify';
 
 const SettingsModal = ({ settings, updateSettings, onClose }) => {
     const modalContentRef = useRef(null);
@@ -8,6 +8,7 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
     const [playlists, setPlaylists] = useState([]);
     const [loadingPlaylists, setLoadingPlaylists] = useState(false);
     const [playlistError, setPlaylistError] = useState('');
+    const spotifyRedirectUri = getRedirectUri();
 
     const durationFieldNames = new Set(['focusDuration', 'shortBreakDuration', 'longBreakDuration']);
     const [durationDrafts, setDurationDrafts] = useState({
@@ -281,7 +282,8 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
                                     {playlistError && <p className="playlist-error">{playlistError}</p>}
                                 </div>
                             )}
-                            <p className="help-text">Requires Spotify Premium. Add your app Redirect URI in the Spotify Developer Dashboard (default is your site root `/`, or you can use `/spotify-callback`).</p>
+                            <p className="help-text">Requires Spotify Premium. Add your app Redirect URI in the Spotify Developer Dashboard.</p>
+                            <p className="help-text">Redirect URI used: <span style={{ opacity: 0.9, wordBreak: 'break-all' }}>{spotifyRedirectUri}</span></p>
                         </div>
                     )}
                 </div>

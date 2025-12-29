@@ -449,8 +449,8 @@ const Report = ({ onPomodoroComplete }) => {
                 <button className="auth-provider" disabled={authBusy} onClick={() => handleOAuth('github')}>
                   Continue with GitHub
                 </button>
-                <button className="auth-provider" disabled={authBusy} onClick={() => handleOAuth('linkedin_oidc')}>
-                  Continue with LinkedIn
+                <button className="auth-provider" disabled={authBusy} onClick={() => handleOAuth('google')}>
+                  Continue with Google
                 </button>
                 <button className="auth-provider" disabled={authBusy} onClick={() => handleOAuth('spotify')}>
                   Continue with Spotify

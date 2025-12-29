@@ -63,7 +63,7 @@
 
 This app supports Supabase Auth with:
 - Email + Password
-- OAuth providers (GitHub / LinkedIn / Spotify)
+- OAuth providers (GitHub / Google / Spotify)
 
 #### 1) Create env vars
 
@@ -106,6 +106,10 @@ Then redeploy.
     - `https://pomodoro-khaki-one.vercel.app/spotify-callback` (production)
 - Paste the Client ID in Settings → Music Provider → Spotify, then click **Connect to Spotify**.
 - Ensure “Web Playback SDK” is enabled and that your Spotify account is Premium.
+
+Notes:
+- This app uses PKCE and does not require a Spotify Client Secret on the frontend.
+- By default the app uses `/spotify-callback` as the redirect path. You can override it with `VITE_SPOTIFY_REDIRECT_URI` or `VITE_SPOTIFY_REDIRECT_PATH`.
 
 Tip: keep Spotify on `/spotify-callback` (see Redirect URIs above) to avoid conflicts with other OAuth flows.
 
