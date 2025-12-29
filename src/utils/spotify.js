@@ -189,3 +189,26 @@ export const fetchUserPlaylists = async ({ token, limit = 50 }) => {
 
     return playlists;
 };
+
+export const getMe = async ({ token }) => {
+    if (!token) throw new Error("Missing Spotify access token");
+
+    const response = await fetch("https://api.spotify.com/v1/me", {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+
+    if (response.status === 401) {
+        throw new Error("unauthorized");
+    }
+    if (response.status === 403) {
+        throw new Error("forbidden");
+    }
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`spotify_api_error:${response.status}:${text}`);
+    }
+
+    return response.json();
+};

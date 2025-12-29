@@ -3,16 +3,18 @@ import SpotifyPlayer from 'react-spotify-web-playback';
 
 const DEFAULT_URI = 'spotify:playlist:0vvXsWCC9xrXsKd4JyS05a';
 
-const SpotifyWebPlayer = ({ token, playing, uri }) => {
+const SpotifyWebPlayer = ({ token, playing, uri, isPremium }) => {
     const [play, setPlay] = useState(false);
 
     useEffect(() => {
         setPlay(playing);
     }, [playing]);
 
-    if (!token) return null;
-
     const selectedUri = uri || DEFAULT_URI;
+
+    // Premium-only: Spotify Web Playback SDK requires Premium.
+    if (!isPremium) return null;
+    if (!token) return null;
 
     return (
         <div className="spotify-player-wrapper glass-panel">
@@ -38,20 +40,25 @@ const SpotifyWebPlayer = ({ token, playing, uri }) => {
             />
             <style jsx>{`
                 .spotify-player-wrapper {
-                   position: fixed;
-                   bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem);
-                   left: 50%;
-                   transform: translateX(-50%);
-                   width: 90%;
-                   max-width: 600px;
-                   border-radius: 16px;
-                   overflow: hidden; 
-                   z-index: 90;
-                   padding: 0.5rem 1rem;
-                   backdrop-filter: blur(12px);
-                   border: 1px solid rgba(255, 255, 255, 0.1);
-                   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                                     position: fixed;
+                                     bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem);
+                                     left: calc(env(safe-area-inset-left, 0px) + 0.75rem);
+                                     width: min(300px, calc(100vw - 1.5rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
+                                     height: 80px;
+                                     border-radius: 12px;
+                                     overflow: hidden; 
+                                     z-index: 50;
+                                     padding: 0;
+                                     user-select: none;
                 }
+
+                                @media (max-width: 600px) {
+                                    .spotify-player-wrapper {
+                                        left: calc(env(safe-area-inset-left, 0px) + 0.75rem);
+                                        right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
+                                        width: auto;
+                                    }
+                                }
             `}</style>
         </div>
     );

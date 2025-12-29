@@ -7,7 +7,7 @@ import LofiPlayer from './components/LofiPlayer';
 import SpotifyPlayer from './components/SpotifyPlayer';
 import Report from './components/Report';
 import SettingsModal from './components/SettingsModal';
-import { isTokenExpired, refreshAccessToken } from './utils/spotify';
+import { getMe, isTokenExpired, refreshAccessToken } from './utils/spotify';
 
 function App() {
   const savedSpotifyClientId = localStorage.getItem('spotifyClientId') || import.meta.env.VITE_SPOTIFY_CLIENT_ID || 'c017309c2bfc4c9f9c6794e18c79f250';
@@ -18,6 +18,7 @@ function App() {
 
   const [city, setCity] = useState('seoul_hangang');
   const [showSettings, setShowSettings] = useState(false);
+  const [spotifyProduct, setSpotifyProduct] = useState(localStorage.getItem('spotifyProduct') || null);
   const [settings, setSettings] = useState({
     focusDuration: 25,
     shortBreakDuration: 5,
@@ -127,6 +128,42 @@ function App() {
     };
   }, [settings.spotifyRefreshToken, settings.spotifyTokenExpiresAt, settings.spotifyClientId]);
 
+  // Detect Spotify subscription level (Premium needed for Web Playback SDK)
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSubscription = async () => {
+      if (!settings.spotifyToken) {
+        setSpotifyProduct(null);
+        localStorage.removeItem('spotifyProduct');
+        return;
+      }
+
+      try {
+        const me = await getMe({ token: settings.spotifyToken });
+        const product = me?.product || null;
+        if (cancelled) return;
+
+        setSpotifyProduct(product);
+        if (product) {
+          localStorage.setItem('spotifyProduct', product);
+        } else {
+          localStorage.removeItem('spotifyProduct');
+        }
+      } catch (err) {
+        if (cancelled) return;
+        console.warn('Failed to load Spotify subscription info', err);
+        setSpotifyProduct(null);
+        localStorage.removeItem('spotifyProduct');
+      }
+    };
+
+    loadSubscription();
+    return () => {
+      cancelled = true;
+    };
+  }, [settings.spotifyToken]);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Ignore if typing in an input
@@ -234,6 +271,7 @@ function App() {
       {settings.musicProvider === 'spotify' ? (
         <SpotifyPlayer
           token={settings.spotifyToken}
+          isPremium={spotifyProduct === 'premium'}
           playing={false}
           uri={settings.spotifySelectedPlaylistUri}
         />

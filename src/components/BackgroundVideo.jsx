@@ -36,7 +36,7 @@ const BackgroundVideo = ({ videoId }) => {
           background: rgba(0, 0, 0, 0.2); /* Slight darken for text readability */
           z-index: 1;
         }
-        iframe {
+        .video-background iframe {
           width: 100%;
           height: 56.25vw; /* Given a 16:9 aspect ratio, 9/16*100 = 56.25 */
           min-height: 100vh;
@@ -47,7 +47,7 @@ const BackgroundVideo = ({ videoId }) => {
           transform: translate(-50%, -50%);
         }
         @supports (min-height: 100dvh) {
-          iframe {
+          .video-background iframe {
             min-height: 100dvh;
           }
         }
