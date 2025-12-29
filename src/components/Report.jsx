@@ -1,7 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const Report = ({ onPomodoroComplete }) => {
   const [showReport, setShowReport] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [authBusy, setAuthBusy] = useState(false);
+  const authBtnRef = useRef(null);
+  const authPopoverRef = useRef(null);
+
+  const { loading: authLoading, user, signInWithPassword, signUp, signInWithOAuth, signOut } = useAuth();
   const [stats, setStats] = useState({
     totalHours: 0,
     pomodorosCompleted: 0,
@@ -37,10 +47,102 @@ const Report = ({ onPomodoroComplete }) => {
       if (e.key === 'Escape' && showReport) {
         setShowReport(false);
       }
+      if (e.key === 'Escape' && showAuth) {
+        setShowAuth(false);
+      }
     };
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
-  }, [showReport]);
+  }, [showReport, showAuth]);
+
+  useEffect(() => {
+    if (!showAuth) return;
+
+    const onPointerDown = (e) => {
+      const popoverEl = authPopoverRef.current;
+      const buttonEl = authBtnRef.current;
+      if (popoverEl && popoverEl.contains(e.target)) return;
+      if (buttonEl && buttonEl.contains(e.target)) return;
+      setShowAuth(false);
+    };
+
+    window.addEventListener('pointerdown', onPointerDown);
+    return () => window.removeEventListener('pointerdown', onPointerDown);
+  }, [showAuth]);
+
+  const redirectTo = `${window.location.origin}/auth-callback`;
+
+  const handleOAuth = async (provider) => {
+    setAuthError('');
+    setAuthBusy(true);
+    try {
+      const { error } = await signInWithOAuth({ provider, redirectTo });
+      if (error) setAuthError(error.message || String(error));
+    } catch (err) {
+      setAuthError(err?.message || String(err));
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  const handleEmailSignIn = async () => {
+    const email = String(authEmail || '').trim();
+    const password = String(authPassword || '');
+    if (!email || !password) {
+      setAuthError('Email and password are required.');
+      return;
+    }
+
+    setAuthError('');
+    setAuthBusy(true);
+    try {
+      const { error } = await signInWithPassword({ email, password });
+      if (error) setAuthError(error.message || String(error));
+      else setShowAuth(false);
+    } catch (err) {
+      setAuthError(err?.message || String(err));
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  const handleEmailSignUp = async () => {
+    const email = String(authEmail || '').trim();
+    const password = String(authPassword || '');
+    if (!email || !password) {
+      setAuthError('Email and password are required.');
+      return;
+    }
+
+    setAuthError('');
+    setAuthBusy(true);
+    try {
+      const { error } = await signUp({ email, password });
+      if (error) {
+        setAuthError(error.message || String(error));
+      } else {
+        setShowAuth(false);
+      }
+    } catch (err) {
+      setAuthError(err?.message || String(err));
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    setAuthError('');
+    setAuthBusy(true);
+    try {
+      const { error } = await signOut();
+      if (error) setAuthError(error.message || String(error));
+      else setShowAuth(false);
+    } catch (err) {
+      setAuthError(err?.message || String(err));
+    } finally {
+      setAuthBusy(false);
+    }
+  };
 
   const handlePomodoroComplete = (event) => {
     const { duration } = event.detail;
@@ -281,6 +383,86 @@ const Report = ({ onPomodoroComplete }) => {
         </svg>
       </button>
 
+      <button
+        ref={authBtnRef}
+        className={`auth-btn ${user ? 'signed-in' : ''}`}
+        onClick={() => {
+          setAuthError('');
+          setShowAuth(v => !v);
+        }}
+        title={user ? 'Account' : 'Sign in'}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 21a8 8 0 0 0-16 0" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+      </button>
+
+      {showAuth && (
+        <div ref={authPopoverRef} className="auth-popover glass-panel" role="dialog" aria-label="Authentication">
+          <div className="auth-popover-header">
+            <div className="auth-title">{user ? 'Account' : 'Sign in'}</div>
+            <button className="auth-close" onClick={() => setShowAuth(false)} aria-label="Close">×</button>
+          </div>
+
+          {authLoading ? (
+            <div className="auth-muted">Loading…</div>
+          ) : user ? (
+            <>
+              <div className="auth-muted">Signed in as</div>
+              <div className="auth-strong">{user.email || user.id}</div>
+              <button className="auth-primary" disabled={authBusy} onClick={handleLogout}>
+                {authBusy ? 'Signing out…' : 'Sign out'}
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="auth-fields">
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
+                  autoComplete="email"
+                />
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  autoComplete="current-password"
+                />
+              </div>
+
+              <div className="auth-actions">
+                <button className="auth-primary" disabled={authBusy} onClick={handleEmailSignIn}>
+                  {authBusy ? 'Please wait…' : 'Sign in'}
+                </button>
+                <button className="auth-secondary" disabled={authBusy} onClick={handleEmailSignUp}>
+                  Sign up
+                </button>
+              </div>
+
+              <div className="auth-divider"><span>or</span></div>
+
+              <div className="auth-oauth">
+                <button className="auth-provider" disabled={authBusy} onClick={() => handleOAuth('github')}>
+                  Continue with GitHub
+                </button>
+                <button className="auth-provider" disabled={authBusy} onClick={() => handleOAuth('linkedin_oidc')}>
+                  Continue with LinkedIn
+                </button>
+                <button className="auth-provider" disabled={authBusy} onClick={() => handleOAuth('spotify')}>
+                  Continue with Spotify
+                </button>
+              </div>
+            </>
+          )}
+
+          {authError ? <div className="auth-error">{authError}</div> : null}
+        </div>
+      )}
+
       {showReport && (
         <div className="report-modal-overlay" onClick={() => setShowReport(false)}>
           <div className="report-modal glass-panel" onClick={(e) => e.stopPropagation()}>
@@ -392,6 +574,170 @@ const Report = ({ onPomodoroComplete }) => {
         .report-btn:hover {
           background: rgba(255, 255, 255, 0.2);
           border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .auth-btn {
+          position: fixed;
+          top: calc(env(safe-area-inset-top, 0px) + 0.75rem + 96px);
+          right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: #fff;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+          z-index: 100;
+        }
+
+        .auth-btn:hover {
+          background: rgba(255, 255, 255, 0.2);
+          border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .auth-btn.signed-in {
+          border-color: rgba(74, 222, 128, 0.6);
+        }
+
+        .auth-popover {
+          position: fixed;
+          top: calc(env(safe-area-inset-top, 0px) + 0.75rem + 144px);
+          right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
+          width: min(320px, calc(100vw - 1.5rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
+          padding: 1rem;
+          border-radius: 16px;
+          z-index: 150;
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .auth-popover-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.75rem;
+        }
+
+        .auth-title {
+          font-weight: 500;
+          letter-spacing: 0.5px;
+        }
+
+        .auth-close {
+          background: transparent;
+          border: none;
+          color: rgba(255,255,255,0.8);
+          font-size: 1.25rem;
+          cursor: pointer;
+          line-height: 1;
+        }
+
+        .auth-muted {
+          color: rgba(255,255,255,0.6);
+          font-size: 0.9rem;
+        }
+
+        .auth-strong {
+          color: rgba(255,255,255,0.95);
+          font-size: 0.95rem;
+          word-break: break-word;
+        }
+
+        .auth-fields {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .auth-fields input {
+          width: 100%;
+          padding: 0.7rem 0.8rem;
+          border-radius: 10px;
+          border: 1px solid rgba(255,255,255,0.2);
+          background: rgba(0,0,0,0.25);
+          color: rgba(255,255,255,0.95);
+          outline: none;
+        }
+
+        .auth-fields input:focus {
+          border-color: rgba(255,255,255,0.35);
+        }
+
+        .auth-actions {
+          display: flex;
+          gap: 0.5rem;
+        }
+
+        .auth-primary,
+        .auth-secondary,
+        .auth-provider {
+          border: 1px solid rgba(255,255,255,0.2);
+          background: rgba(255,255,255,0.08);
+          color: rgba(255,255,255,0.95);
+          padding: 0.65rem 0.8rem;
+          border-radius: 10px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          font-size: 0.9rem;
+        }
+
+        .auth-primary {
+          flex: 1;
+        }
+
+        .auth-secondary {
+          flex: 1;
+          background: rgba(0,0,0,0.15);
+        }
+
+        .auth-primary:hover,
+        .auth-secondary:hover,
+        .auth-provider:hover {
+          border-color: rgba(255,255,255,0.35);
+          background: rgba(255,255,255,0.12);
+        }
+
+        .auth-primary:disabled,
+        .auth-secondary:disabled,
+        .auth-provider:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .auth-divider {
+          position: relative;
+          text-align: center;
+          color: rgba(255,255,255,0.5);
+          font-size: 0.85rem;
+        }
+
+        .auth-divider span {
+          padding: 0 0.5rem;
+          background: rgba(0,0,0,0);
+        }
+
+        .auth-oauth {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .auth-provider {
+          width: 100%;
+          text-align: left;
+        }
+
+        .auth-error {
+          color: rgba(255, 190, 190, 0.95);
+          font-size: 0.85rem;
+          border-top: 1px solid rgba(255,255,255,0.12);
+          padding-top: 0.6rem;
+          word-break: break-word;
         }
 
         .report-modal-overlay {

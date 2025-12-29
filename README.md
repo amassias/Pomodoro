@@ -59,6 +59,45 @@
 
 4.  Open your browser at `http://localhost:5173` (or the port shown in your terminal).
 
+### Supabase Auth Setup (Email + OAuth)
+
+This app supports Supabase Auth with:
+- Email + Password
+- OAuth providers (GitHub / LinkedIn / Spotify)
+
+#### 1) Create env vars
+
+Create a `.env.local` at the repo root:
+
+```bash
+VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_PUBLIC_KEY
+```
+
+Important:
+- Never put Supabase `service_role` keys in the frontend.
+
+#### 2) Configure Redirect URLs in Supabase
+
+In Supabase Dashboard → Authentication → URL Configuration:
+
+- Site URL:
+    - `https://pomodoro-khaki-one.vercel.app`
+
+- Additional Redirect URLs:
+    - `http://localhost:5173/auth-callback`
+    - `https://pomodoro-khaki-one.vercel.app/auth-callback`
+
+The app handles OAuth redirects on `/auth-callback`.
+
+#### 3) Configure Vercel env vars
+
+In Vercel Project → Settings → Environment Variables, add:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+Then redeploy.
+
 ### Spotify Setup (optional)
 
 - In the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/), create an app and note the Client ID.
@@ -67,6 +106,8 @@
     - `https://pomodoro-khaki-one.vercel.app/spotify-callback` (production)
 - Paste the Client ID in Settings → Music Provider → Spotify, then click **Connect to Spotify**.
 - Ensure “Web Playback SDK” is enabled and that your Spotify account is Premium.
+
+Tip: keep Spotify on `/spotify-callback` (see Redirect URIs above) to avoid conflicts with other OAuth flows.
 
 ## ⌨️ Keyboard Shortcuts
 
