@@ -446,14 +446,38 @@ const Report = ({ onPomodoroComplete }) => {
               <div className="auth-divider"><span>or</span></div>
 
               <div className="auth-oauth">
-                <button className="auth-provider" disabled={authBusy} onClick={() => handleOAuth('github')}>
-                  Continue with GitHub
+                <button
+                  type="button"
+                  className="auth-provider"
+                  disabled={authBusy}
+                  onClick={() => handleOAuth('github')}
+                  aria-label="Continue with GitHub"
+                  title="Continue with GitHub"
+                >
+                  <img className="auth-provider-logo auth-provider-logo--github" src="/logos/github.png" alt="" aria-hidden="true" />
+                  <span className="sr-only">Continue with GitHub</span>
                 </button>
-                <button className="auth-provider" disabled={authBusy} onClick={() => handleOAuth('google')}>
-                  Continue with Google
+                <button
+                  type="button"
+                  className="auth-provider"
+                  disabled={authBusy}
+                  onClick={() => handleOAuth('google')}
+                  aria-label="Continue with Google"
+                  title="Continue with Google"
+                >
+                  <img className="auth-provider-logo" src="/logos/google.png" alt="" aria-hidden="true" />
+                  <span className="sr-only">Continue with Google</span>
                 </button>
-                <button className="auth-provider" disabled={authBusy} onClick={() => handleOAuth('spotify')}>
-                  Continue with Spotify
+                <button
+                  type="button"
+                  className="auth-provider"
+                  disabled={authBusy}
+                  onClick={() => handleOAuth('spotify')}
+                  aria-label="Continue with Spotify"
+                  title="Continue with Spotify"
+                >
+                  <img className="auth-provider-logo" src="/logos/spotify.png" alt="" aria-hidden="true" />
+                  <span className="sr-only">Continue with Spotify</span>
                 </button>
               </div>
             </>
@@ -723,13 +747,50 @@ const Report = ({ onPomodoroComplete }) => {
 
         .auth-oauth {
           display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
+          flex-direction: row;
+          gap: 0.75rem;
+          justify-content: center;
         }
 
         .auth-provider {
-          width: 100%;
-          text-align: left;
+          width: 44px;
+          height: 44px;
+          padding: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+        }
+
+        .auth-provider-logo {
+          width: 22px;
+          height: 22px;
+          object-fit: contain;
+          display: block;
+        }
+
+        /* GitHub logo is often dark; invert it for dark UI. */
+        .auth-provider-logo--github {
+          filter: invert(1);
+        }
+
+        .auth-primary:focus-visible,
+        .auth-secondary:focus-visible,
+        .auth-provider:focus-visible {
+          outline: 2px solid rgba(255,255,255,0.7);
+          outline-offset: 2px;
+        }
+
+        .sr-only {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          padding: 0;
+          margin: -1px;
+          overflow: hidden;
+          clip: rect(0, 0, 0, 0);
+          white-space: nowrap;
+          border: 0;
         }
 
         .auth-error {
