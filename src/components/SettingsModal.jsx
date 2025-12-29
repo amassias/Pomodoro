@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ALARM_SOUNDS, TICKING_SOUNDS } from '../utils/sounds';
 import { fetchUserPlaylists, getLoginUrl } from '../utils/spotify';
 
@@ -7,8 +7,50 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
     const [playlists, setPlaylists] = useState([]);
     const [loadingPlaylists, setLoadingPlaylists] = useState(false);
     const [playlistError, setPlaylistError] = useState('');
+
+    const durationFieldNames = new Set(['focusDuration', 'shortBreakDuration', 'longBreakDuration']);
+    const [durationDrafts, setDurationDrafts] = useState({
+        focusDuration: String(settings.focusDuration ?? ''),
+        shortBreakDuration: String(settings.shortBreakDuration ?? ''),
+        longBreakDuration: String(settings.longBreakDuration ?? ''),
+    });
+
+    useEffect(() => {
+        setDurationDrafts({
+            focusDuration: String(settings.focusDuration ?? ''),
+            shortBreakDuration: String(settings.shortBreakDuration ?? ''),
+            longBreakDuration: String(settings.longBreakDuration ?? ''),
+        });
+    }, [settings.focusDuration, settings.shortBreakDuration, settings.longBreakDuration]);
+
+    const commitDurationDraft = (name) => {
+        const raw = String(durationDrafts[name] ?? '').trim();
+        const isValid = /^[1-9]\d*$/.test(raw);
+
+        if (!isValid) {
+            setDurationDrafts(prev => ({
+                ...prev,
+                [name]: String(settings[name] ?? ''),
+            }));
+            return;
+        }
+
+        const nextValue = Number(raw);
+        if (nextValue !== settings[name]) {
+            updateSettings({
+                ...settings,
+                [name]: nextValue,
+            });
+        }
+        setDurationDrafts(prev => ({
+            ...prev,
+            [name]: String(nextValue),
+        }));
+    };
+
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
+        if (durationFieldNames.has(name)) return;
         const newValue = type === 'checkbox' ? checked : (name.includes('Volume') || name.includes('Repeat') ? Number(value) : value);
 
         updateSettings({
@@ -70,9 +112,16 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
                             <input
                                 type="number"
                                 name="focusDuration"
-                                value={settings.focusDuration}
-                                onChange={handleChange}
+                                value={durationDrafts.focusDuration}
+                                onChange={(e) => setDurationDrafts(prev => ({ ...prev, focusDuration: e.target.value }))}
+                                onBlur={() => commitDurationDraft('focusDuration')}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') e.currentTarget.blur();
+                                }}
                                 min="1"
+                                step="1"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
                             />
                         </div>
                         <div className="input-wrapper">
@@ -80,9 +129,16 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
                             <input
                                 type="number"
                                 name="shortBreakDuration"
-                                value={settings.shortBreakDuration}
-                                onChange={handleChange}
+                                value={durationDrafts.shortBreakDuration}
+                                onChange={(e) => setDurationDrafts(prev => ({ ...prev, shortBreakDuration: e.target.value }))}
+                                onBlur={() => commitDurationDraft('shortBreakDuration')}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') e.currentTarget.blur();
+                                }}
                                 min="1"
+                                step="1"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
                             />
                         </div>
                         <div className="input-wrapper">
@@ -90,9 +146,16 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
                             <input
                                 type="number"
                                 name="longBreakDuration"
-                                value={settings.longBreakDuration}
-                                onChange={handleChange}
+                                value={durationDrafts.longBreakDuration}
+                                onChange={(e) => setDurationDrafts(prev => ({ ...prev, longBreakDuration: e.target.value }))}
+                                onBlur={() => commitDurationDraft('longBreakDuration')}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') e.currentTarget.blur();
+                                }}
                                 min="1"
+                                step="1"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
                             />
                         </div>
                     </div>

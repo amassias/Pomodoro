@@ -1,8 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ALARM_SOUNDS, TICKING_SOUNDS } from '../utils/sounds';
 
+const DEFAULT_DURATIONS = {
+  focus: 25,
+  shortBreak: 5,
+  longBreak: 15,
+};
+
+const coercePositiveInt = (value, fallback) => {
+  const n = Number(value);
+  if (Number.isInteger(n) && n > 0) return n;
+  return fallback;
+};
+
+const getModeMinutes = (mode, settings) => {
+  if (mode === 'focus') return coercePositiveInt(settings.focusDuration, DEFAULT_DURATIONS.focus);
+  if (mode === 'shortBreak') return coercePositiveInt(settings.shortBreakDuration, DEFAULT_DURATIONS.shortBreak);
+  if (mode === 'longBreak') return coercePositiveInt(settings.longBreakDuration, DEFAULT_DURATIONS.longBreak);
+  return DEFAULT_DURATIONS.focus;
+};
+
 const Timer = ({ settings }) => {
-  const [minutes, setMinutes] = useState(settings.focusDuration);
+  const [minutes, setMinutes] = useState(() => getModeMinutes('focus', settings));
   const [seconds, setSeconds] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [mode, setMode] = useState('focus'); // focus, shortBreak, longBreak
@@ -28,9 +47,7 @@ const Timer = ({ settings }) => {
   useEffect(() => {
     // Sync time when settings or mode change IF not active to prevent jumping
     if (!isActive) {
-      if (mode === 'focus') setMinutes(settings.focusDuration);
-      else if (mode === 'shortBreak') setMinutes(settings.shortBreakDuration);
-      else if (mode === 'longBreak') setMinutes(settings.longBreakDuration);
+      setMinutes(getModeMinutes(mode, settings));
       setSeconds(0);
     }
   }, [settings, mode]); // isActive excluded to avoid reset during countdown if settings panel is opened
@@ -39,10 +56,17 @@ const Timer = ({ settings }) => {
     let interval = null;
     if (isActive) {
       interval = setInterval(() => {
-        if (seconds === 0) {
-          if (minutes === 0) {
+        const m = Number(minutes);
+        const s = Number(seconds);
+        const safeMinutes = Number.isFinite(m) ? m : 0;
+        const safeSeconds = Number.isFinite(s) ? s : 0;
+
+        if (safeSeconds <= 0) {
+          if (safeMinutes <= 0) {
             clearInterval(interval);
             setIsActive(false);
+            setMinutes(0);
+            setSeconds(0);
 
             // Play alarm sound with repeat
             // Play alarm sound with repeat
@@ -75,28 +99,28 @@ const Timer = ({ settings }) => {
 
                 if (newCompleted % 4 === 0) {
                   setMode('longBreak');
-                  setMinutes(settings.longBreakDuration);
+                  setMinutes(getModeMinutes('longBreak', settings));
                   setSeconds(0);
                   if (settings.autoStartBreaks) setIsActive(true);
                 } else {
                   setMode('shortBreak');
-                  setMinutes(settings.shortBreakDuration);
+                  setMinutes(getModeMinutes('shortBreak', settings));
                   setSeconds(0);
                   if (settings.autoStartBreaks) setIsActive(true);
                 }
               } else if (mode === 'shortBreak' || mode === 'longBreak') {
                 setMode('focus');
-                setMinutes(settings.focusDuration);
+                setMinutes(getModeMinutes('focus', settings));
                 setSeconds(0);
                 if (settings.autoStartPomodoros) setIsActive(true);
               }
             }, 1000);
           } else {
-            setMinutes(minutes - 1);
+            setMinutes(safeMinutes - 1);
             setSeconds(59);
           }
         } else {
-          setSeconds(seconds - 1);
+          setSeconds(safeSeconds - 1);
 
           // Play ticking sound if enabled
           // Play ticking sound if enabled
@@ -122,7 +146,9 @@ const Timer = ({ settings }) => {
 
     // Update Title
     if (isActive) {
-      const timeString = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      const titleMinutes = Math.max(0, Number(minutes) || 0);
+      const titleSeconds = Math.max(0, Number(seconds) || 0);
+      const timeString = `${String(titleMinutes).padStart(2, '0')}:${String(titleSeconds).padStart(2, '0')}`;
       const modeString = mode === 'focus' ? 'Focus' : 'Break';
       document.title = `${timeString} - ${modeString}`;
     }
@@ -156,9 +182,7 @@ const Timer = ({ settings }) => {
 
   const resetTimer = () => {
     setIsActive(false);
-    if (mode === 'focus') setMinutes(settings.focusDuration);
-    else if (mode === 'shortBreak') setMinutes(settings.shortBreakDuration);
-    else if (mode === 'longBreak') setMinutes(settings.longBreakDuration);
+    setMinutes(getModeMinutes(mode, settings));
     setSeconds(0);
   };
 
@@ -166,9 +190,7 @@ const Timer = ({ settings }) => {
     setMode(newMode);
     setIsActive(false);
     setSeconds(0);
-    if (newMode === 'focus') setMinutes(settings.focusDuration);
-    else if (newMode === 'shortBreak') setMinutes(settings.shortBreakDuration);
-    else if (newMode === 'longBreak') setMinutes(settings.longBreakDuration);
+    setMinutes(getModeMinutes(newMode, settings));
   };
 
   return (
@@ -195,7 +217,7 @@ const Timer = ({ settings }) => {
       </div>
 
       <div className="time-display">
-        {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+        {String(Math.max(0, Number(minutes) || 0)).padStart(2, '0')}:{String(Math.max(0, Number(seconds) || 0)).padStart(2, '0')}
       </div>
 
       <div className="timer-controls">
