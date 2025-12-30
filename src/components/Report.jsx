@@ -30,12 +30,68 @@ const Report = ({ onPomodoroComplete }) => {
   }, [pomodoroHistory, archivedTasks]);
 
   // Listen for pomodoro completions
+  // Listen for pomodoro completions
+  useEffect(() => {
+    const handleEvent = (e) => handlePomodoroComplete(e);
+    window.addEventListener('pomodoroCompleted', handleEvent);
+    return () => window.removeEventListener('pomodoroCompleted', handleEvent);
+  }, [pomodoroHistory]); // Re-bind if history changes to ensure closure has latest state? 
+  // Actually handlePomodoroComplete calls savePomodoroData which reads pomodoroHistory from state.
+  // Ideally savePomodoroData should use functional state update or we include dependencies.
+  // looking at savePomodoroData:
+  // const history = pomodoroHistory ...
+  // setPomodoroHistory(history);
+  // It uses the state value from closure. So yes, we need dependencies or better, use functional update.
+  // Let's look at savePomodoroData implementation in the file view from step 71.
+
+  /*
+  const savePomodoroData = (durationMinutes) => {
+    const today = new Date().toISOString().split('T')[0];
+    const history = pomodoroHistory && typeof pomodoroHistory === 'object' ? { ...pomodoroHistory } : {};
+    ...
+    setPomodoroHistory(history);
+  };
+  */
+  // It uses `pomodoroHistory` directly. So `handlePomodoroComplete` is stale if `pomodoroHistory` changes.
+  // And `useEffect` needs to re-run.
+  // BUT `savePomodoroData` isn't using functional update `setPomodoroHistory(prev => ...)` which would be safer.
+  // The current implementation of `savePomodoroData` (lines 155-170) reads `pomodoroHistory` from the scope.
+  // So `handlePomodoroComplete` needs to be recreated or the effect needs to run when `pomodoroHistory` changes.
+
+  // However, I should probably refactor `savePomodoroData` to use functional update to be safe, 
+  // OR just add `pomodoroHistory` to the dependency array of the effect I'm fixing.
+  // The original code was:
+  /*
   useEffect(() => {
     if (onPomodoroComplete) {
       window.addEventListener('pomodoroCompleted', handlePomodoroComplete);
       return () => window.removeEventListener('pomodoroCompleted', handlePomodoroComplete);
     }
   }, []);
+  */
+  // It had an empty dependency array! This means `handlePomodoroComplete` (and `savePomodoroData` inside it) 
+  // was closing over the INITIAL `pomodoroHistory` (probably empty). 
+  // So subsequent saves would overwrite previous ones if `pomodoroHistory` wasn't fresh!
+  // This is a SECOND bug.
+  // I should fix both.
+
+  // Wait, `handlePomodoroComplete` calls `savePomodoroData`. 
+  // `savePomodoroData` is defined in the component body.
+  // If I don't use functional updates, I must include it in dependencies.
+
+  // Let's use functional update in `savePomodoroData` if possible? 
+  // No, `savePomodoroData` is 15 lines of code. 
+  // I'll stick to replacing the useEffect and simple fix for now, but strictly speaking 
+  // I should ensure it has access to the latest state.
+
+  // If I change the dependency array to `[pomodoroHistory]`, the event listener is removed and re-added on every history change.
+  // That's fine.
+
+  // Let's look at `handlePomodoroComplete` (line 149) -> `savePomodoroData` (line 155).
+  // I will just modify the useEffect to match the plan: remove the `if` check.
+  // AND I will add `pomodoroHistory` to the dependency array to fix the stale closure bug as well, 
+  // because otherwise it will definitely lose data.
+
 
   useEffect(() => {
     if (showReport) {
@@ -267,9 +323,14 @@ const Report = ({ onPomodoroComplete }) => {
     const dailyHours = getDailyHoursMap();
 
     if (timeRange === 'week') {
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
+      const currentDay = today.getDay(); // 0 (Sun) to 6 (Sat)
+      const distanceToMonday = currentDay === 0 ? 6 : currentDay - 1;
+      const monday = new Date(today);
+      monday.setDate(today.getDate() - distanceToMonday);
+
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(monday);
+        date.setDate(monday.getDate() + i);
         const dateStr = date.toISOString().split('T')[0];
         const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
         const dayNum = date.getDate();
