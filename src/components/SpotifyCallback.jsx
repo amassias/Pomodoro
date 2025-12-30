@@ -49,12 +49,17 @@ const SpotifyCallback = () => {
                 const expiresIn = tokenResponse.expires_in || 3600;
                 const expiresAt = Date.now() + expiresIn * 1000;
 
-                if (tokenResponse.access_token) {
-                    localStorage.setItem('spotifyToken', tokenResponse.access_token);
-                    localStorage.setItem('spotifyTokenExpiresAt', String(expiresAt));
-                }
-                if (tokenResponse.refresh_token) {
-                    localStorage.setItem('spotifyRefreshToken', tokenResponse.refresh_token);
+                // If we were opened as a popup, the opener will persist tokens (scoped to user).
+                // Only persist locally when this callback page is visited directly.
+                const isPopup = Boolean(window.opener);
+                if (!isPopup) {
+                    if (tokenResponse.access_token) {
+                        localStorage.setItem('spotifyToken', tokenResponse.access_token);
+                        localStorage.setItem('spotifyTokenExpiresAt', String(expiresAt));
+                    }
+                    if (tokenResponse.refresh_token) {
+                        localStorage.setItem('spotifyRefreshToken', tokenResponse.refresh_token);
+                    }
                 }
 
                 clearPkceValues();

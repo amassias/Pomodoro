@@ -1,48 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useUserData } from '../context/UserDataContext.jsx';
 
 const TaskList = () => {
-    const [tasks, setTasks] = useState(() => {
-        const savedTasks = localStorage.getItem('pomodoro-tasks');
-        return savedTasks ? JSON.parse(savedTasks) : [];
-    });
-    const [archivedTasks, setArchivedTasks] = useState(() => {
-        const saved = localStorage.getItem('pomodoro-archived-tasks');
-        return saved ? JSON.parse(saved) : [];
-    });
+    const { loading, tasks, setTasks, archivedTasks, setArchivedTasks } = useUserData();
     const [newTask, setNewTask] = useState('');
     const [showArchive, setShowArchive] = useState(false);
     const [animatingTaskId, setAnimatingTaskId] = useState(null);
     const [selectedArchivedIds, setSelectedArchivedIds] = useState(() => new Set());
 
-    useEffect(() => {
-        localStorage.setItem('pomodoro-tasks', JSON.stringify(tasks));
-    }, [tasks]);
-
-    useEffect(() => {
-        localStorage.setItem('pomodoro-archived-tasks', JSON.stringify(archivedTasks));
-    }, [archivedTasks]);
+    const closeArchive = () => {
+        setShowArchive(false);
+        if (selectedArchivedIds.size > 0) {
+            setSelectedArchivedIds(new Set());
+        }
+    };
 
     useEffect(() => {
         const handleEsc = (e) => {
             if (e.key === 'Escape' && showArchive) {
-                setShowArchive(false);
+                closeArchive();
             }
         };
         window.addEventListener('keydown', handleEsc);
         return () => window.removeEventListener('keydown', handleEsc);
     }, [showArchive]);
 
-    useEffect(() => {
-        if (!showArchive && selectedArchivedIds.size > 0) {
-            setSelectedArchivedIds(new Set());
-        }
-    }, [showArchive]);
+    const toggleArchive = () => {
+        setShowArchive(prev => {
+            const next = !prev;
+            if (prev && selectedArchivedIds.size > 0) {
+                setSelectedArchivedIds(new Set());
+            }
+            return next;
+        });
+    };
 
     const addTask = (e) => {
         e.preventDefault();
         if (!newTask.trim()) return;
-        setTasks([...tasks, { id: Date.now(), text: newTask, completed: false }]);
+        setTasks([...(Array.isArray(tasks) ? tasks : []), { id: crypto.randomUUID(), text: newTask, completed: false }]);
         setNewTask('');
     };
 
@@ -73,10 +70,10 @@ const TaskList = () => {
     const restoreTask = (id) => {
         const task = archivedTasks.find(t => t.id === id);
         if (task) {
-            const { archivedAt, ...restoredTask } = task;
+            const { archivedAt: _archivedAt, ...restoredTask } = task;
             setArchivedTasks(archivedTasks.filter(t => t.id !== id));
             setTasks([...tasks, { ...restoredTask, completed: false }]);
-            setShowArchive(false);
+            closeArchive();
         }
     };
 
@@ -115,7 +112,7 @@ const TaskList = () => {
 
         const toRestore = archivedTasks
             .filter(t => ids.includes(t.id))
-            .map(({ archivedAt, ...restoredTask }) => ({ ...restoredTask, completed: false }));
+            .map(({ archivedAt: _archivedAt, ...restoredTask }) => ({ ...restoredTask, completed: false }));
 
         setArchivedTasks(prev => prev.filter(t => !ids.includes(t.id)));
         setTasks(prev => [...prev, ...toRestore]);
@@ -137,7 +134,7 @@ const TaskList = () => {
                 {archivedTasks.length > 0 && (
                     <button
                         className="archive-btn"
-                        onClick={() => setShowArchive(!showArchive)}
+                        onClick={toggleArchive}
                         title="View archived tasks"
                     >
                         📦 {archivedTasks.length}
@@ -155,7 +152,7 @@ const TaskList = () => {
                 <button type="submit" className="add-btn">+</button>
             </form>
             <ul className="task-list">
-                {tasks.map(task => (
+                {(Array.isArray(tasks) ? tasks : []).map(task => (
                     <li
                         key={task.id}
                         className={`task-item ${task.completed ? 'completed' : ''} ${animatingTaskId === task.id ? 'animating' : ''}`}
@@ -169,11 +166,11 @@ const TaskList = () => {
             </ul>
 
             {showArchive && createPortal(
-                <div className="archive-modal-overlay" onClick={() => setShowArchive(false)}>
+                <div className="archive-modal-overlay" onClick={closeArchive}>
                     <div className="archive-modal glass-panel" onClick={(e) => e.stopPropagation()}>
                         <div className="archive-header">
                             <h2>Archived Tasks</h2>
-                            <button className="close-btn" onClick={() => setShowArchive(false)}>✕</button>
+                            <button className="close-btn" onClick={closeArchive}>✕</button>
                         </div>
                         {archivedTasks.length > 0 && (
                             <div className="archive-toolbar">
@@ -206,11 +203,11 @@ const TaskList = () => {
                                 </div>
                             </div>
                         )}
-                        {archivedTasks.length === 0 ? (
+                        {(Array.isArray(archivedTasks) ? archivedTasks : []).length === 0 ? (
                             <p className="empty-message">No archived tasks</p>
                         ) : (
                             <ul className="archived-list">
-                                {archivedTasks.map(task => (
+                                {(Array.isArray(archivedTasks) ? archivedTasks : []).map(task => (
                                     <li
                                         key={task.id}
                                         className={`archived-item ${selectedArchivedIds.has(task.id) ? 'selected' : ''}`}
@@ -255,6 +252,9 @@ const TaskList = () => {
                     </div>
                 </div>,
                 document.body
+            )}
+            {loading && (
+                <div className="task-sync-status" aria-live="polite">Syncing…</div>
             )}
             <style jsx>{`
                 .task-list-container {

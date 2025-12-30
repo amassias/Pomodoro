@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useUserData } from '../context/UserDataContext.jsx';
 
 const Report = ({ onPomodoroComplete }) => {
   const [showReport, setShowReport] = useState(false);
@@ -12,6 +13,7 @@ const Report = ({ onPomodoroComplete }) => {
   const authPopoverRef = useRef(null);
 
   const { loading: authLoading, user, signInWithPassword, signUp, signInWithOAuth, signOut } = useAuth();
+  const { pomodoroHistory, setPomodoroHistory, setTasks, archivedTasks, setArchivedTasks } = useUserData();
   const [stats, setStats] = useState({
     totalHours: 0,
     pomodorosCompleted: 0,
@@ -22,10 +24,10 @@ const Report = ({ onPomodoroComplete }) => {
   const [timeRange, setTimeRange] = useState('week'); // week, month, year
   const [selectedDay, setSelectedDay] = useState(null);
 
-  // Load stats from localStorage
+  // Load stats when underlying data changes
   useEffect(() => {
     loadStats();
-  }, []);
+  }, [pomodoroHistory, archivedTasks]);
 
   // Listen for pomodoro completions
   useEffect(() => {
@@ -152,7 +154,7 @@ const Report = ({ onPomodoroComplete }) => {
 
   const savePomodoroData = (durationMinutes) => {
     const today = new Date().toISOString().split('T')[0];
-    const history = JSON.parse(localStorage.getItem('pomodoroHistory') || '{}');
+    const history = pomodoroHistory && typeof pomodoroHistory === 'object' ? { ...pomodoroHistory } : {};
 
     if (!history[today]) {
       history[today] = [];
@@ -164,7 +166,7 @@ const Report = ({ onPomodoroComplete }) => {
       completed: true
     });
 
-    localStorage.setItem('pomodoroHistory', JSON.stringify(history));
+    setPomodoroHistory(history);
   };
 
   const addTestData = () => {
@@ -175,7 +177,7 @@ const Report = ({ onPomodoroComplete }) => {
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
 
-      const history = JSON.parse(localStorage.getItem('pomodoroHistory') || '{}');
+      const history = pomodoroHistory && typeof pomodoroHistory === 'object' ? { ...pomodoroHistory } : {};
       if (!history[dateStr]) {
         history[dateStr] = [];
       }
@@ -190,7 +192,7 @@ const Report = ({ onPomodoroComplete }) => {
         });
       }
 
-      localStorage.setItem('pomodoroHistory', JSON.stringify(history));
+      setPomodoroHistory(history);
     }
 
     loadStats();
@@ -198,8 +200,8 @@ const Report = ({ onPomodoroComplete }) => {
   };
 
   const loadStats = () => {
-    const history = JSON.parse(localStorage.getItem('pomodoroHistory') || '{}');
-    const tasks = JSON.parse(localStorage.getItem('pomodoro-archived-tasks') || '[]');
+    const history = pomodoroHistory && typeof pomodoroHistory === 'object' ? pomodoroHistory : {};
+    const tasks = Array.isArray(archivedTasks) ? archivedTasks : [];
 
     let totalMinutes = 0;
     let totalPomodoros = 0;
@@ -247,7 +249,7 @@ const Report = ({ onPomodoroComplete }) => {
   }, [timeRange]);
 
   const getDailyHoursMap = () => {
-    const history = JSON.parse(localStorage.getItem('pomodoroHistory') || '{}');
+    const history = pomodoroHistory && typeof pomodoroHistory === 'object' ? pomodoroHistory : {};
     const dailyHours = {};
 
     Object.entries(history).forEach(([date, sessions]) => {
@@ -561,8 +563,9 @@ const Report = ({ onPomodoroComplete }) => {
             <div className="report-actions">
               <button className="reset-btn" onClick={() => {
                 if (confirm('Reset all data?')) {
-                  localStorage.removeItem('pomodoroHistory');
-                  localStorage.removeItem('pomodoro-archived-tasks');
+                  setPomodoroHistory({});
+                  setTasks([]);
+                  setArchivedTasks([]);
                   loadStats();
                 }
               }}>

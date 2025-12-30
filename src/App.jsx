@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import BackgroundVideo from './components/BackgroundVideo';
 import Timer from './components/Timer';
 import CitySelector from './components/CitySelector';
@@ -8,35 +8,22 @@ import SpotifyPlayer from './components/SpotifyPlayer';
 import Report from './components/Report';
 import SettingsModal from './components/SettingsModal';
 import { getMe, isTokenExpired, refreshAccessToken } from './utils/spotify';
+import { useUserData } from './context/UserDataContext.jsx';
+import { scopedKey, storageKeys } from './utils/storage.js';
 
 function App() {
-  const savedSpotifyClientId = localStorage.getItem('spotifyClientId') || import.meta.env.VITE_SPOTIFY_CLIENT_ID || 'c017309c2bfc4c9f9c6794e18c79f250';
-  const savedSpotifyToken = localStorage.getItem('spotifyToken');
-  const savedSpotifyRefreshToken = localStorage.getItem('spotifyRefreshToken');
-  const savedSpotifyExpiresAt = localStorage.getItem('spotifyTokenExpiresAt');
-  const savedSpotifySelectedPlaylistUri = localStorage.getItem('spotifySelectedPlaylistUri') || 'spotify:playlist:0vvXsWCC9xrXsKd4JyS05a';
+  const {
+    userId,
+    city,
+    setCity,
+    settings,
+    setSettings,
+    persistSpotifySecretsToLocalStorage,
+  } = useUserData();
 
-  const [city, setCity] = useState('seoul_hangang');
   const [showSettings, setShowSettings] = useState(false);
-  const [spotifyProduct, setSpotifyProduct] = useState(localStorage.getItem('spotifyProduct') || null);
-  const [settings, setSettings] = useState({
-    focusDuration: 25,
-    shortBreakDuration: 5,
-    longBreakDuration: 15,
-    sound: 'beep',
-    alarmVolume: 70,
-    alarmRepeat: 1,
-    tickingSound: 'none',
-    tickingVolume: 50,
-    autoStartBreaks: false,
-    autoStartPomodoros: false,
-    musicProvider: 'lofi', // lofi | spotify
-    spotifyClientId: savedSpotifyClientId,
-    spotifyToken: savedSpotifyToken || null,
-    spotifyRefreshToken: savedSpotifyRefreshToken || null,
-    spotifyTokenExpiresAt: savedSpotifyExpiresAt ? Number(savedSpotifyExpiresAt) : null,
-    spotifySelectedPlaylistUri: savedSpotifySelectedPlaylistUri
-  });
+  const spotifyProductKey = scopedKey(userId, storageKeys.spotifyProduct);
+  const [spotifyProduct, setSpotifyProduct] = useState(localStorage.getItem(spotifyProductKey) || null);
 
   const persistSpotifyTokens = ({ token, refreshToken, expiresAt, expiresIn }) => {
     const resolvedExpiresAt = expiresAt || (expiresIn ? Date.now() + expiresIn * 1000 : null);
@@ -48,15 +35,11 @@ function App() {
       spotifyTokenExpiresAt: resolvedExpiresAt || prev.spotifyTokenExpiresAt
     }));
 
-    if (token) {
-      localStorage.setItem('spotifyToken', token);
-    }
-    if (refreshToken) {
-      localStorage.setItem('spotifyRefreshToken', refreshToken);
-    }
-    if (resolvedExpiresAt) {
-      localStorage.setItem('spotifyTokenExpiresAt', String(resolvedExpiresAt));
-    }
+    persistSpotifySecretsToLocalStorage({
+      token,
+      refreshToken,
+      expiresAt: resolvedExpiresAt
+    });
   };
 
   useEffect(() => {
@@ -82,16 +65,17 @@ function App() {
   // Persist Spotify Client ID
   useEffect(() => {
     if (settings.spotifyClientId) {
-      localStorage.setItem('spotifyClientId', settings.spotifyClientId);
+      localStorage.setItem(storageKeys.spotifyClientId, settings.spotifyClientId);
     }
   }, [settings.spotifyClientId]);
 
   // Persist Spotify selected playlist
   useEffect(() => {
     if (settings.spotifySelectedPlaylistUri) {
-      localStorage.setItem('spotifySelectedPlaylistUri', settings.spotifySelectedPlaylistUri);
+      const playlistKey = scopedKey(userId, storageKeys.spotifySelectedPlaylistUri);
+      localStorage.setItem(playlistKey, settings.spotifySelectedPlaylistUri);
     }
-  }, [settings.spotifySelectedPlaylistUri]);
+  }, [userId, settings.spotifySelectedPlaylistUri]);
 
   // Refresh token when near expiry
   useEffect(() => {
@@ -135,7 +119,7 @@ function App() {
     const loadSubscription = async () => {
       if (!settings.spotifyToken) {
         setSpotifyProduct(null);
-        localStorage.removeItem('spotifyProduct');
+        localStorage.removeItem(spotifyProductKey);
         return;
       }
 
@@ -146,15 +130,15 @@ function App() {
 
         setSpotifyProduct(product);
         if (product) {
-          localStorage.setItem('spotifyProduct', product);
+          localStorage.setItem(spotifyProductKey, product);
         } else {
-          localStorage.removeItem('spotifyProduct');
+          localStorage.removeItem(spotifyProductKey);
         }
       } catch (err) {
         if (cancelled) return;
         console.warn('Failed to load Spotify subscription info', err);
         setSpotifyProduct(null);
-        localStorage.removeItem('spotifyProduct');
+        localStorage.removeItem(spotifyProductKey);
       }
     };
 
@@ -162,7 +146,7 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [settings.spotifyToken]);
+  }, [settings.spotifyToken, spotifyProductKey]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {

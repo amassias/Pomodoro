@@ -90,6 +90,19 @@ In Supabase Dashboard → Authentication → URL Configuration:
 
 The app handles OAuth redirects on `/auth-callback`.
 
+### Supabase Database Setup (Per‑Account Sync)
+
+To sync tasks, pomodoro history (reports), settings, and city selection per user (and across devices), you must create the `user_state` table and its RLS policies.
+
+1) In Supabase Dashboard → **SQL Editor**, run the script in:
+
+- [supabase/user_state.sql](supabase/user_state.sql)
+
+2) Confirm **Row Level Security** is enabled for `public.user_state`.
+
+Notes:
+- Spotify access/refresh tokens are still stored locally in the browser (but are isolated per Supabase user on the same device). Spotify preferences (e.g., selected playlist, provider) sync via `user_state.settings`.
+
 #### 3) Configure Vercel env vars
 
 In Vercel Project → Settings → Environment Variables, add:
