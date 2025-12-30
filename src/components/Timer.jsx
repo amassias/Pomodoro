@@ -70,16 +70,27 @@ const Timer = ({ settings }) => {
 
             // Play alarm sound with repeat
             // Play alarm sound with repeat
-            const playAlarm = (times = 1) => {
+            const playAlarm = (times = 1, { fallback } = {}) => {
               if (times <= 0) return;
-              const audio = new Audio(ALARM_SOUNDS[settings.sound] || ALARM_SOUNDS.beep);
+              const resolvedUrl = ALARM_SOUNDS[settings.sound] || ALARM_SOUNDS.bell;
+              const audio = new Audio(resolvedUrl);
               audio.volume = (settings.alarmVolume || 70) / 100; // Convert to 0-1 range
               audio.onended = () => {
                 if (times > 1) {
                   setTimeout(() => playAlarm(times - 1), 500); // Repeat with 500ms delay
                 }
               };
-              audio.play().catch(e => console.log('Audio play failed', e));
+              audio.play().catch(e => {
+                const fallbackUrl = fallback || ALARM_SOUNDS.bell;
+                if (fallbackUrl && fallbackUrl !== resolvedUrl) {
+                  const retry = new Audio(fallbackUrl);
+                  retry.volume = (settings.alarmVolume || 70) / 100;
+                  retry.onended = audio.onended;
+                  retry.play().catch(err => console.log('Audio play failed', err));
+                  return;
+                }
+                console.log('Audio play failed', e);
+              });
             };
 
             playAlarm(settings.alarmRepeat || 1);

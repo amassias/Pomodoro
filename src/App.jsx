@@ -394,6 +394,7 @@ function App() {
             align-items: flex-start;
             flex-wrap: wrap;
             justify-content: center;
+            margin-bottom: 1.25rem;
             pointer-events: auto; /* Reactivate for controls */
         }
         .bottom-bar {
