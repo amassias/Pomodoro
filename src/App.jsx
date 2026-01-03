@@ -309,6 +309,15 @@ function App() {
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
       </button>
 
+      <a
+        className="recommend-btn"
+        href="mailto:massias.arthur@gmail.com?subject=World%20Focus%20-%20Suggestion&body=Hi!%0A%0AI%20would%20like%20to%20suggest%3A%0A%0A%5B%20%5D%20A%20new%20YouTube%20live%20view%0A%5B%20%5D%20A%20new%20feature%0A%0ADetails%3A%0A"
+        title="Suggest a YouTube live view or request a feature"
+        aria-label="Suggest a YouTube live view or request a feature"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><line x1="9" y1="9" x2="15" y2="9"></line><line x1="9" y1="13" x2="15" y2="13"></line></svg>
+      </a>
+
       {settings.musicProvider === 'spotify' ? (
         <SpotifyPlayer
           token={settings.spotifyToken}
@@ -428,6 +437,37 @@ function App() {
         }
         
         .settings-btn:active {
+          transform: scale(0.95);
+        }
+        
+        /* Recommend Button */
+        .recommend-btn {
+          position: fixed;
+          top: calc(env(safe-area-inset-top, 0px) + 0.75rem + 144px);
+          right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: #fff;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+          z-index: 100;
+          text-decoration: none;
+        }
+        
+        .recommend-btn:hover {
+          background: rgba(255, 255, 255, 0.15);
+          border-color: rgba(255, 255, 255, 0.4);
+          box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
+          transform: scale(1.05);
+        }
+        
+        .recommend-btn:active {
           transform: scale(0.95);
         }
         .top-bar h1 {
