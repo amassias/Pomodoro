@@ -282,40 +282,52 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
 
                     {settings.musicProvider === 'spotify' && (
                         <div className="spotify-settings">
-                            {/* Client ID hidden as requested */}
-                            <div className="connect-wrapper">
-                                <button
-                                    className="connect-btn"
-                                    disabled={connecting}
-                                    onClick={async () => {
-                                        if (!settings.spotifyClientId) {
-                                            alert('Please enter a Client ID first');
-                                            return;
-                                        }
-
-                                        setConnecting(true);
-                                        try {
-                                            const url = await getLoginUrl(settings.spotifyClientId);
-                                            const width = 450;
-                                            const height = 730;
-                                            const left = (window.screen.width / 2) - (width / 2);
-                                            const top = (window.screen.height / 2) - (height / 2);
-                                            const popup = window.open(url, 'Spotify Login', `width=${width},height=${height},left=${left},top=${top}`);
-                                            if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-                                                alert("Popup was blocked! Please allow popups for this website to connect to Spotify.");
-                                            }
-                                        } catch (err) {
-                                            console.error('Spotify auth start failed', err);
-                                            alert('Could not start Spotify login. Please try again.');
-                                        } finally {
-                                            setConnecting(false);
-                                        }
-                                    }}
-                                >
-                                    {connecting ? 'Opening…' : 'Connect to Spotify'}
-                                </button>
-                                {settings.spotifyToken && <span className="status-connected">Connected ✓</span>}
-                            </div>
+                            {!settings.spotifyClientId ? (
+                                <div className="config-error">
+                                    <p className="error-message">⚠️ Spotify Client ID Not Configured</p>
+                                    <p className="error-details">
+                                        To use Spotify integration, you need to set up your own Spotify Client ID:
+                                    </p>
+                                    <ol className="config-steps">
+                                        <li>Create an app in the <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener noreferrer">Spotify Developer Dashboard</a></li>
+                                        <li>Copy your Client ID</li>
+                                        <li>Set <code>VITE_SPOTIFY_CLIENT_ID</code> in your <code>.env</code> file</li>
+                                        <li>Restart the development server</li>
+                                    </ol>
+                                    <p className="error-details">
+                                        The LoFi player is available as an alternative music provider.
+                                    </p>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="connect-wrapper">
+                                        <button
+                                            className="connect-btn"
+                                            disabled={connecting}
+                                            onClick={async () => {
+                                                setConnecting(true);
+                                                try {
+                                                    const url = await getLoginUrl(settings.spotifyClientId);
+                                                    const width = 450;
+                                                    const height = 730;
+                                                    const left = (window.screen.width / 2) - (width / 2);
+                                                    const top = (window.screen.height / 2) - (height / 2);
+                                                    const popup = window.open(url, 'Spotify Login', `width=${width},height=${height},left=${left},top=${top}`);
+                                                    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+                                                        alert("Popup was blocked! Please allow popups for this website to connect to Spotify.");
+                                                    }
+                                                } catch (err) {
+                                                    console.error('Spotify auth start failed', err);
+                                                    alert('Could not start Spotify login. Please try again.');
+                                                } finally {
+                                                    setConnecting(false);
+                                                }
+                                            }}
+                                        >
+                                            {connecting ? 'Opening…' : 'Connect to Spotify'}
+                                        </button>
+                                        {settings.spotifyToken && <span className="status-connected">Connected ✓</span>}
+                                    </div>
 
                             {settings.spotifyToken && (
                                 <div className="playlist-picker">
@@ -381,6 +393,8 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
                             )}
                             <p className="help-text">Requires Spotify Premium. Add your app Redirect URI in the Spotify Developer Dashboard.</p>
                             <p className="help-text">Redirect URI used: <span style={{ opacity: 0.9, wordBreak: 'break-all' }}>{spotifyRedirectUri}</span></p>
+                            </>
+                            )}
                         </div>
                     )}
                 </div>
@@ -844,6 +858,58 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
                         font-size: 0.75rem;
                         color: rgba(255,255,255,0.5);
                         margin: 0;
+                    }
+
+                    .config-error {
+                        background: rgba(255, 193, 7, 0.1);
+                        border: 1px solid rgba(255, 193, 7, 0.3);
+                        border-radius: 12px;
+                        padding: 1.5rem;
+                        text-align: left;
+                    }
+
+                    .error-message {
+                        font-size: 1rem;
+                        font-weight: 600;
+                        color: #ffc107;
+                        margin: 0 0 1rem 0;
+                    }
+
+                    .error-details {
+                        font-size: 0.9rem;
+                        color: rgba(255,255,255,0.85);
+                        margin: 0 0 1rem 0;
+                        line-height: 1.5;
+                    }
+
+                    .config-steps {
+                        font-size: 0.9rem;
+                        color: rgba(255,255,255,0.85);
+                        margin: 0 0 1rem 0;
+                        padding-left: 1.5rem;
+                        line-height: 1.8;
+                    }
+
+                    .config-steps li {
+                        margin-bottom: 0.5rem;
+                    }
+
+                    .config-steps a {
+                        color: #1ed760;
+                        text-decoration: underline;
+                    }
+
+                    .config-steps a:hover {
+                        color: #1cb954;
+                    }
+
+                    .config-steps code {
+                        background: rgba(0,0,0,0.3);
+                        padding: 0.2rem 0.5rem;
+                        border-radius: 4px;
+                        font-family: 'Courier New', monospace;
+                        font-size: 0.85rem;
+                        color: #ffc107;
                     }
                     
                     .status-connected {

@@ -12,7 +12,14 @@ const getDefaultSettings = ({ userId }) => {
   const savedSpotifyClientId =
     localStorage.getItem(storageKeys.spotifyClientId) ||
     import.meta.env.VITE_SPOTIFY_CLIENT_ID ||
-    'c017309c2bfc4c9f9c6794e18c79f250';
+    null;
+
+  // Log warning in development when Spotify Client ID is missing
+  if (!savedSpotifyClientId && import.meta.env.DEV) {
+    console.warn(
+      'Spotify Client ID not configured. Set VITE_SPOTIFY_CLIENT_ID in your .env file to enable Spotify integration.'
+    );
+  }
 
   const tokenKey = scopedKey(userId, storageKeys.spotifyToken);
   const refreshTokenKey = scopedKey(userId, storageKeys.spotifyRefreshToken);

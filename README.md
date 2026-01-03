@@ -111,20 +111,54 @@ In Vercel Project → Settings → Environment Variables, add:
 
 Then redeploy.
 
-### Spotify Setup (optional)
+### Spotify Setup (Required for Spotify Integration)
 
-- In the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/), create an app and note the Client ID.
-- Add these Redirect URIs to the app settings:
-    - `http://localhost:5173/spotify-callback` (development)
-    - `https://pomodoro-khaki-one.vercel.app/spotify-callback` (production)
-- Paste the Client ID in Settings → Music Provider → Spotify, then click **Connect to Spotify**.
-- Ensure “Web Playback SDK” is enabled and that your Spotify account is Premium.
+**⚠️ IMPORTANT:** To use Spotify features, you **must** configure your own Spotify Client ID. Without this configuration, the app will use the LoFi player as the music provider.
 
-Notes:
-- This app uses PKCE and does not require a Spotify Client Secret on the frontend.
-- By default the app uses `/spotify-callback` as the redirect path. You can override it with `VITE_SPOTIFY_REDIRECT_URI` or `VITE_SPOTIFY_REDIRECT_PATH`.
+#### Setup Steps:
 
-Tip: keep Spotify on `/spotify-callback` (see Redirect URIs above) to avoid conflicts with other OAuth flows.
+1. **Create a Spotify App:**
+   - Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/)
+   - Log in with your Spotify account
+   - Click "Create app"
+   - Fill in the app name and description
+   - Note your **Client ID** (you'll need this)
+
+2. **Configure Redirect URIs:**
+   Add these Redirect URIs in your Spotify app settings:
+   - `http://localhost:5173/spotify-callback` (for development)
+   - `https://pomodoro-khaki-one.vercel.app/spotify-callback` (for production)
+
+3. **Set Environment Variable:**
+   Create a `.env.local` file in the project root (or add to your existing one):
+   ```bash
+   VITE_SPOTIFY_CLIENT_ID=your_actual_client_id_here
+   ```
+
+4. **Restart Development Server:**
+   ```bash
+   npm run dev
+   ```
+
+5. **Connect Your Account:**
+   - Open Settings → Music Provider → Toggle to Spotify
+   - Click "Connect to Spotify"
+   - Log in and authorize the app
+
+#### Requirements:
+- Spotify Premium account (required for Web Playback SDK)
+- "Web Playback SDK" must be enabled in your Spotify app settings
+
+#### Security Notes:
+- This app uses PKCE (Proof Key for Code Exchange) for OAuth
+- No Client Secret is required on the frontend
+- Never commit your `.env.local` file to version control
+- Each deployment environment needs its own Client ID configuration
+
+#### Default Behavior:
+- Without `VITE_SPOTIFY_CLIENT_ID` configured, the app will display a configuration error message in Settings
+- The LoFi player remains available as an alternative music provider
+- By default, the app uses `/spotify-callback` as the redirect path (override with `VITE_SPOTIFY_REDIRECT_PATH` if needed)
 
 ## ⌨️ Keyboard Shortcuts
 

@@ -16,7 +16,7 @@ const SpotifyCallback = () => {
             const code = params.get('code');
             const returnedState = params.get('state');
             const error = params.get('error');
-            const clientId = localStorage.getItem('spotifyClientId') || import.meta.env.VITE_SPOTIFY_CLIENT_ID || '';
+            const clientId = localStorage.getItem('spotifyClientId') || import.meta.env.VITE_SPOTIFY_CLIENT_ID || null;
             const { state: storedState } = loadPkceValues();
 
             if (error) {
