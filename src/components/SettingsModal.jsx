@@ -305,6 +305,11 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
                                             className="connect-btn"
                                             disabled={connecting}
                                             onClick={async () => {
+                                                if (!settings.spotifyClientId) {
+                                                    console.error('Spotify Client ID is not configured');
+                                                    return;
+                                                }
+                                                
                                                 setConnecting(true);
                                                 try {
                                                     const url = await getLoginUrl(settings.spotifyClientId);
