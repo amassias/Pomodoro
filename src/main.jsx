@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import SpotifyCallback from './components/SpotifyCallback.jsx';
 import SupabaseCallback from './components/SupabaseCallback.jsx';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { UserDataProvider } from './context/UserDataContext.jsx';
 import './index.css';
@@ -23,16 +24,18 @@ const isSupabaseCallback = pathname.startsWith('/auth-callback') && !isSpotifyCa
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
-        <AuthProvider>
-            {isSpotifyCallback ? (
-                <SpotifyCallback />
-            ) : isSupabaseCallback ? (
-                <SupabaseCallback />
-            ) : (
-                <UserDataProvider>
-                    <App />
-                </UserDataProvider>
-            )}
-        </AuthProvider>
+        <ErrorBoundary>
+            <AuthProvider>
+                {isSpotifyCallback ? (
+                    <SpotifyCallback />
+                ) : isSupabaseCallback ? (
+                    <SupabaseCallback />
+                ) : (
+                    <UserDataProvider>
+                        <App />
+                    </UserDataProvider>
+                )}
+            </AuthProvider>
+        </ErrorBoundary>
     </React.StrictMode>,
 )

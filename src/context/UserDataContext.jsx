@@ -77,6 +77,43 @@ const isEffectivelyEmpty = (value, type) => {
   return value == null;
 };
 
+const normalizeTask = (task) => {
+  if (!task || typeof task !== 'object') return null;
+  const id =
+    typeof task.id === 'string'
+      ? task.id
+      : typeof task.id === 'number'
+        ? String(task.id)
+        : null;
+  if (!id) return null;
+
+  return {
+    id,
+    text: typeof task.text === 'string' ? task.text : '',
+    completed: typeof task.completed === 'boolean' ? task.completed : false,
+  };
+};
+
+const normalizeTasks = (maybeTasks) => {
+  if (!Array.isArray(maybeTasks)) return [];
+  return maybeTasks.map(normalizeTask).filter(Boolean);
+};
+
+const normalizeArchivedTask = (task) => {
+  const normalized = normalizeTask(task);
+  if (!normalized) return null;
+  const archivedAt = typeof task.archivedAt === 'string' ? task.archivedAt : null;
+  return {
+    ...normalized,
+    archivedAt,
+  };
+};
+
+const normalizeArchivedTasks = (maybeTasks) => {
+  if (!Array.isArray(maybeTasks)) return [];
+  return maybeTasks.map(normalizeArchivedTask).filter(Boolean);
+};
+
 export const UserDataProvider = ({ children }) => {
   const { user } = useAuth();
   const userId = user?.id ?? null;
@@ -97,8 +134,8 @@ export const UserDataProvider = ({ children }) => {
     let cancelled = false;
 
     const loadGuest = () => {
-      setTasks(readJson(storageKeys.tasks, []));
-      setArchivedTasks(readJson(storageKeys.archivedTasks, []));
+      setTasks(normalizeTasks(readJson(storageKeys.tasks, [])));
+      setArchivedTasks(normalizeArchivedTasks(readJson(storageKeys.archivedTasks, [])));
       setPomodoroHistory(readJson(storageKeys.history, {}));
       setCity(localStorage.getItem(storageKeys.city) || DEFAULT_CITY);
       setSettings(getDefaultSettings({ userId: null }));
@@ -141,8 +178,8 @@ export const UserDataProvider = ({ children }) => {
 
         // Optional one-time migration from guest localStorage → account.
         // Only when the account is empty and guest has data.
-        const guestTasks = readJson(storageKeys.tasks, []);
-        const guestArchived = readJson(storageKeys.archivedTasks, []);
+        const guestTasks = normalizeTasks(readJson(storageKeys.tasks, []));
+        const guestArchived = normalizeArchivedTasks(readJson(storageKeys.archivedTasks, []));
         const guestHistory = readJson(storageKeys.history, {});
 
         const shouldMigrate =
@@ -156,15 +193,15 @@ export const UserDataProvider = ({ children }) => {
         const mergedRow = shouldMigrate
           ? {
               ...row,
-              tasks: Array.isArray(guestTasks) ? guestTasks : [],
-              archived_tasks: Array.isArray(guestArchived) ? guestArchived : [],
+              tasks: guestTasks,
+              archived_tasks: guestArchived,
               pomodoro_history: guestHistory && typeof guestHistory === 'object' ? guestHistory : {},
             }
           : row;
 
         if (!cancelled) {
-          setTasks(Array.isArray(mergedRow.tasks) ? mergedRow.tasks : []);
-          setArchivedTasks(Array.isArray(mergedRow.archived_tasks) ? mergedRow.archived_tasks : []);
+          setTasks(normalizeTasks(mergedRow.tasks));
+          setArchivedTasks(normalizeArchivedTasks(mergedRow.archived_tasks));
           setPomodoroHistory(
             mergedRow.pomodoro_history && typeof mergedRow.pomodoro_history === 'object'
               ? mergedRow.pomodoro_history
@@ -186,8 +223,8 @@ export const UserDataProvider = ({ children }) => {
               {
                 user_id: userId,
                 city: mergedRow.city || DEFAULT_CITY,
-                tasks: mergedRow.tasks,
-                archived_tasks: mergedRow.archived_tasks,
+                tasks: normalizeTasks(mergedRow.tasks),
+                archived_tasks: normalizeArchivedTasks(mergedRow.archived_tasks),
                 pomodoro_history: mergedRow.pomodoro_history,
                 settings: mergedRow.settings || {},
               },
@@ -257,8 +294,8 @@ export const UserDataProvider = ({ children }) => {
             {
               user_id: userId,
               city: city || DEFAULT_CITY,
-              tasks: Array.isArray(tasks) ? tasks : [],
-              archived_tasks: Array.isArray(archivedTasks) ? archivedTasks : [],
+              tasks: normalizeTasks(tasks),
+              archived_tasks: normalizeArchivedTasks(archivedTasks),
               pomodoro_history:
                 pomodoroHistory && typeof pomodoroHistory === 'object' ? pomodoroHistory : {},
               settings: sanitizeSettingsForDb(settings),

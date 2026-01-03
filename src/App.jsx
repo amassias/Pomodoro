@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import BackgroundVideo from './components/BackgroundVideo';
 import Timer from './components/Timer';
 import CitySelector from './components/CitySelector';
@@ -25,7 +25,7 @@ function App() {
   const spotifyProductKey = scopedKey(userId, storageKeys.spotifyProduct);
   const [spotifyProduct, setSpotifyProduct] = useState(localStorage.getItem(spotifyProductKey) || null);
 
-  const persistSpotifyTokens = ({ token, refreshToken, expiresAt, expiresIn }) => {
+  const persistSpotifyTokens = useCallback(({ token, refreshToken, expiresAt, expiresIn }) => {
     const resolvedExpiresAt = expiresAt || (expiresIn ? Date.now() + expiresIn * 1000 : null);
 
     setSettings(prev => ({
@@ -40,7 +40,7 @@ function App() {
       refreshToken,
       expiresAt: resolvedExpiresAt
     });
-  };
+  }, [persistSpotifySecretsToLocalStorage, setSettings]);
 
   useEffect(() => {
     const handleMessage = (event) => {
@@ -60,7 +60,7 @@ function App() {
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, []);
+  }, [persistSpotifyTokens]);
 
   // Persist Spotify Client ID
   useEffect(() => {
@@ -81,9 +81,38 @@ function App() {
   useEffect(() => {
     let cancelled = false;
 
-    const maybeRefresh = async () => {
+    const BASE_POLL_MS = 60_000;
+    const MAX_RETRIES = 8;
+    const MAX_BACKOFF_MS = 30 * 60_000; // 30 minutes
+
+    let retryCount = 0;
+    let timeoutId = null;
+    let inFlight = false;
+
+    const schedule = (delayMs) => {
+      if (cancelled) return;
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        tick();
+      }, delayMs);
+    };
+
+    const tick = async () => {
       if (!settings.spotifyRefreshToken || !settings.spotifyClientId) return;
       if (!isTokenExpired(settings.spotifyTokenExpiresAt)) return;
+
+      if (inFlight) {
+        schedule(BASE_POLL_MS);
+        return;
+      }
+
+      if (retryCount >= MAX_RETRIES) {
+        console.warn('Spotify token refresh paused (too many failures).');
+        schedule(MAX_BACKOFF_MS);
+        return;
+      }
+
+      inFlight = true;
 
       try {
         const response = await refreshAccessToken({
@@ -92,23 +121,51 @@ function App() {
         });
 
         if (!cancelled) {
+          retryCount = 0;
           persistSpotifyTokens({
             token: response.access_token,
             refreshToken: response.refresh_token || settings.spotifyRefreshToken,
             expiresIn: response.expires_in
           });
         }
+
+        schedule(BASE_POLL_MS);
       } catch (err) {
+        retryCount += 1;
         console.error('Spotify token refresh failed', err);
+
+        const backoffMs = Math.min(
+          BASE_POLL_MS * Math.pow(2, Math.max(0, retryCount - 1)),
+          MAX_BACKOFF_MS
+        );
+        schedule(backoffMs);
+      } finally {
+        inFlight = false;
       }
     };
 
-    const intervalId = setInterval(maybeRefresh, 60000);
-    maybeRefresh();
+    // Poll periodically; if refresh fails while expired, back off.
+    const start = () => {
+      // If token isn't expired, just poll at a steady pace.
+      if (!settings.spotifyRefreshToken || !settings.spotifyClientId) {
+        schedule(BASE_POLL_MS);
+        return;
+      }
+
+      if (!isTokenExpired(settings.spotifyTokenExpiresAt)) {
+        retryCount = 0;
+        schedule(BASE_POLL_MS);
+        return;
+      }
+
+      tick();
+    };
+
+    start();
 
     return () => {
       cancelled = true;
-      clearInterval(intervalId);
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [settings.spotifyRefreshToken, settings.spotifyTokenExpiresAt, settings.spotifyClientId]);
 
