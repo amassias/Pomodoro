@@ -5,6 +5,7 @@ const LofiPlayer = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(50);
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
   const playerRef = useRef(null);
   const isDraggingRef = useRef(false);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
@@ -16,9 +17,22 @@ const LofiPlayer = () => {
 
   const audioRef = useRef(new Audio());
 
+  const configureAudioSource = React.useCallback(() => {
+    const audio = audioRef.current;
+    audio.preload = 'auto';
+
+    if (audio.src !== trackUrl) {
+      audio.src = trackUrl;
+      audio.crossOrigin = 'anonymous';
+    }
+
+    return audio;
+  }, [trackUrl]);
+
   const handleMouseDown = (e) => {
     if (e.target.closest('.player-controls') || e.target.closest('.volume-mini')) return;
     isDraggingRef.current = true;
+    setIsDragging(true);
     dragOffsetRef.current = {
       x: e.clientX - position.x,
       y: e.clientY - position.y
@@ -42,26 +56,30 @@ const LofiPlayer = () => {
 
   const handleMouseUp = () => {
     isDraggingRef.current = false;
+    setIsDragging(false);
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
   };
 
   React.useEffect(() => {
-    const audio = audioRef.current;
+    configureAudioSource();
 
-    // Set static source
-    if (audio.src !== trackUrl) {
-      audio.src = trackUrl;
-      audio.crossOrigin = 'anonymous';
-    }
+    const warmUp = () => {
+      try {
+        configureAudioSource().load();
+      } catch {
+        // no-op
+      }
+    };
 
-    if (isPlaying) {
-      audio.play().catch(e => console.log('Play/Autoplay blocked', e));
-    } else {
-      audio.pause();
-    }
-  }, [isPlaying]);
+    window.addEventListener('pointerdown', warmUp, { once: true });
+    window.addEventListener('keydown', warmUp, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', warmUp);
+      window.removeEventListener('keydown', warmUp);
+    };
+  }, [configureAudioSource]);
 
   React.useEffect(() => {
     const audio = audioRef.current;
@@ -82,13 +100,31 @@ const LofiPlayer = () => {
 
   React.useEffect(() => {
     return () => {
-      audioRef.current.pause();
-      audioRef.current.src = '';
+      const audio = audioRef.current;
+      audio.pause();
+      audio.src = '';
     };
   }, []);
 
   const togglePlay = () => {
-    setIsPlaying(!isPlaying);
+    const audio = configureAudioSource();
+    audio.volume = volume / 100;
+
+    if (isPlaying) {
+      audio.pause();
+      setIsPlaying(false);
+      return;
+    }
+
+    const playPromise = audio.play();
+    setIsPlaying(true);
+
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch((e) => {
+        console.log('Play/Autoplay blocked', e);
+        setIsPlaying(false);
+      });
+    }
   };
 
   return (
@@ -97,7 +133,7 @@ const LofiPlayer = () => {
       className="lofi-player glass-panel"
       style={{
         transform: `translate(${position.x}px, ${position.y}px)`,
-        cursor: isDraggingRef.current ? 'grabbing' : 'grab'
+        cursor: isDragging ? 'grabbing' : 'grab'
       }}
       onMouseDown={handleMouseDown}
     >
@@ -122,7 +158,7 @@ const LofiPlayer = () => {
             min="0"
             max="100"
             value={volume}
-            onChange={(e) => setVolume(e.target.value)}
+            onChange={(e) => setVolume(Number(e.target.value))}
             className="volume-slider"
             title={`Volume: ${volume}%`}
           />
