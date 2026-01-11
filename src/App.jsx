@@ -418,23 +418,6 @@ function App() {
       ) : null}
 
       <div className="overlay">
-        <header className="top-bar glass-panel">
-          <div className="header-left">
-            <h1>World Focus</h1>
-          </div>
-
-          <CitySelector
-            currentCity={city}
-            cities={visibleCities}
-            onSelect={setCity}
-            isLoading={isValidatingLocations}
-            error={locationsError}
-          />
-
-          <div className="header-right">
-          </div>
-        </header>
-
         <main className="main-content">
           <div className="main-grid">
             <Timer settings={settings} />
@@ -442,17 +425,13 @@ function App() {
           </div>
         </main>
 
-        <footer className="bottom-bar glass-panel">
-          <p>
-            {isValidatingLocations
-              ? 'Loading locations…'
-              : currentCity?.name
-                ? `Studying in ${currentCity.name}`
-                : locationsError
-                  ? 'Unable to load locations'
-                  : 'No available locations'}
-          </p>
-        </footer>
+        <CitySelector
+          currentCity={city}
+          cities={visibleCities}
+          onSelect={setCity}
+          isLoading={isValidatingLocations}
+          error={locationsError}
+        />
       </div>
 
       <Report />
