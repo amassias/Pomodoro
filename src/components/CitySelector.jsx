@@ -1,8 +1,58 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
-const CitySelector = ({ currentCity, cities, onSelect }) => {
-  const categories = [...new Set(Object.values(cities).map(c => c.category))];
+const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error = null }) => {
+  if (isLoading) {
+    return (
+      <div className="city-selector-container">
+        <div className="category-tabs" />
+        <div className="city-grid">
+          <div style={{ color: 'var(--text-secondary)', opacity: 0.9 }}>
+            Loading locations…
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="city-selector-container">
+        <div className="category-tabs" />
+        <div className="city-grid">
+          <div style={{ color: 'var(--text-secondary)', opacity: 0.9 }}>
+            {error === 'dev_api_unavailable'
+              ? 'Dev mode: /api is not running (use Vercel dev to validate live streams)'
+              : 'Unable to load locations'}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const categories = useMemo(
+    () => [...new Set(Object.values(cities).map(c => c.category))],
+    [cities]
+  );
   const [activeCategory, setActiveCategory] = useState('Urban Night');
+
+  useEffect(() => {
+    if (!categories.length) return;
+    if (categories.includes(activeCategory)) return;
+    setActiveCategory(categories[0]);
+  }, [activeCategory, categories]);
+
+  if (!categories.length) {
+    return (
+      <div className="city-selector-container">
+        <div className="category-tabs" />
+        <div className="city-grid">
+          <div style={{ color: 'var(--text-secondary)', opacity: 0.9 }}>
+            No available locations
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="city-selector-container">

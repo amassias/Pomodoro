@@ -9,7 +9,42 @@ import Report from './components/Report';
 import SettingsModal from './components/SettingsModal';
 import { getMe, isTokenExpired, refreshAccessToken } from './utils/spotify';
 import { useUserData } from './context/UserDataContext.jsx';
-import { scopedKey, storageKeys } from './utils/storage.js';
+import { markBadYoutubeVideoId, readBadYoutubeVideoIds, scopedKey, storageKeys } from './utils/storage.js';
+
+const CITIES = {
+  // Urban Night
+  shibuya: { name: 'Tokyo (Shibuya)', id: 'tujkoXI8rWM', category: 'Urban Night' },
+  shinjuku: { name: 'Tokyo (Shinjuku)', id: 'DjdUEyjx8GM', category: 'Urban Night' },
+  osaka: { name: 'Osaka (Dotonbori)', id: 'CoSJb_nSgxo', category: 'Urban Night' },
+  nyc_times: { name: 'NYC (Times Sq)', id: 'rnXIjl_Rzy4', category: 'Urban Night' },
+  nyc_street: { name: 'NYC (Street)', id: '1-iS7LArMPA', category: 'Urban Night' },
+  seoul_gangnam: { name: 'Seoul (Gangnam)', id: 'OE_S4_2F8Cg', category: 'Urban Night' },
+  seoul_hangang: { name: 'Seoul (Hangang & Banpo Bridge)', id: '-JhoMGoAfFc', category: 'Urban Night' },
+  hongkong: { name: 'Hong Kong', id: 'h3hF2v9c_Ck', category: 'Urban Night' },
+  chongqing: { name: 'Chongqing', id: 'XY2M2WJb4sg', category: 'Urban Night' },
+
+  // Urban Day
+  paris: { name: 'Paris (Eiffel)', id: 'OzYp4NRZlwQ', category: 'Urban Day' },
+  london: { name: 'London (Abbey Rd)', id: '57w2gYXjRic', category: 'Urban Day' },
+  venice: { name: 'Venice', id: 'ph1vpnYIxJk', category: 'Urban Day' },
+  prague: { name: 'Prague', id: 'u0THwV8T47E', category: 'Urban Day' },
+  amsterdam: { name: 'Amsterdam', id: 'sJP5q6SeX5Q', category: 'Urban Day' },
+  jackson: { name: 'Jackson Hole', id: '1EqIQaUqfT4', category: 'Urban Day' },
+  santorini: { name: 'Santorini', id: '9G88RhrM32Y', category: 'Urban Day' },
+
+  // Nature
+  namibia: { name: 'Namibia (Desert)', id: 'ydYDqZQpim8', category: 'Nature' },
+  kenya: { name: 'Kenya (Safari)', id: 'liveVslqWxc', category: 'Nature' },
+  monterey: { name: 'Jellyfish', id: '2g811Eo7K8U', category: 'Nature' },
+  maldives: { name: 'Maldives', id: 'N9l9g5e8G8E', category: 'Nature' },
+  aurora: { name: 'Northern Lights', id: 'DDU-rZs-Ic4', category: 'Nature' },
+
+  // Focus / Vibe
+  iss: { name: 'Space (ISS)', id: 'xRPjKQtRXR8', category: 'Focus' },
+  lofi: { name: 'Lofi Girl', id: 'jfKfPfyJRdk', category: 'Focus' },
+  synthwave: { name: 'Synthwave Radio', id: '4xDzrJKXOOY', category: 'Focus' },
+  train: { name: 'Norway Train', id: 'HyGci9POlW8', category: 'Focus' },
+};
 
 function App() {
   const {
@@ -24,6 +59,92 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const spotifyProductKey = scopedKey(userId, storageKeys.spotifyProduct);
   const [spotifyProduct, setSpotifyProduct] = useState(localStorage.getItem(spotifyProductKey) || null);
+
+  const cities = CITIES;
+
+  const [isValidatingLocations, setIsValidatingLocations] = useState(true);
+  const [locationsError, setLocationsError] = useState(null);
+  const [liveYoutubeVideoIds, setLiveYoutubeVideoIds] = useState(() => new Set());
+
+  const [badYoutubeVideoIds, setBadYoutubeVideoIds] = useState(() => readBadYoutubeVideoIds({ userId }));
+
+  useEffect(() => {
+    setBadYoutubeVideoIds(readBadYoutubeVideoIds({ userId }));
+  }, [userId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const validate = async () => {
+      setIsValidatingLocations(true);
+      setLocationsError(null);
+
+      const videoIds = Array.from(
+        new Set(
+          Object.values(cities)
+            .map((c) => c?.id)
+            .filter(Boolean)
+        )
+      );
+
+      if (!videoIds.length) {
+        setLiveYoutubeVideoIds(new Set());
+        setIsValidatingLocations(false);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/youtube/validate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ videoIds }),
+        });
+
+        if (!response.ok) {
+          const text = await response.text().catch(() => '');
+          let details = text;
+          try {
+            const parsed = JSON.parse(text);
+            details = parsed?.error || parsed?.message || text;
+          } catch {
+            // ignore
+          }
+
+          throw new Error(`Validate API failed (${response.status})${details ? `: ${details}` : ''}`);
+        }
+
+        const data = await response.json();
+        const validIds = Array.isArray(data?.validIds) ? data.validIds : [];
+        if (cancelled) return;
+
+        setLiveYoutubeVideoIds(new Set(validIds));
+        setIsValidatingLocations(false);
+      } catch (err) {
+        console.warn('Failed to validate live locations', err);
+        if (cancelled) return;
+
+        // Local Vite dev server does not serve Vercel Serverless Functions.
+        // In dev, fall back to showing all locations so the UI remains usable.
+        if (import.meta?.env?.DEV) {
+          setLiveYoutubeVideoIds(new Set(videoIds));
+          setLocationsError('dev_api_unavailable');
+          setIsValidatingLocations(false);
+          return;
+        }
+
+        setLiveYoutubeVideoIds(new Set());
+        setLocationsError(err instanceof Error ? err.message : 'failed');
+        setIsValidatingLocations(false);
+      }
+    };
+
+    validate();
+    return () => {
+      cancelled = true;
+    };
+  }, [cities]);
 
   const persistSpotifyTokens = useCallback(({ token, refreshToken, expiresAt, expiresIn }) => {
     const resolvedExpiresAt = expiresAt || (expiresIn ? Date.now() + expiresIn * 1000 : null);
@@ -231,46 +352,68 @@ function App() {
   }, [showSettings]);
 
   // Exhaustive list of video streams with categories
-  const cities = {
-    // Urban Night
-    shibuya: { name: 'Tokyo (Shibuya)', id: 'tujkoXI8rWM', category: 'Urban Night' },
-    shinjuku: { name: 'Tokyo (Shinjuku)', id: 'DjdUEyjx8GM', category: 'Urban Night' },
-    osaka: { name: 'Osaka (Dotonbori)', id: 'CoSJb_nSgxo', category: 'Urban Night' },
-    nyc_times: { name: 'NYC (Times Sq)', id: 'rnXIjl_Rzy4', category: 'Urban Night' },
-    nyc_street: { name: 'NYC (Street)', id: '1-iS7LArMPA', category: 'Urban Night' },
-    seoul_gangnam: { name: 'Seoul (Gangnam)', id: 'OE_S4_2F8Cg', category: 'Urban Night' },
-    seoul_hangang: { name: 'Seoul (Hangang & Banpo Bridge)', id: '-JhoMGoAfFc', category: 'Urban Night' },
-    hongkong: { name: 'Hong Kong', id: 'h3hF2v9c_Ck', category: 'Urban Night' },
-    chongqing: { name: 'Chongqing', id: 'XY2M2WJb4sg', category: 'Urban Night' },
+  const visibleCities = React.useMemo(() => {
+    if (isValidatingLocations) return {};
 
-    // Urban Day
-    paris: { name: 'Paris (Eiffel)', id: 'OzYp4NRZlwQ', category: 'Urban Day' },
-    london: { name: 'London (Abbey Rd)', id: '57w2gYXjRic', category: 'Urban Day' },
-    venice: { name: 'Venice', id: 'ph1vpnYIxJk', category: 'Urban Day' },
-    prague: { name: 'Prague', id: 'u0THwV8T47E', category: 'Urban Day' },
-    amsterdam: { name: 'Amsterdam', id: 'sJP5q6SeX5Q', category: 'Urban Day' },
-    jackson: { name: 'Jackson Hole', id: '1EqIQaUqfT4', category: 'Urban Day' },
-    santorini: { name: 'Santorini', id: '9G88RhrM32Y', category: 'Urban Day' },
+    const entries = Object.entries(cities).filter(([, c]) => {
+      if (!c?.id) return false;
+      if (!liveYoutubeVideoIds.has(c.id)) return false;
+      if (badYoutubeVideoIds.has(c.id)) return false;
+      return true;
+    });
 
-    // Nature
-    namibia: { name: 'Namibia (Desert)', id: 'ydYDqZQpim8', category: 'Nature' },
-    kenya: { name: 'Kenya (Safari)', id: 'liveVslqWxc', category: 'Nature' },
-    monterey: { name: 'Jellyfish', id: '2g811Eo7K8U', category: 'Nature' },
-    maldives: { name: 'Maldives', id: 'N9l9g5e8G8E', category: 'Nature' },
-    aurora: { name: 'Northern Lights', id: 'DDU-rZs-Ic4', category: 'Nature' },
+    // Strict hide: if everything is invalid, show nothing.
+    return Object.fromEntries(entries);
+  }, [badYoutubeVideoIds, cities, isValidatingLocations, liveYoutubeVideoIds]);
 
-    // Focus / Vibe
-    iss: { name: 'Space (ISS)', id: 'xRPjKQtRXR8', category: 'Focus' },
-    lofi: { name: 'Lofi Girl', id: 'jfKfPfyJRdk', category: 'Focus' },
-    synthwave: { name: 'Synthwave Radio', id: '4xDzrJKXOOY', category: 'Focus' },
-    train: { name: 'Norway Train', id: 'HyGci9POlW8', category: 'Focus' }
-  };
+  // If the currently selected city is missing/hidden, fall back to the first visible option.
+  useEffect(() => {
+    if (visibleCities[city]) return;
 
-  const currentCity = cities[city] || cities.shibuya;
+    // Prefer a fallback in the same category as the previously-selected city.
+    const previousCategory = cities?.[city]?.category || null;
+    const visibleEntries = Object.entries(visibleCities);
+
+    const sameCategoryFallbackKey = previousCategory
+      ? (visibleEntries.find(([, c]) => c?.category === previousCategory)?.[0] || null)
+      : null;
+
+    const preferredKey = visibleCities.seoul_hangang ? 'seoul_hangang' : null;
+    const firstVisibleKey = visibleEntries[0]?.[0] || null;
+
+    const fallbackKey = sameCategoryFallbackKey || preferredKey || firstVisibleKey || null;
+
+    if (fallbackKey && fallbackKey !== city) {
+      setCity(fallbackKey);
+    }
+  }, [city, setCity, visibleCities]);
+
+  const currentCity = visibleCities[city] || null;
+
+  const handleVideoError = useCallback(
+    ({ videoId, code }) => {
+      if (!videoId) return;
+
+      // If the YouTube API itself failed to load (adblock/network), don't permanently hide a specific city.
+      if (code === 'api_load_failed') {
+        console.warn('YouTube IFrame API failed to load; cannot evaluate stream health.', { videoId });
+        return;
+      }
+
+      // Short TTL for timeouts (can be transient), longer TTL for explicit YouTube errors.
+      const ttlMs = code === 'play_timeout' ? 30 * 60 * 1000 : undefined;
+
+      markBadYoutubeVideoId(videoId, { userId, ttlMs });
+      setBadYoutubeVideoIds(readBadYoutubeVideoIds({ userId }));
+    },
+    [userId]
+  );
 
   return (
     <div className="app-container">
-      <BackgroundVideo videoId={currentCity.id} />
+      {currentCity?.id ? (
+        <BackgroundVideo videoId={currentCity.id} onVideoError={handleVideoError} />
+      ) : null}
 
       <div className="overlay">
         <header className="top-bar glass-panel">
@@ -280,8 +423,10 @@ function App() {
 
           <CitySelector
             currentCity={city}
-            cities={cities}
+            cities={visibleCities}
             onSelect={setCity}
+            isLoading={isValidatingLocations}
+            error={locationsError}
           />
 
           <div className="header-right">
@@ -296,7 +441,15 @@ function App() {
         </main>
 
         <footer className="bottom-bar glass-panel">
-          <p>Studying in {currentCity.name}</p>
+          <p>
+            {isValidatingLocations
+              ? 'Loading locations…'
+              : currentCity?.name
+                ? `Studying in ${currentCity.name}`
+                : locationsError
+                  ? 'Unable to load locations'
+                  : 'No available locations'}
+          </p>
         </footer>
       </div>
 
