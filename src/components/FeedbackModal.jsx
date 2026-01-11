@@ -26,6 +26,19 @@ const FeedbackModal = ({ open, onClose, currentStreamId, currentStreamName }) =>
     onClose();
   };
 
+  React.useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        handleClose();
+      }
+    };
+
+    if (open) {
+      window.addEventListener('keydown', handleEscape);
+      return () => window.removeEventListener('keydown', handleEscape);
+    }
+  }, [open]);
+
   const resetForm = () => {
     setFeedbackType('stream_bug');
     setProblemType('');
@@ -117,7 +130,6 @@ const FeedbackModal = ({ open, onClose, currentStreamId, currentStreamName }) =>
             className="feedback-modal-close"
             onClick={handleClose}
             title="Close"
-            disabled={isSubmitting}
           >
             ✕
           </button>
