@@ -7,6 +7,7 @@ import LofiPlayer from './components/LofiPlayer';
 import SpotifyPlayer from './components/SpotifyPlayer';
 import Report from './components/Report';
 import SettingsModal from './components/SettingsModal';
+import FeedbackModal from './components/FeedbackModal';
 import { getMe, isTokenExpired, refreshAccessToken } from './utils/spotify';
 import { useUserData } from './context/UserDataContext.jsx';
 import { markBadYoutubeVideoId, readBadYoutubeVideoIds, scopedKey, storageKeys } from './utils/storage.js';
@@ -57,6 +58,7 @@ function App() {
   } = useUserData();
 
   const [showSettings, setShowSettings] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const spotifyProductKey = scopedKey(userId, storageKeys.spotifyProduct);
   const [spotifyProduct, setSpotifyProduct] = useState(localStorage.getItem(spotifyProductKey) || null);
 
@@ -462,14 +464,14 @@ function App() {
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
       </button>
 
-      <a
+      <button
         className="recommend-btn"
-        href="mailto:massias.arthur@gmail.com?subject=World%20Focus%20-%20Suggestion&body=Hi!%0A%0AI%20would%20like%20to%20suggest%3A%0A%0A%5B%20%5D%20A%20new%20YouTube%20live%20view%0A%5B%20%5D%20A%20new%20feature%0A%0ADetails%3A%0A"
-        title="Suggest a YouTube live view or request a feature"
-        aria-label="Suggest a YouTube live view or request a feature"
+        onClick={() => setShowFeedbackModal(true)}
+        title="Send feedback or suggest a YouTube live view"
+        aria-label="Send feedback or suggest a YouTube live view"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><line x1="9" y1="9" x2="15" y2="9"></line><line x1="9" y1="13" x2="15" y2="13"></line></svg>
-      </a>
+      </button>
 
       {settings.musicProvider === 'spotify' ? (
         <SpotifyPlayer
@@ -489,6 +491,13 @@ function App() {
           onClose={() => setShowSettings(false)}
         />
       )}
+
+      <FeedbackModal
+        open={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
+        currentStreamId={currentCity?.id}
+        currentStreamName={currentCity?.name}
+      />
 
       <style jsx>{`
         .app-container {
