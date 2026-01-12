@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useUserData } from '../context/UserDataContext.jsx';
 import Achievements from './Achievements';
+import { generateCSV, downloadFile } from '../utils/exportUtils';
 
 const Report = ({ onPomodoroComplete }) => {
   const [showReport, setShowReport] = useState(false);
@@ -625,6 +626,13 @@ const Report = ({ onPomodoroComplete }) => {
             {renderTasks()}
 
             <div className="report-actions">
+              <button className="export-btn" onClick={() => {
+                const csv = generateCSV(pomodoroHistory);
+                const dateStr = new Date().toISOString().split('T')[0];
+                downloadFile(csv, `pomodoro_history_${dateStr}.csv`, 'text/csv');
+              }}>
+                Export CSV
+              </button>
               <button className="reset-btn" onClick={() => {
                 if (confirm('Reset all data?')) {
                   setPomodoroHistory({});
@@ -1090,6 +1098,22 @@ const Report = ({ onPomodoroComplete }) => {
           font-size: 0.9rem;
           color: rgba(255, 255, 255, 0.7);
           font-weight: 600;
+        }
+
+        .export-btn {
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: rgba(255, 255, 255, 0.9);
+          padding: 0.6rem 1rem;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 0.9rem;
+          transition: all 0.2s;
+        }
+
+        .export-btn:hover {
+          background: rgba(255, 255, 255, 0.15);
+          border-color: rgba(255, 255, 255, 0.3);
         }
 
         .reset-btn {

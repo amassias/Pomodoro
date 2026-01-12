@@ -8,6 +8,7 @@ import SpotifyPlayer from './components/SpotifyPlayer';
 import Report from './components/Report';
 import SettingsModal from './components/SettingsModal';
 import FeedbackModal from './components/FeedbackModal';
+import DailyProgress from './components/DailyProgress';
 import { getMe, isTokenExpired, refreshAccessToken } from './utils/spotify';
 import { useUserData } from './context/UserDataContext.jsx';
 import { markBadYoutubeVideoId, readBadYoutubeVideoIds, scopedKey, storageKeys } from './utils/storage.js';
@@ -418,6 +419,9 @@ function App() {
       ) : null}
 
       <div className="overlay">
+        <div className="top-widget-area">
+          <DailyProgress />
+        </div>
         <main className="main-content">
           <div className="main-grid">
             <Timer settings={settings} />
@@ -582,6 +586,25 @@ function App() {
         }
         
         /* Recommend Button */
+        .top-widget-area {
+            position: fixed;
+            top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
+            left: calc(env(safe-area-inset-left, 0px) + 0.75rem);
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+
+        .top-widget-area:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: scale(1.02);
+        }
+
         .recommend-btn {
           position: fixed;
           top: calc(env(safe-area-inset-top, 0px) + 0.75rem + 144px);

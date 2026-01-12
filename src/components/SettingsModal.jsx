@@ -269,6 +269,24 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
                 </div>
 
                 <div className="setting-group">
+                    <h3>Daily Goal</h3>
+                    <div className="slider-group">
+                        <label>Target</label>
+                        <input
+                            type="range"
+                            name="dailyGoal"
+                            value={settings.dailyGoal || 120}
+                            onChange={(e) => updateSettings({ ...settings, dailyGoal: Number(e.target.value) })}
+                            min="60"
+                            max="720"
+                            step="30"
+                            className="slider"
+                        />
+                        <span className="slider-value">{Math.floor((settings.dailyGoal || 120) / 60)}h {((settings.dailyGoal || 120) % 60) > 0 ? ((settings.dailyGoal || 120) % 60) + 'm' : ''}</span>
+                    </div>
+                </div>
+
+                <div className="setting-group">
                     <h3>Music Provider</h3>
                     <div className="toggle-group">
                         <label className="toggle-label provider-toggle">

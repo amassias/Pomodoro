@@ -37,6 +37,7 @@ const getDefaultSettings = ({ userId }) => {
     autoStartBreaks: false,
     autoStartPomodoros: false,
     musicProvider: 'lofi',
+    dailyGoal: 120, // 2 hours in minutes
 
     // Spotify preferences + local-only secrets
     spotifyClientId: savedSpotifyClientId,
@@ -192,11 +193,11 @@ export const UserDataProvider = ({ children }) => {
 
         const mergedRow = shouldMigrate
           ? {
-              ...row,
-              tasks: guestTasks,
-              archived_tasks: guestArchived,
-              pomodoro_history: guestHistory && typeof guestHistory === 'object' ? guestHistory : {},
-            }
+            ...row,
+            tasks: guestTasks,
+            archived_tasks: guestArchived,
+            pomodoro_history: guestHistory && typeof guestHistory === 'object' ? guestHistory : {},
+          }
           : row;
 
         if (!cancelled) {
@@ -354,6 +355,12 @@ export const UserDataProvider = ({ children }) => {
 
       persistSpotifySecretsToLocalStorage,
       clearSpotifySecretsFromLocalStorage,
+
+      getTodayProgress: () => {
+        const today = new Date().toISOString().split('T')[0];
+        const sessions = pomodoroHistory[today] || [];
+        return sessions.reduce((acc, session) => acc + (session.duration || 0), 0);
+      },
     };
   }, [loading, userId, tasks, archivedTasks, pomodoroHistory, city, settings]);
 
