@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useUserData } from '../context/UserDataContext.jsx';
+import Achievements from './Achievements';
 
 const Report = ({ onPomodoroComplete }) => {
   const [showReport, setShowReport] = useState(false);
@@ -618,6 +619,8 @@ const Report = ({ onPomodoroComplete }) => {
                 ))}
               </div>
             </div>
+
+            <Achievements history={pomodoroHistory} />
 
             {renderTasks()}
 
