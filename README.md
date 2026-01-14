@@ -27,6 +27,7 @@
 - **Visual Charts:** Weekly activity charts to track your consistency.
 - **Task Management:** A built-in task list to organize your session goals.
 - **Daily Progress Indicator:** Visual display of your daily focus session progress.
+- **Data Export:** Download your focus history as a CSV file for your own records.
 
 ### 🏆 Achievements System
 - **Unlock Badges:** Earn achievements based on your productivity milestones:
@@ -49,7 +50,7 @@
 - **Styling:** Vanilla CSS (Glassmorphism, Responsive Grid)
 - **Backend:** [Supabase](https://supabase.com/) (PostgreSQL + Authentication)
 - **Error Handling:** React Error Boundary for graceful error management
-- **OAuth Integration:** Spotify, GitHub, and Google authentication support
+- **OAuth Integration:** GitHub and Google authentication support
 
 ## 🚀 Getting Started
 
@@ -81,7 +82,7 @@
 
 This app supports Supabase Auth with:
 - Email + Password
-- OAuth providers (GitHub / Google / Spotify)
+- OAuth providers (GitHub / Google)
 
 #### 1) Create env vars
 
