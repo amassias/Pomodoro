@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import BackgroundVideo from './components/BackgroundVideo';
 import Timer from './components/Timer';
 import CitySelector from './components/CitySelector';
@@ -694,6 +695,7 @@ function App() {
           }
         }
       `}</style>
+      <Analytics />
     </div>
   );
 }
