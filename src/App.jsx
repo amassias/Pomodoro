@@ -563,8 +563,8 @@ function App() {
           background: rgba(255, 255, 255, 0.1);
           border: 1px solid rgba(255, 255, 255, 0.2);
           color: #fff;
-          width: 40px;
-          height: 40px;
+          width: 48px;
+          height: 48px;
           border-radius: 50%;
           display: flex;
           align-items: center;
@@ -607,13 +607,13 @@ function App() {
 
         .recommend-btn {
           position: fixed;
-          top: calc(env(safe-area-inset-top, 0px) + 0.75rem + 144px);
+          top: calc(env(safe-area-inset-top, 0px) + 0.75rem + 180px);
           right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
           background: rgba(255, 255, 255, 0.1);
           border: 1px solid rgba(255, 255, 255, 0.2);
           color: #fff;
-          width: 40px;
-          height: 40px;
+          width: 48px;
+          height: 48px;
           border-radius: 50%;
           display: flex;
           align-items: center;

@@ -5,6 +5,7 @@ export const storageKeys = {
   city: 'pomodoro-city',
 
   badYoutubeVideoIds: 'pomodoro-bad-youtube-video-ids',
+  favoriteCities: 'pomodoro-favorite-cities',
 
   spotifyClientId: 'spotifyClientId',
   spotifyToken: 'spotifyToken',

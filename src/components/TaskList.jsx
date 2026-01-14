@@ -310,6 +310,7 @@ const TaskList = () => {
                     border-radius: 8px;
                     color: #fff;
                     font-family: inherit;
+                    font-size: 16px; /* Prevents auto-zoom on iOS */
                 }
 
                 .task-input::placeholder {

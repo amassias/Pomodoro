@@ -26,12 +26,30 @@
 - **Detailed Reports:** Meaningful statistics including Total Hours, Pomodoros Completed, and Current Streak.
 - **Visual Charts:** Weekly activity charts to track your consistency.
 - **Task Management:** A built-in task list to organize your session goals.
+- **Daily Progress Indicator:** Visual display of your daily focus session progress.
+
+### 🏆 Achievements System
+- **Unlock Badges:** Earn achievements based on your productivity milestones:
+  - **First Step:** Complete your first focus session.
+  - **Early Bird:** Complete a session between 4 AM and 8 AM.
+  - **Night Owl:** Complete a session between 12 AM and 4 AM.
+  - **Marathoner:** Focus for 4+ hours in a single day.
+  - **Streak Master:** Maintain a 7-day streak.
+  - **Dedication:** Complete 50 total lifetime sessions.
+- **Visual Badge Display:** View all unlocked and locked achievements in your productivity report.
+
+### 💬 Feedback System
+- **User Feedback Modal:** Easily submit feedback and suggestions directly from the app.
+- **In-App Notifications:** Real-time feedback for user actions and app interactions.
 
 ## 🛠️ Tech Stack
 
 - **Frontend Framework:** [React 19](https://react.dev/)
 - **Build Tool:** [Vite](https://vitejs.dev/)
 - **Styling:** Vanilla CSS (Glassmorphism, Responsive Grid)
+- **Backend:** [Supabase](https://supabase.com/) (PostgreSQL + Authentication)
+- **Error Handling:** React Error Boundary for graceful error management
+- **OAuth Integration:** Spotify, GitHub, and Google authentication support
 
 ## 🚀 Getting Started
 

@@ -124,6 +124,7 @@ export const UserDataProvider = ({ children }) => {
   const [tasks, setTasks] = useState([]);
   const [archivedTasks, setArchivedTasks] = useState([]);
   const [pomodoroHistory, setPomodoroHistory] = useState({});
+  const [favoriteCities, setFavoriteCities] = useState([]);
   const [city, setCity] = useState(DEFAULT_CITY);
   const [settings, setSettings] = useState(() => getDefaultSettings({ userId: null }));
 
@@ -138,6 +139,7 @@ export const UserDataProvider = ({ children }) => {
       setTasks(normalizeTasks(readJson(storageKeys.tasks, [])));
       setArchivedTasks(normalizeArchivedTasks(readJson(storageKeys.archivedTasks, [])));
       setPomodoroHistory(readJson(storageKeys.history, {}));
+      setFavoriteCities(readJson(storageKeys.favoriteCities, []));
       setCity(localStorage.getItem(storageKeys.city) || DEFAULT_CITY);
       setSettings(getDefaultSettings({ userId: null }));
     };
@@ -146,7 +148,7 @@ export const UserDataProvider = ({ children }) => {
       // Try fetching first.
       const { data, error } = await supabase
         .from('user_state')
-        .select('user_id, city, tasks, archived_tasks, pomodoro_history, settings')
+        .select('user_id, city, tasks, archived_tasks, pomodoro_history, settings, favorite_cities')
         .eq('user_id', id)
         .maybeSingle();
 
@@ -159,6 +161,7 @@ export const UserDataProvider = ({ children }) => {
         tasks: [],
         archived_tasks: [],
         pomodoro_history: {},
+        favorite_cities: [],
         settings: {},
       };
 
@@ -182,14 +185,17 @@ export const UserDataProvider = ({ children }) => {
         const guestTasks = normalizeTasks(readJson(storageKeys.tasks, []));
         const guestArchived = normalizeArchivedTasks(readJson(storageKeys.archivedTasks, []));
         const guestHistory = readJson(storageKeys.history, {});
+        const guestFavorites = readJson(storageKeys.favoriteCities, []);
 
         const shouldMigrate =
           isEffectivelyEmpty(row.tasks, 'array') &&
           isEffectivelyEmpty(row.archived_tasks, 'array') &&
           isEffectivelyEmpty(row.pomodoro_history, 'object') &&
+          isEffectivelyEmpty(row.favorite_cities, 'array') &&
           (!isEffectivelyEmpty(guestTasks, 'array') ||
             !isEffectivelyEmpty(guestArchived, 'array') ||
-            !isEffectivelyEmpty(guestHistory, 'object'));
+            !isEffectivelyEmpty(guestHistory, 'object') ||
+            !isEffectivelyEmpty(guestFavorites, 'array'));
 
         const mergedRow = shouldMigrate
           ? {
@@ -197,6 +203,7 @@ export const UserDataProvider = ({ children }) => {
             tasks: guestTasks,
             archived_tasks: guestArchived,
             pomodoro_history: guestHistory && typeof guestHistory === 'object' ? guestHistory : {},
+            favorite_cities: Array.isArray(guestFavorites) ? guestFavorites : [],
           }
           : row;
 
@@ -208,6 +215,7 @@ export const UserDataProvider = ({ children }) => {
               ? mergedRow.pomodoro_history
               : {}
           );
+          setFavoriteCities(Array.isArray(mergedRow.favorite_cities) ? mergedRow.favorite_cities : []);
           setCity(mergedRow.city || DEFAULT_CITY);
 
           const defaults = getDefaultSettings({ userId });
@@ -227,6 +235,7 @@ export const UserDataProvider = ({ children }) => {
                 tasks: normalizeTasks(mergedRow.tasks),
                 archived_tasks: normalizeArchivedTasks(mergedRow.archived_tasks),
                 pomodoro_history: mergedRow.pomodoro_history,
+                favorite_cities: Array.isArray(mergedRow.favorite_cities) ? mergedRow.favorite_cities : [],
                 settings: mergedRow.settings || {},
               },
               { onConflict: 'user_id' }
@@ -235,6 +244,7 @@ export const UserDataProvider = ({ children }) => {
           removeKey(storageKeys.tasks);
           removeKey(storageKeys.archivedTasks);
           removeKey(storageKeys.history);
+          removeKey(storageKeys.favoriteCities);
         }
       } catch (err) {
         console.warn('Failed to load user state', err);
@@ -272,6 +282,11 @@ export const UserDataProvider = ({ children }) => {
 
   useEffect(() => {
     if (userId) return;
+    writeJson(storageKeys.favoriteCities, favoriteCities);
+  }, [userId, favoriteCities]);
+
+  useEffect(() => {
+    if (userId) return;
     if (city) localStorage.setItem(storageKeys.city, city);
   }, [userId, city]);
 
@@ -299,6 +314,7 @@ export const UserDataProvider = ({ children }) => {
               archived_tasks: normalizeArchivedTasks(archivedTasks),
               pomodoro_history:
                 pomodoroHistory && typeof pomodoroHistory === 'object' ? pomodoroHistory : {},
+              favorite_cities: favoriteCities,
               settings: sanitizeSettingsForDb(settings),
             },
             { onConflict: 'user_id' }
@@ -311,7 +327,7 @@ export const UserDataProvider = ({ children }) => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [userId, loading, tasks, archivedTasks, pomodoroHistory, city, settings]);
+  }, [userId, loading, tasks, archivedTasks, pomodoroHistory, favoriteCities, city, settings]);
 
   const persistSpotifySecretsToLocalStorage = ({ token, refreshToken, expiresAt }) => {
     const tokenKey = scopedKey(userId, storageKeys.spotifyToken);
@@ -350,6 +366,16 @@ export const UserDataProvider = ({ children }) => {
       city,
       setCity,
 
+      favoriteCities, // expose to consumers
+      toggleFavorite: (cityId) => {
+        setFavoriteCities((prev) => {
+          const s = new Set(prev);
+          if (s.has(cityId)) s.delete(cityId);
+          else s.add(cityId);
+          return Array.from(s);
+        });
+      },
+
       settings,
       setSettings,
 
@@ -362,7 +388,7 @@ export const UserDataProvider = ({ children }) => {
         return sessions.reduce((acc, session) => acc + (session.duration || 0), 0);
       },
     };
-  }, [loading, userId, tasks, archivedTasks, pomodoroHistory, city, settings]);
+  }, [loading, userId, tasks, archivedTasks, pomodoroHistory, favoriteCities, city, settings]);
 
   return <UserDataContext.Provider value={value}>{children}</UserDataContext.Provider>;
 };

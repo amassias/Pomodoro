@@ -37,7 +37,7 @@ const Report = ({ onPomodoroComplete }) => {
     const handleEvent = (e) => handlePomodoroComplete(e);
     window.addEventListener('pomodoroCompleted', handleEvent);
     return () => window.removeEventListener('pomodoroCompleted', handleEvent);
-  }, [pomodoroHistory]); // Re-bind if history changes to ensure closure has latest state? 
+  }, []); // Functional update in savePomodoroData removes need for history dependency 
   // Actually handlePomodoroComplete calls savePomodoroData which reads pomodoroHistory from state.
   // Ideally savePomodoroData should use functional state update or we include dependencies.
   // looking at savePomodoroData:
@@ -210,21 +210,25 @@ const Report = ({ onPomodoroComplete }) => {
     loadStats();
   };
 
+  // No longer rely on stable `pomodoroHistory` in this closure.
   const savePomodoroData = (durationMinutes) => {
     const today = new Date().toISOString().split('T')[0];
-    const history = pomodoroHistory && typeof pomodoroHistory === 'object' ? { ...pomodoroHistory } : {};
 
-    if (!history[today]) {
-      history[today] = [];
-    }
+    setPomodoroHistory(prevHistory => {
+      const history = prevHistory && typeof prevHistory === 'object' ? { ...prevHistory } : {};
 
-    history[today].push({
-      duration: durationMinutes,
-      timestamp: new Date().toISOString(),
-      completed: true
+      if (!history[today]) {
+        history[today] = [];
+      }
+
+      history[today].push({
+        duration: durationMinutes,
+        timestamp: new Date().toISOString(),
+        completed: true
+      });
+
+      return history;
     });
-
-    setPomodoroHistory(history);
   };
 
   const addTestData = () => {
@@ -533,17 +537,6 @@ const Report = ({ onPomodoroComplete }) => {
                   <img className="auth-provider-logo" src="/logos/google.png" alt="" aria-hidden="true" />
                   <span className="sr-only">Continue with Google</span>
                 </button>
-                <button
-                  type="button"
-                  className="auth-provider"
-                  disabled={authBusy}
-                  onClick={() => handleOAuth('spotify')}
-                  aria-label="Continue with Spotify"
-                  title="Continue with Spotify"
-                >
-                  <img className="auth-provider-logo" src="/logos/spotify.png" alt="" aria-hidden="true" />
-                  <span className="sr-only">Continue with Spotify</span>
-                </button>
               </div>
             </>
           )}
@@ -654,13 +647,13 @@ const Report = ({ onPomodoroComplete }) => {
       <style jsx>{`
         .report-btn {
           position: fixed;
-          top: calc(env(safe-area-inset-top, 0px) + 0.75rem + 48px);
+          top: calc(env(safe-area-inset-top, 0px) + 0.75rem + 60px);
           right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
           background: rgba(255, 255, 255, 0.1);
           border: 1px solid rgba(255, 255, 255, 0.2);
           color: #fff;
-          width: 40px;
-          height: 40px;
+          width: 48px;
+          height: 48px;
           border-radius: 50%;
           display: flex;
           align-items: center;
@@ -677,13 +670,13 @@ const Report = ({ onPomodoroComplete }) => {
 
         .auth-btn {
           position: fixed;
-          top: calc(env(safe-area-inset-top, 0px) + 0.75rem + 96px);
+          top: calc(env(safe-area-inset-top, 0px) + 0.75rem + 120px);
           right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
           background: rgba(255, 255, 255, 0.1);
           border: 1px solid rgba(255, 255, 255, 0.2);
           color: #fff;
-          width: 40px;
-          height: 40px;
+          width: 48px;
+          height: 48px;
           border-radius: 50%;
           display: flex;
           align-items: center;
@@ -704,7 +697,7 @@ const Report = ({ onPomodoroComplete }) => {
 
         .auth-popover {
           position: fixed;
-          top: calc(env(safe-area-inset-top, 0px) + 0.75rem + 144px);
+          top: calc(env(safe-area-inset-top, 0px) + 0.75rem + 180px);
           right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
           width: min(320px, calc(100vw - 1.5rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
           padding: 1rem;

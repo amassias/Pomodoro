@@ -319,6 +319,12 @@ const Timer = ({ settings }) => {
           .time-display {
             font-size: clamp(3.25rem, 14vw, 5rem);
           }
+          
+          @media (max-width: 380px) {
+            .time-display {
+                font-size: 3.5rem; /* Ensure it fits on very small devices like SE */
+            }
+          }
           .timer-controls {
             width: 100%;
             gap: 0.75rem;

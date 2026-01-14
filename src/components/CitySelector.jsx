@@ -1,14 +1,30 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useUserData } from '../context/UserDataContext.jsx';
 
 const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error = null }) => {
-  const categories = useMemo(
-    () => cities ? [...new Set(Object.values(cities).map(c => c.category))] : [],
-    [cities]
+  const { favoriteCities, toggleFavorite } = useUserData();
+
+  const categories = useMemo(() => {
+    if (!cities) return [];
+
+    // Get unique categories from cities
+    const allCats = [...new Set(Object.values(cities).map(c => c.category))];
+
+    // If we have any favorites, prepend "Favorites" category
+    if (favoriteCities && favoriteCities.length > 0) {
+      return ['Favorites', ...allCats];
+    }
+    return allCats;
+  }, [cities, favoriteCities]);
+
+  const [activeCategory, setActiveCategory] = useState(
+    (favoriteCities && favoriteCities.length > 0) ? 'Favorites' : 'Urban Night'
   );
-  
-  const [activeCategory, setActiveCategory] = useState('Urban Night');
+
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Auto-switch to newly appearing category if current active one disappears (unlikely here but good practice)
+  // Also default to Favorites if available on first load
   useEffect(() => {
     if (categories.length > 0 && !categories.includes(activeCategory)) {
       setActiveCategory(categories[0]);
@@ -22,6 +38,18 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
     if (error) return <div className="status-msg">Unable to load locations</div>;
     if (!cities || Object.keys(cities).length === 0) return <div className="status-msg">No locations available</div>;
 
+    const visibleCitiesEntry = Object.entries(cities).filter(([key, city]) => {
+      if (activeCategory === 'Favorites') {
+        return favoriteCities.includes(key);
+      }
+      return city.category === activeCategory;
+    });
+
+    if (visibleCitiesEntry.length === 0 && activeCategory === 'Favorites') {
+      // This can happen if user un-favorites the last item in the list
+      return <div className="status-msg">No favorites yet</div>;
+    }
+
     return (
       <div className="expanded-content">
         <div className="category-tabs">
@@ -34,15 +62,15 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
                 setActiveCategory(cat);
               }}
             >
-              {cat}
+              {cat === 'Favorites' ? '❤️ Favorites' : cat}
             </button>
           ))}
         </div>
 
         <div className="city-grid">
-          {Object.entries(cities)
-            .filter(([_, city]) => city.category === activeCategory)
-            .map(([key, city]) => (
+          {visibleCitiesEntry.map(([key, city]) => {
+            const isFav = favoriteCities.includes(key);
+            return (
               <button
                 key={key}
                 className={`city-btn ${currentCity === key ? 'active' : ''}`}
@@ -52,9 +80,22 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
                   setIsExpanded(false);
                 }}
               >
-                {city.name}
+                <div className="city-btn-inner">
+                  <span>{city.name}</span>
+                  <span
+                    className={`fav-icon ${isFav ? 'liked' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(key);
+                    }}
+                    title={isFav ? "Remove from favorites" : "Add to favorites"}
+                  >
+                    {isFav ? '❤️' : '🤍'}
+                  </span>
+                </div>
               </button>
-            ))}
+            )
+          })}
         </div>
       </div>
     );
@@ -62,8 +103,8 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
 
   return (
     <footer className={`bottom-bar glass-panel ${isExpanded ? 'expanded' : ''}`}>
-      <div 
-        className="footer-header" 
+      <div
+        className="footer-header"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <p className="location-text">
@@ -227,7 +268,7 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
           font-size: 1rem;
           transition: 0.2s;
           cursor: pointer;
-          min-width: 120px;
+          min-width: 140px;
         }
 
         .city-btn:hover {
@@ -243,6 +284,36 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
           color: white;
         }
 
+        .city-btn-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        .fav-icon {
+            font-size: 0.9rem;
+            opacity: 0.3;
+            transition: all 0.2s;
+            padding: 2px;
+            border-radius: 50%;
+        }
+
+        .city-btn:hover .fav-icon {
+            opacity: 0.7;
+        }
+
+        .fav-icon:hover {
+            opacity: 1 !important;
+            transform: scale(1.2);
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .fav-icon.liked {
+            opacity: 1;
+        }
+
         .status-msg {
           color: var(--text-secondary);
           padding: 1rem;
@@ -253,7 +324,20 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
           .bottom-bar {
             width: 100%;
             margin: 0;
+            bottom: 0px;
             border-radius: 24px 24px 0 0;
+          }
+
+          .bottom-bar.expanded {
+            width: 100%;
+            height: 80vh; /* More height on mobile */
+            max-height: 80vh;
+            border-radius: 24px 24px 0 0;
+          }
+
+          .expanded-panel {
+             /* Add safe area padding for devices with home indicator */
+             padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
           }
 
           .footer-header {
