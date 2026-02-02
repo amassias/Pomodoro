@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ALARM_SOUNDS, TICKING_SOUNDS } from '../utils/sounds';
 import { fetchUserPlaylists, getLoginUrl, getRedirectUri } from '../utils/spotify';
 
-const SettingsModal = ({ settings, updateSettings, onClose }) => {
+const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => {
     const modalContentRef = useRef(null);
     const previewAudioRef = useRef(null);
     const previewAudioContextRef = useRef(null);
@@ -484,7 +484,19 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
                         </div>
                     </div>
                 </div>
-
+                <div className="setting-group">
+                    <h3>Help</h3>
+                    <button
+                        className="tutorial-btn"
+                        onClick={onRestartTour}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                        <span>Show Tutorial</span>
+                    </button>
+                    <p className="help-text" style={{ marginTop: '0.75rem' }}>
+                        Keyboard shortcuts: <kbd>Space</kbd> start/pause • <kbd>R</kbd> reset • <kbd>M</kbd> mute
+                    </p>
+                </div>
                 <style jsx>{`
                     .modal-overlay {
                         position: fixed;
@@ -871,6 +883,36 @@ const SettingsModal = ({ settings, updateSettings, onClose }) => {
                         margin-top: 0.5rem;
                         display: block;
                         text-align: center;
+                    }
+
+                    .tutorial-btn {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 0.5rem;
+                        width: 100%;
+                        padding: 0.75rem 1rem;
+                        background: rgba(255, 255, 255, 0.1);
+                        border: 1px solid rgba(255, 255, 255, 0.2);
+                        border-radius: 8px;
+                        color: #fff;
+                        font-weight: 500;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                    }
+
+                    .tutorial-btn:hover {
+                        background: rgba(255, 255, 255, 0.15);
+                        border-color: rgba(255, 255, 255, 0.3);
+                    }
+
+                    kbd {
+                        background: rgba(255, 255, 255, 0.1);
+                        border: 1px solid rgba(255, 255, 255, 0.2);
+                        border-radius: 4px;
+                        padding: 0.15rem 0.35rem;
+                        font-family: inherit;
+                        font-size: 0.7rem;
                     }
                 `}</style>
             </div>

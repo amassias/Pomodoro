@@ -231,36 +231,6 @@ const Report = ({ onPomodoroComplete }) => {
     });
   };
 
-  const addTestData = () => {
-    // Add test data for the last 7 days
-    const today = new Date();
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
-
-      const history = pomodoroHistory && typeof pomodoroHistory === 'object' ? { ...pomodoroHistory } : {};
-      if (!history[dateStr]) {
-        history[dateStr] = [];
-      }
-
-      // Add random pomodoros
-      const count = Math.floor(Math.random() * 4) + 1;
-      for (let j = 0; j < count; j++) {
-        history[dateStr].push({
-          duration: 25,
-          timestamp: new Date().toISOString(),
-          completed: true
-        });
-      }
-
-      setPomodoroHistory(history);
-    }
-
-    loadStats();
-    console.log('Test data added!');
-  };
-
   const loadStats = () => {
     const history = pomodoroHistory && typeof pomodoroHistory === 'object' ? pomodoroHistory : {};
     const tasks = Array.isArray(archivedTasks) ? archivedTasks : [];
@@ -486,6 +456,15 @@ const Report = ({ onPomodoroComplete }) => {
             </>
           ) : (
             <>
+              <div className="auth-benefits">
+                <div className="auth-benefits-title">✨ Why create an account?</div>
+                <ul className="auth-benefits-list">
+                  <li>🔄 Sync your data across all devices</li>
+                  <li>💾 Never lose your progress or stats</li>
+                  <li>📊 Access your reports anywhere</li>
+                </ul>
+              </div>
+
               <div className="auth-fields">
                 <input
                   type="email"
@@ -636,9 +615,6 @@ const Report = ({ onPomodoroComplete }) => {
               }}>
                 Reset Data
               </button>
-              <button className="test-btn" onClick={addTestData}>
-                Add Test Data (7 days)
-              </button>
             </div>
           </div>
         </div>
@@ -670,7 +646,7 @@ const Report = ({ onPomodoroComplete }) => {
 
         .auth-btn {
           position: fixed;
-          top: calc(env(safe-area-inset-top, 0px) + 0.75rem + 120px);
+          top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
           right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
           background: rgba(255, 255, 255, 0.1);
           border: 1px solid rgba(255, 255, 255, 0.2);
@@ -738,6 +714,32 @@ const Report = ({ onPomodoroComplete }) => {
           color: rgba(255,255,255,0.95);
           font-size: 0.95rem;
           word-break: break-word;
+        }
+
+        .auth-benefits {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 12px;
+          padding: 0.8rem 1rem;
+          margin-bottom: 0.8rem;
+        }
+
+        .auth-benefits-title {
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: rgba(255, 255, 255, 0.9);
+          margin-bottom: 0.5rem;
+        }
+
+        .auth-benefits-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          font-size: 0.8rem;
+          color: rgba(255, 255, 255, 0.7);
+        }
+
+        .auth-benefits-list li {
+          padding: 0.2rem 0;
         }
 
         .auth-fields {
@@ -1094,13 +1096,15 @@ const Report = ({ onPomodoroComplete }) => {
         }
 
         .export-btn {
+          flex: 1;
           background: rgba(255, 255, 255, 0.1);
           border: 1px solid rgba(255, 255, 255, 0.2);
           color: rgba(255, 255, 255, 0.9);
-          padding: 0.6rem 1rem;
-          border-radius: 8px;
+          padding: 1rem 2rem;
+          border-radius: 12px;
           cursor: pointer;
-          font-size: 0.9rem;
+          font-size: 1rem;
+          font-weight: 600;
           transition: all 0.2s;
         }
 
@@ -1110,7 +1114,7 @@ const Report = ({ onPomodoroComplete }) => {
         }
 
         .reset-btn {
-          width: 48%;
+          flex: 1;
           background: rgba(255, 107, 107, 0.2);
           border: 1px solid rgba(255, 107, 107, 0.3);
           color: #ff6b6b;

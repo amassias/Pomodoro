@@ -10,9 +10,11 @@ import Report from './components/Report';
 import SettingsModal from './components/SettingsModal';
 import FeedbackModal from './components/FeedbackModal';
 import DailyProgress from './components/DailyProgress';
+import WelcomeModal from './components/WelcomeModal';
+import OnboardingTour from './components/OnboardingTour';
 import { getMe, isTokenExpired, refreshAccessToken } from './utils/spotify';
 import { useUserData } from './context/UserDataContext.jsx';
-import { markBadYoutubeVideoId, readBadYoutubeVideoIds, scopedKey, storageKeys } from './utils/storage.js';
+import { markBadYoutubeVideoId, readBadYoutubeVideoIds, scopedKey, storageKeys, hasCompletedOnboarding, setOnboardingCompleted } from './utils/storage.js';
 
 const CITIES = {
   // Urban Night
@@ -51,20 +53,55 @@ const CITIES = {
 
 function App() {
   const {
+    loading: userDataLoading,
     userId,
     city,
     setCity,
     settings,
     setSettings,
     persistSpotifySecretsToLocalStorage,
+    customLocations,
   } = useUserData();
 
   const [showSettings, setShowSettings] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [showTour, setShowTour] = useState(false);
   const spotifyProductKey = scopedKey(userId, storageKeys.spotifyProduct);
   const [spotifyProduct, setSpotifyProduct] = useState(localStorage.getItem(spotifyProductKey) || null);
 
-  const cities = CITIES;
+  // Check onboarding status after user data loads
+  useEffect(() => {
+    if (!userDataLoading && !hasCompletedOnboarding(userId)) {
+      setShowWelcome(true);
+    }
+  }, [userDataLoading, userId]);
+
+  const handleStartTour = () => {
+    setShowWelcome(false);
+    setShowTour(true);
+  };
+
+  const handleSkipOnboarding = () => {
+    setShowWelcome(false);
+    setOnboardingCompleted(userId, true);
+  };
+
+  const handleTourComplete = () => {
+    setShowTour(false);
+    setOnboardingCompleted(userId, true);
+  };
+
+  const handleRestartTour = () => {
+    setShowSettings(false);
+    setShowWelcome(true);
+  };
+
+  // Merge built-in CITIES with user's custom locations
+  const cities = React.useMemo(() => ({
+    ...CITIES,
+    ...customLocations
+  }), [customLocations]);
 
   const [isValidatingLocations, setIsValidatingLocations] = useState(true);
   const [locationsError, setLocationsError] = useState(null);
@@ -80,6 +117,9 @@ function App() {
     let cancelled = false;
 
     const validate = async () => {
+      // Wait for user data to finish loading before validating
+      if (userDataLoading) return;
+
       setIsValidatingLocations(true);
       setLocationsError(null);
 
@@ -93,6 +133,15 @@ function App() {
 
       if (!videoIds.length) {
         setLiveYoutubeVideoIds(new Set());
+        setIsValidatingLocations(false);
+        return;
+      }
+
+      // In local dev mode, skip validation entirely and show all locations
+      // Vercel serverless functions aren't available locally
+      if (import.meta?.env?.DEV) {
+        setLiveYoutubeVideoIds(new Set(videoIds));
+        setLocationsError(null);
         setIsValidatingLocations(false);
         return;
       }
@@ -129,15 +178,6 @@ function App() {
         console.warn('Failed to validate live locations', err);
         if (cancelled) return;
 
-        // Local Vite dev server does not serve Vercel Serverless Functions.
-        // In dev, fall back to showing all locations so the UI remains usable.
-        if (import.meta?.env?.DEV) {
-          setLiveYoutubeVideoIds(new Set(videoIds));
-          setLocationsError('dev_api_unavailable');
-          setIsValidatingLocations(false);
-          return;
-        }
-
         setLiveYoutubeVideoIds(new Set());
         setLocationsError(err instanceof Error ? err.message : 'failed');
         setIsValidatingLocations(false);
@@ -148,7 +188,7 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [cities]);
+  }, [cities, userDataLoading]);
 
   const persistSpotifyTokens = useCallback(({ token, refreshToken, expiresAt, expiresIn }) => {
     const resolvedExpiresAt = expiresAt || (expiresIn ? Date.now() + expiresIn * 1000 : null);
@@ -359,8 +399,12 @@ function App() {
   const visibleCities = React.useMemo(() => {
     if (isValidatingLocations) return {};
 
-    const entries = Object.entries(cities).filter(([, c]) => {
+    const entries = Object.entries(cities).filter(([key, c]) => {
       if (!c?.id) return false;
+      
+      // Always show custom locations (user-added) without validation
+      if (key.startsWith('custom_')) return true;
+      
       if (!liveYoutubeVideoIds.has(c.id)) return false;
       if (badYoutubeVideoIds.has(c.id)) return false;
       return true;
@@ -372,6 +416,8 @@ function App() {
 
   // If the currently selected city is missing/hidden, fall back to the first visible option.
   useEffect(() => {
+    // Don't run fallback while still validating - wait for validation to complete
+    if (isValidatingLocations) return;
     if (visibleCities[city]) return;
 
     // Prefer a fallback in the same category as the previously-selected city.
@@ -390,7 +436,7 @@ function App() {
     if (fallbackKey && fallbackKey !== city) {
       setCity(fallbackKey);
     }
-  }, [city, setCity, visibleCities]);
+  }, [city, isValidatingLocations, setCity, visibleCities]);
 
   const currentCity = visibleCities[city] || null;
 
@@ -473,6 +519,7 @@ function App() {
           settings={settings}
           updateSettings={setSettings}
           onClose={() => setShowSettings(false)}
+          onRestartTour={handleRestartTour}
         />
       )}
 
@@ -482,6 +529,17 @@ function App() {
         currentStreamId={currentCity?.id}
         currentStreamName={currentCity?.name}
       />
+
+      {showWelcome && (
+        <WelcomeModal 
+          onStartTour={handleStartTour} 
+          onSkip={handleSkipOnboarding} 
+        />
+      )}
+
+      {showTour && (
+        <OnboardingTour onComplete={handleTourComplete} />
+      )}
 
       <style jsx>{`
         .app-container {
@@ -559,7 +617,7 @@ function App() {
         /* Settings Button */
         .settings-btn {
           position: fixed;
-          top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
+          top: calc(env(safe-area-inset-top, 0px) + 0.75rem + 120px);
           right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
           background: rgba(255, 255, 255, 0.1);
           border: 1px solid rgba(255, 255, 255, 0.2);

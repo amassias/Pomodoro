@@ -6,6 +6,7 @@ export const storageKeys = {
 
   badYoutubeVideoIds: 'pomodoro-bad-youtube-video-ids',
   favoriteCities: 'pomodoro-favorite-cities',
+  customLocations: 'pomodoro-custom-locations',
 
   spotifyClientId: 'spotifyClientId',
   spotifyToken: 'spotifyToken',
@@ -82,4 +83,21 @@ export const markBadYoutubeVideoId = (
   const map = normalizeBadYoutubeMap(raw);
   map[videoId] = now + ttlMs;
   writeJson(key, map);
+};
+
+// Onboarding helpers
+const ONBOARDING_KEY = 'pomodoro-onboarding-completed';
+
+export const hasCompletedOnboarding = (userId) => {
+  const key = scopedKey(userId, ONBOARDING_KEY);
+  return readJson(key, false) === true;
+};
+
+export const setOnboardingCompleted = (userId, completed = true) => {
+  const key = scopedKey(userId, ONBOARDING_KEY);
+  writeJson(key, completed);
+};
+
+export const resetOnboarding = (userId) => {
+  setOnboardingCompleted(userId, false);
 };

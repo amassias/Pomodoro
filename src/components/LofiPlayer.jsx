@@ -106,6 +106,43 @@ const LofiPlayer = () => {
     };
   }, []);
 
+  // Autoplay on first user interaction (browsers block autoplay without interaction)
+  React.useEffect(() => {
+    const attemptAutoplay = () => {
+      const audio = configureAudioSource();
+      audio.volume = volume / 100;
+      const playPromise = audio.play();
+      if (playPromise && typeof playPromise.then === 'function') {
+        playPromise
+          .then(() => setIsPlaying(true))
+          .catch(() => {
+            // Autoplay blocked, will start on first user interaction
+          });
+      }
+    };
+
+    // Try immediate autoplay first
+    attemptAutoplay();
+
+    // If blocked, try again on first user interaction
+    const startOnInteraction = () => {
+      if (!audioRef.current.paused) return; // Already playing
+      const audio = configureAudioSource();
+      audio.volume = volume / 100;
+      audio.play()
+        .then(() => setIsPlaying(true))
+        .catch(() => {});
+    };
+
+    window.addEventListener('click', startOnInteraction, { once: true });
+    window.addEventListener('keydown', startOnInteraction, { once: true });
+
+    return () => {
+      window.removeEventListener('click', startOnInteraction);
+      window.removeEventListener('keydown', startOnInteraction);
+    };
+  }, [configureAudioSource, volume]);
+
   const togglePlay = () => {
     const audio = configureAudioSource();
     audio.volume = volume / 100;

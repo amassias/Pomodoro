@@ -77,7 +77,7 @@ const Timer = ({ settings }) => {
               audio.volume = (settings.alarmVolume || 70) / 100; // Convert to 0-1 range
               audio.onended = () => {
                 if (times > 1) {
-                  setTimeout(() => playAlarm(times - 1), 500); // Repeat with 500ms delay
+                  setTimeout(() => playAlarm(times - 1), 200); // Repeat with 200ms delay
                 }
               };
               audio.play().catch(e => {
@@ -93,7 +93,7 @@ const Timer = ({ settings }) => {
               });
             };
 
-            playAlarm(settings.alarmRepeat || 1);
+            playAlarm(settings.alarmRepeat || 3);
 
             // Emit pomodoro completion event
             if (mode === 'focus') {

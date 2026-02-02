@@ -31,7 +31,7 @@ const getDefaultSettings = ({ userId }) => {
     longBreakDuration: 15,
     sound: 'beep',
     alarmVolume: 70,
-    alarmRepeat: 1,
+    alarmRepeat: 3,
     tickingSound: 'none',
     tickingVolume: 50,
     autoStartBreaks: false,
@@ -125,6 +125,7 @@ export const UserDataProvider = ({ children }) => {
   const [archivedTasks, setArchivedTasks] = useState([]);
   const [pomodoroHistory, setPomodoroHistory] = useState({});
   const [favoriteCities, setFavoriteCities] = useState([]);
+  const [customLocations, setCustomLocations] = useState({});
   const [city, setCity] = useState(DEFAULT_CITY);
   const [settings, setSettings] = useState(() => getDefaultSettings({ userId: null }));
 
@@ -140,6 +141,7 @@ export const UserDataProvider = ({ children }) => {
       setArchivedTasks(normalizeArchivedTasks(readJson(storageKeys.archivedTasks, [])));
       setPomodoroHistory(readJson(storageKeys.history, {}));
       setFavoriteCities(readJson(storageKeys.favoriteCities, []));
+      setCustomLocations(readJson(storageKeys.customLocations, {}));
       setCity(localStorage.getItem(storageKeys.city) || DEFAULT_CITY);
       setSettings(getDefaultSettings({ userId: null }));
     };
@@ -287,6 +289,11 @@ export const UserDataProvider = ({ children }) => {
 
   useEffect(() => {
     if (userId) return;
+    writeJson(storageKeys.customLocations, customLocations);
+  }, [userId, customLocations]);
+
+  useEffect(() => {
+    if (userId) return;
     if (city) localStorage.setItem(storageKeys.city, city);
   }, [userId, city]);
 
@@ -376,6 +383,23 @@ export const UserDataProvider = ({ children }) => {
         });
       },
 
+      customLocations,
+      addCustomLocation: (name, videoId) => {
+        const key = `custom_${videoId}`;
+        setCustomLocations((prev) => ({
+          ...prev,
+          [key]: { name, id: videoId, category: 'Custom' }
+        }));
+        return key;
+      },
+      removeCustomLocation: (key) => {
+        setCustomLocations((prev) => {
+          const next = { ...prev };
+          delete next[key];
+          return next;
+        });
+      },
+
       settings,
       setSettings,
 
@@ -388,7 +412,7 @@ export const UserDataProvider = ({ children }) => {
         return sessions.reduce((acc, session) => acc + (session.duration || 0), 0);
       },
     };
-  }, [loading, userId, tasks, archivedTasks, pomodoroHistory, favoriteCities, city, settings]);
+  }, [loading, userId, tasks, archivedTasks, pomodoroHistory, favoriteCities, customLocations, city, settings]);
 
   return <UserDataContext.Provider value={value}>{children}</UserDataContext.Provider>;
 };

@@ -1,8 +1,36 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useUserData } from '../context/UserDataContext.jsx';
 
+// Extract YouTube video ID from various URL formats
+const extractYouTubeId = (input) => {
+  if (!input) return null;
+  
+  // Already a video ID (11 characters, alphanumeric with - and _)
+  if (/^[a-zA-Z0-9_-]{11}$/.test(input.trim())) {
+    return input.trim();
+  }
+  
+  // YouTube URL patterns
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/live\/)([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/.*[?&]v=([a-zA-Z0-9_-]{11})/,
+  ];
+  
+  for (const pattern of patterns) {
+    const match = input.match(pattern);
+    if (match) return match[1];
+  }
+  
+  return null;
+};
+
 const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error = null }) => {
-  const { favoriteCities, toggleFavorite } = useUserData();
+  const { favoriteCities, toggleFavorite, customLocations, addCustomLocation, removeCustomLocation } = useUserData();
+
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newLocationName, setNewLocationName] = useState('');
+  const [newLocationUrl, setNewLocationUrl] = useState('');
+  const [addError, setAddError] = useState('');
 
   const categories = useMemo(() => {
     if (!cities) return [];
@@ -33,6 +61,29 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
 
   const currentCityName = cities?.[currentCity]?.name || 'Select Location';
 
+  const handleAddLocation = () => {
+    setAddError('');
+    
+    const name = newLocationName.trim();
+    if (!name) {
+      setAddError('Please enter a name for this location');
+      return;
+    }
+    
+    const videoId = extractYouTubeId(newLocationUrl);
+    if (!videoId) {
+      setAddError('Please enter a valid YouTube URL or video ID');
+      return;
+    }
+    
+    const key = addCustomLocation(name, videoId);
+    setNewLocationName('');
+    setNewLocationUrl('');
+    setShowAddModal(false);
+    setActiveCategory('Custom');
+    onSelect(key);
+  };
+
   const renderExpandedContent = () => {
     if (isLoading) return <div className="status-msg">Loading locations…</div>;
     if (error) return <div className="status-msg">Unable to load locations</div>;
@@ -50,6 +101,8 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
       return <div className="status-msg">No favorites yet</div>;
     }
 
+    const isCustomCategory = activeCategory === 'Custom';
+
     return (
       <div className="expanded-content">
         <div className="category-tabs">
@@ -62,7 +115,7 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
                 setActiveCategory(cat);
               }}
             >
-              {cat === 'Favorites' ? '❤️ Favorites' : cat}
+              {cat === 'Favorites' ? '❤️ Favorites' : cat === 'Custom' ? '➕ Custom' : cat}
             </button>
           ))}
         </div>
@@ -70,6 +123,7 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
         <div className="city-grid">
           {visibleCitiesEntry.map(([key, city]) => {
             const isFav = favoriteCities.includes(key);
+            const isCustom = key.startsWith('custom_');
             return (
               <button
                 key={key}
@@ -82,46 +136,139 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
               >
                 <div className="city-btn-inner">
                   <span>{city.name}</span>
-                  <span
-                    className={`fav-icon ${isFav ? 'liked' : ''}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFavorite(key);
-                    }}
-                    title={isFav ? "Remove from favorites" : "Add to favorites"}
-                  >
-                    {isFav ? '❤️' : '🤍'}
-                  </span>
+                  <div className="city-btn-actions">
+                    {isCustom && (
+                      <span
+                        className="delete-icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Remove "${city.name}" from your custom locations?`)) {
+                            removeCustomLocation(key);
+                          }
+                        }}
+                        title="Remove custom location"
+                      >
+                        🗑️
+                      </span>
+                    )}
+                    <span
+                      className={`fav-icon ${isFav ? 'liked' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(key);
+                      }}
+                      title={isFav ? "Remove from favorites" : "Add to favorites"}
+                    >
+                      {isFav ? '❤️' : '🤍'}
+                    </span>
+                  </div>
                 </div>
               </button>
             )
           })}
+          
+          {/* Add Location Button - show in Custom category or when it's empty */}
+          {(isCustomCategory || visibleCitiesEntry.length === 0) && (
+            <button
+              className="city-btn add-location-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowAddModal(true);
+              }}
+            >
+              <div className="city-btn-inner">
+                <span>➕ Add Location</span>
+              </div>
+            </button>
+          )}
         </div>
+
+        {/* Always show Add Location at the bottom */}
+        {!isCustomCategory && visibleCitiesEntry.length > 0 && (
+          <div className="add-location-footer">
+            <button
+              className="add-location-small-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowAddModal(true);
+              }}
+            >
+              ➕ Add your own YouTube stream
+            </button>
+          </div>
+        )}
       </div>
     );
   };
 
   return (
-    <footer className={`bottom-bar glass-panel ${isExpanded ? 'expanded' : ''}`}>
-      <div
-        className="footer-header"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <p className="location-text">
-          {isLoading
-            ? 'Loading locations…'
-            : currentCity && currentCityName
-              ? `Studying in ${currentCityName}`
-              : error
-                ? 'Unable to load locations'
-                : 'No available locations'}
-        </p>
-        <span className="chevron">{isExpanded ? '⌃' : '⌄'}</span>
-      </div>
+    <>
+      <footer className={`bottom-bar glass-panel ${isExpanded ? 'expanded' : ''}`}>
+        <div
+          className="footer-header"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          <p className="location-text">
+            {isLoading
+              ? 'Loading locations…'
+              : currentCity && currentCityName
+                ? `Studying in ${currentCityName}`
+                : error
+                  ? 'Unable to load locations'
+                  : 'No available locations'}
+          </p>
+          <span className="chevron">{isExpanded ? '⌃' : '⌄'}</span>
+        </div>
 
-      {isExpanded && (
-        <div className="expanded-panel">
-          {renderExpandedContent()}
+        {isExpanded && (
+          <div className="expanded-panel">
+            {renderExpandedContent()}
+          </div>
+        )}
+      </footer>
+
+      {/* Add Location Modal */}
+      {showAddModal && (
+        <div className="add-modal-overlay" onClick={() => setShowAddModal(false)}>
+          <div className="add-modal glass-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="add-modal-header">
+              <h3>Add Custom Location</h3>
+              <button className="close-btn" onClick={() => setShowAddModal(false)}>×</button>
+            </div>
+            
+            <div className="add-modal-body">
+              <p className="add-modal-hint">
+                Paste a YouTube video or livestream URL to use as your background.
+              </p>
+              
+              <div className="add-modal-field">
+                <label>Location Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g., My Cozy Cafe"
+                  value={newLocationName}
+                  onChange={(e) => setNewLocationName(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              
+              <div className="add-modal-field">
+                <label>YouTube URL or Video ID</label>
+                <input
+                  type="text"
+                  placeholder="e.g., https://youtube.com/watch?v=..."
+                  value={newLocationUrl}
+                  onChange={(e) => setNewLocationUrl(e.target.value)}
+                />
+              </div>
+              
+              {addError && <div className="add-modal-error">{addError}</div>}
+              
+              <button className="add-modal-submit" onClick={handleAddLocation}>
+                Add Location
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -353,8 +500,157 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
             font-size: 0.85rem;
           }
         }
+
+        /* Add Location Modal Styles */
+        .add-modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.6);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          backdrop-filter: blur(4px);
+        }
+
+        .add-modal {
+          width: 90%;
+          max-width: 400px;
+          padding: 1.5rem;
+          border-radius: 16px;
+        }
+
+        .add-modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 1rem;
+        }
+
+        .add-modal-header h3 {
+          margin: 0;
+          font-size: 1.1rem;
+          font-weight: 600;
+        }
+
+        .add-modal-header .close-btn {
+          background: none;
+          border: none;
+          color: rgba(255, 255, 255, 0.7);
+          font-size: 1.5rem;
+          cursor: pointer;
+          padding: 0;
+          line-height: 1;
+        }
+
+        .add-modal-hint {
+          font-size: 0.85rem;
+          color: rgba(255, 255, 255, 0.6);
+          margin-bottom: 1rem;
+        }
+
+        .add-modal-field {
+          margin-bottom: 1rem;
+        }
+
+        .add-modal-field label {
+          display: block;
+          font-size: 0.85rem;
+          color: rgba(255, 255, 255, 0.8);
+          margin-bottom: 0.4rem;
+        }
+
+        .add-modal-field input {
+          width: 100%;
+          padding: 0.7rem 0.8rem;
+          border-radius: 10px;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          background: rgba(0, 0, 0, 0.25);
+          color: rgba(255, 255, 255, 0.95);
+          outline: none;
+          font-size: 0.95rem;
+        }
+
+        .add-modal-field input:focus {
+          border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .add-modal-error {
+          color: #ff6b6b;
+          font-size: 0.85rem;
+          margin-bottom: 1rem;
+        }
+
+        .add-modal-submit {
+          width: 100%;
+          padding: 0.8rem;
+          border-radius: 10px;
+          border: none;
+          background: rgba(255, 255, 255, 0.15);
+          color: white;
+          font-size: 0.95rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .add-modal-submit:hover {
+          background: rgba(255, 255, 255, 0.25);
+        }
+
+        .add-location-footer {
+          margin-top: 1rem;
+          padding-top: 1rem;
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+          text-align: center;
+        }
+
+        .add-location-small-btn {
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px dashed rgba(255, 255, 255, 0.2);
+          color: rgba(255, 255, 255, 0.7);
+          padding: 0.6rem 1rem;
+          border-radius: 8px;
+          font-size: 0.85rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .add-location-small-btn:hover {
+          background: rgba(255, 255, 255, 0.12);
+          color: rgba(255, 255, 255, 0.9);
+        }
+
+        .add-location-btn {
+          border-style: dashed !important;
+          opacity: 0.7;
+        }
+
+        .add-location-btn:hover {
+          opacity: 1;
+        }
+
+        .city-btn-actions {
+          display: flex;
+          gap: 0.3rem;
+          align-items: center;
+        }
+
+        .delete-icon {
+          font-size: 0.85rem;
+          opacity: 0.6;
+          cursor: pointer;
+          transition: opacity 0.2s;
+        }
+
+        .delete-icon:hover {
+          opacity: 1;
+        }
       `}</style>
-    </footer>
+    </>
   );
 };
 
