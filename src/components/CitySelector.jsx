@@ -24,7 +24,7 @@ const extractYouTubeId = (input) => {
   return null;
 };
 
-const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error = null }) => {
+const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error = null, validationFailed = false }) => {
   const { favoriteCities, toggleFavorite, customLocations, addCustomLocation, removeCustomLocation } = useUserData();
 
   const [showAddModal, setShowAddModal] = useState(false);
@@ -86,7 +86,10 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
 
   const renderExpandedContent = () => {
     if (isLoading) return <div className="status-msg">Loading locations…</div>;
-    if (error) return <div className="status-msg">Unable to load locations</div>;
+    // Only show full error if no cities available (validation failed AND no fallback)
+    if (error && (!cities || Object.keys(cities).length === 0)) {
+      return <div className="status-msg">Unable to load locations</div>;
+    }
     if (!cities || Object.keys(cities).length === 0) return <div className="status-msg">No locations available</div>;
 
     const visibleCitiesEntry = Object.entries(cities).filter(([key, city]) => {
@@ -105,6 +108,11 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
 
     return (
       <div className="expanded-content">
+        {validationFailed && (
+          <div className="validation-warning">
+            ⚠️ Some streams may be offline. Couldn't verify availability.
+          </div>
+        )}
         <div className="category-tabs">
           {categories.map(cat => (
             <button
@@ -465,6 +473,17 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
           color: var(--text-secondary);
           padding: 1rem;
           text-align: center;
+        }
+
+        .validation-warning {
+          background: rgba(255, 193, 7, 0.15);
+          border: 1px solid rgba(255, 193, 7, 0.3);
+          color: #ffc107;
+          padding: 0.5rem 0.75rem;
+          border-radius: 8px;
+          font-size: 0.8rem;
+          text-align: center;
+          margin-bottom: 0.75rem;
         }
 
         @media (max-width: 768px) {

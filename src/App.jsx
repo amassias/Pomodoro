@@ -105,6 +105,7 @@ function App() {
 
   const [isValidatingLocations, setIsValidatingLocations] = useState(true);
   const [locationsError, setLocationsError] = useState(null);
+  const [validationFailed, setValidationFailed] = useState(false);
   const [liveYoutubeVideoIds, setLiveYoutubeVideoIds] = useState(() => new Set());
 
   const [badYoutubeVideoIds, setBadYoutubeVideoIds] = useState(() => readBadYoutubeVideoIds({ userId }));
@@ -173,12 +174,22 @@ function App() {
         if (cancelled) return;
 
         setLiveYoutubeVideoIds(new Set(validIds));
+        setValidationFailed(false);
         setIsValidatingLocations(false);
       } catch (err) {
         console.warn('Failed to validate live locations', err);
         if (cancelled) return;
 
-        setLiveYoutubeVideoIds(new Set());
+        // Fallback: show all cities instead of none, with a warning
+        const allVideoIds = Array.from(
+          new Set(
+            Object.values(cities)
+              .map((c) => c?.id)
+              .filter(Boolean)
+          )
+        );
+        setLiveYoutubeVideoIds(new Set(allVideoIds));
+        setValidationFailed(true);
         setLocationsError(err instanceof Error ? err.message : 'failed');
         setIsValidatingLocations(false);
       }
@@ -404,15 +415,19 @@ function App() {
       
       // Always show custom locations (user-added) without validation
       if (key.startsWith('custom_')) return true;
+
+      // If validation failed, show all cities except known bad ones
+      if (validationFailed) {
+        return !badYoutubeVideoIds.has(c.id);
+      }
       
       if (!liveYoutubeVideoIds.has(c.id)) return false;
       if (badYoutubeVideoIds.has(c.id)) return false;
       return true;
     });
 
-    // Strict hide: if everything is invalid, show nothing.
     return Object.fromEntries(entries);
-  }, [badYoutubeVideoIds, cities, isValidatingLocations, liveYoutubeVideoIds]);
+  }, [badYoutubeVideoIds, cities, isValidatingLocations, liveYoutubeVideoIds, validationFailed]);
 
   // If the currently selected city is missing/hidden, fall back to the first visible option.
   useEffect(() => {
@@ -482,6 +497,7 @@ function App() {
           onSelect={setCity}
           isLoading={isValidatingLocations}
           error={locationsError}
+          validationFailed={validationFailed}
         />
       </div>
 
@@ -490,6 +506,7 @@ function App() {
         className="settings-btn"
         onClick={() => setShowSettings(true)}
         title="Settings"
+        aria-label="Settings"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
       </button>

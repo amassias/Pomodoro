@@ -39,46 +39,55 @@ const TaskList = () => {
     const addTask = (e) => {
         e.preventDefault();
         if (!newTask.trim()) return;
-        setTasks([...(Array.isArray(tasks) ? tasks : []), { id: crypto.randomUUID(), text: newTask, completed: false }]);
+        setTasks(prev => [...(Array.isArray(prev) ? prev : []), { id: crypto.randomUUID(), text: newTask, completed: false }]);
         setNewTask('');
     };
 
     const toggleTask = (id) => {
-        const task = tasks.find(t => t.id === id);
-        if (task && !task.completed) {
-            // Animate the task before archiving
-            setAnimatingTaskId(id);
-            setTimeout(() => {
-                archiveTask(id);
-                setAnimatingTaskId(null);
-            }, 400);
-        } else {
-            setTasks(tasks.map(t =>
-                t.id === id ? { ...t, completed: !t.completed } : t
-            ));
-        }
+        setTasks(prev => {
+            const task = prev.find(t => t.id === id);
+            if (task && !task.completed) {
+                // Animate the task before archiving
+                setAnimatingTaskId(id);
+                setTimeout(() => {
+                    archiveTask(id);
+                    setAnimatingTaskId(null);
+                }, 400);
+                return prev; // Return unchanged, archiveTask will update
+            } else {
+                return prev.map(t =>
+                    t.id === id ? { ...t, completed: !t.completed } : t
+                );
+            }
+        });
     };
 
     const archiveTask = (id) => {
-        const task = tasks.find(t => t.id === id);
-        if (task) {
-            setTasks(tasks.filter(t => t.id !== id));
-            setArchivedTasks([...archivedTasks, { ...task, completed: true, archivedAt: new Date().toISOString() }]);
-        }
+        setTasks(prev => {
+            const task = prev.find(t => t.id === id);
+            if (task) {
+                setArchivedTasks(prevArchived => [...prevArchived, { ...task, completed: true, archivedAt: new Date().toISOString() }]);
+                return prev.filter(t => t.id !== id);
+            }
+            return prev;
+        });
     };
 
     const restoreTask = (id) => {
-        const task = archivedTasks.find(t => t.id === id);
-        if (task) {
-            const { archivedAt: _archivedAt, ...restoredTask } = task;
-            setArchivedTasks(archivedTasks.filter(t => t.id !== id));
-            setTasks([...tasks, { ...restoredTask, completed: false }]);
-            closeArchive();
-        }
+        setArchivedTasks(prev => {
+            const task = prev.find(t => t.id === id);
+            if (task) {
+                const { archivedAt: _archivedAt, ...restoredTask } = task;
+                setTasks(prevTasks => [...prevTasks, { ...restoredTask, completed: false }]);
+                closeArchive();
+                return prev.filter(t => t.id !== id);
+            }
+            return prev;
+        });
     };
 
     const deleteTask = (id) => {
-        setArchivedTasks(archivedTasks.filter(t => t.id !== id));
+        setArchivedTasks(prev => prev.filter(t => t.id !== id));
         if (selectedArchivedIds.has(id)) {
             setSelectedArchivedIds(prev => {
                 const next = new Set(prev);
@@ -99,6 +108,8 @@ const TaskList = () => {
 
     const selectAllArchived = () => {
         setSelectedArchivedIds(prev => {
+            // We need current archivedTasks length, but for selecting all we can use the closure
+            // since this is a UI action that happens synchronously with the current view
             if (archivedTasks.length > 0 && prev.size === archivedTasks.length) {
                 return new Set();
             }
@@ -136,6 +147,8 @@ const TaskList = () => {
                         className="archive-btn"
                         onClick={toggleArchive}
                         title="View archived tasks"
+                        aria-label="View archived tasks"
+                        aria-pressed={showArchive}
                     >
                         📦 {archivedTasks.length}
                     </button>
@@ -149,7 +162,7 @@ const TaskList = () => {
                     placeholder="Add a task..."
                     className="task-input"
                 />
-                <button type="submit" className="add-btn">+</button>
+                <button type="submit" className="add-btn" aria-label="Add task">+</button>
             </form>
             <ul className="task-list">
                 {(Array.isArray(tasks) ? tasks : []).map(task => (
@@ -170,7 +183,7 @@ const TaskList = () => {
                     <div className="archive-modal glass-panel" onClick={(e) => e.stopPropagation()}>
                         <div className="archive-header">
                             <h2>Archived Tasks</h2>
-                            <button className="close-btn" onClick={closeArchive}>✕</button>
+                            <button className="close-btn" onClick={closeArchive} aria-label="Close">✕</button>
                         </div>
                         {archivedTasks.length > 0 && (
                             <div className="archive-toolbar">
@@ -218,6 +231,8 @@ const TaskList = () => {
                                                 className={`select-box ${selectedArchivedIds.has(task.id) ? 'checked' : ''}`}
                                                 onClick={() => toggleArchivedSelection(task.id)}
                                                 title={selectedArchivedIds.has(task.id) ? 'Unselect' : 'Select'}
+                                                aria-label={selectedArchivedIds.has(task.id) ? 'Unselect task' : 'Select task'}
+                                                aria-pressed={selectedArchivedIds.has(task.id)}
                                             >
                                                 {selectedArchivedIds.has(task.id) ? '✓' : ''}
                                             </button>
@@ -228,6 +243,7 @@ const TaskList = () => {
                                                 className="icon-btn restore-btn"
                                                 onClick={() => restoreTask(task.id)}
                                                 title="Restore task"
+                                                aria-label="Restore task"
                                             >
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                     <polyline points="1 4 1 10 7 10"></polyline>
@@ -238,6 +254,7 @@ const TaskList = () => {
                                                 className="icon-btn delete-btn"
                                                 onClick={() => deleteTask(task.id)}
                                                 title="Delete permanently"
+                                                aria-label="Delete permanently"
                                             >
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                     <polyline points="3 6 5 6 21 6"></polyline>

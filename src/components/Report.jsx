@@ -415,6 +415,7 @@ const Report = ({ onPomodoroComplete }) => {
         className="report-btn"
         onClick={() => setShowReport(true)}
         title="View statistics"
+        aria-label="View statistics"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <line x1="18" y1="20" x2="18" y2="10" />
@@ -431,6 +432,8 @@ const Report = ({ onPomodoroComplete }) => {
           setShowAuth(v => !v);
         }}
         title={user ? 'Account' : 'Sign in'}
+        aria-label={user ? 'Account' : 'Sign in'}
+        aria-expanded={showAuth}
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M20 21a8 8 0 0 0-16 0" />
@@ -530,7 +533,7 @@ const Report = ({ onPomodoroComplete }) => {
           <div className="report-modal glass-panel" onClick={(e) => e.stopPropagation()}>
             <div className="report-header">
               <h2>Report</h2>
-              <button className="close-btn" onClick={() => setShowReport(false)}>✕</button>
+              <button className="close-btn" onClick={() => setShowReport(false)} aria-label="Close">✕</button>
             </div>
 
             <div className="report-cards">
