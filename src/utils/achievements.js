@@ -1,17 +1,17 @@
+import { parseLocalDateKey, daysBetween } from './dateUtils';
+
 // Helper function to calculate max streak from history
 const calculateMaxStreak = (history) => {
     const dates = Object.keys(history || {}).sort();
     if (dates.length === 0) return 0;
 
-    const sortedDates = dates.map(d => new Date(d)).sort((a, b) => a - b);
+    // Sort dates and compare using local date parsing
+    const sortedDates = [...dates].sort();
     let currentStreak = 1;
     let maxStreak = 1;
 
     for (let i = 1; i < sortedDates.length; i++) {
-        const prev = sortedDates[i - 1];
-        const curr = sortedDates[i];
-        const diffTime = Math.abs(curr - prev);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const diffDays = daysBetween(sortedDates[i - 1], sortedDates[i]);
 
         if (diffDays === 1) {
             currentStreak++;

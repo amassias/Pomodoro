@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ALARM_SOUNDS, TICKING_SOUNDS } from '../utils/sounds';
 
 const DEFAULT_DURATIONS = {
@@ -28,146 +28,24 @@ const Timer = ({ settings }) => {
   const [pomodorosCompleted, setPomodorosCompleted] = useState(0);
 
   const tickingAudioRef = useRef(null);
+  const modeRef = useRef(mode);
+  const settingsRef = useRef(settings);
+  
+  // Timestamp-based timing to prevent drift in background tabs
+  const endAtRef = useRef(null);
+  const remainingMsRef = useRef(getModeMinutes('focus', settings) * 60 * 1000);
+
+  // Keep refs in sync with state/props
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
 
   useEffect(() => {
-    const handleToggle = () => toggleTimer();
-    const handleReset = () => resetTimer();
+    settingsRef.current = settings;
+  }, [settings]);
 
-    window.addEventListener('timer-toggle', handleToggle);
-    window.addEventListener('timer-reset', handleReset);
-
-    return () => {
-      window.removeEventListener('timer-toggle', handleToggle);
-      window.removeEventListener('timer-reset', handleReset);
-    };
-  }, [isActive, mode, minutes, seconds]); // Dependencies needed if toggle/reset use state closures? 
-  // toggleTimer uses setIsActive(!isActive), so it needs isActive dependency or functional update.
-  // Let's check toggleTimer definition.
-
-  useEffect(() => {
-    // Sync time when settings or mode change IF not active to prevent jumping
-    if (!isActive) {
-      setMinutes(getModeMinutes(mode, settings));
-      setSeconds(0);
-    }
-  }, [settings, mode]); // isActive excluded to avoid reset during countdown if settings panel is opened
-
-  useEffect(() => {
-    let interval = null;
-    if (isActive) {
-      interval = setInterval(() => {
-        const m = Number(minutes);
-        const s = Number(seconds);
-        const safeMinutes = Number.isFinite(m) ? m : 0;
-        const safeSeconds = Number.isFinite(s) ? s : 0;
-
-        if (safeSeconds <= 0) {
-          if (safeMinutes <= 0) {
-            clearInterval(interval);
-            setIsActive(false);
-            setMinutes(0);
-            setSeconds(0);
-
-            // Play alarm sound with repeat
-            // Play alarm sound with repeat
-            const playAlarm = (times = 1, { fallback } = {}) => {
-              if (times <= 0) return;
-              const resolvedUrl = ALARM_SOUNDS[settings.sound] || ALARM_SOUNDS.bell;
-              const audio = new Audio(resolvedUrl);
-              audio.volume = (settings.alarmVolume || 70) / 100; // Convert to 0-1 range
-              audio.onended = () => {
-                if (times > 1) {
-                  setTimeout(() => playAlarm(times - 1), 200); // Repeat with 200ms delay
-                }
-              };
-              audio.play().catch(e => {
-                const fallbackUrl = fallback || ALARM_SOUNDS.bell;
-                if (fallbackUrl && fallbackUrl !== resolvedUrl) {
-                  const retry = new Audio(fallbackUrl);
-                  retry.volume = (settings.alarmVolume || 70) / 100;
-                  retry.onended = audio.onended;
-                  retry.play().catch(err => console.log('Audio play failed', err));
-                  return;
-                }
-                console.log('Audio play failed', e);
-              });
-            };
-
-            playAlarm(settings.alarmRepeat || 3);
-
-            // Emit pomodoro completion event
-            if (mode === 'focus') {
-              window.dispatchEvent(new CustomEvent('pomodoroCompleted', {
-                detail: { duration: settings.focusDuration }
-              }));
-            }
-
-            // Auto start next timer
-            setTimeout(() => {
-              if (mode === 'focus') {
-                const newCompleted = pomodorosCompleted + 1;
-                setPomodorosCompleted(newCompleted);
-
-                if (newCompleted % 4 === 0) {
-                  setMode('longBreak');
-                  setMinutes(getModeMinutes('longBreak', settings));
-                  setSeconds(0);
-                  if (settings.autoStartBreaks) setIsActive(true);
-                } else {
-                  setMode('shortBreak');
-                  setMinutes(getModeMinutes('shortBreak', settings));
-                  setSeconds(0);
-                  if (settings.autoStartBreaks) setIsActive(true);
-                }
-              } else if (mode === 'shortBreak' || mode === 'longBreak') {
-                setMode('focus');
-                setMinutes(getModeMinutes('focus', settings));
-                setSeconds(0);
-                if (settings.autoStartPomodoros) setIsActive(true);
-              }
-            }, 1000);
-          } else {
-            setMinutes(safeMinutes - 1);
-            setSeconds(59);
-          }
-        } else {
-          setSeconds(safeSeconds - 1);
-
-          // Play ticking sound if enabled
-          // Play ticking sound if enabled
-          if (settings.tickingSound && settings.tickingSound !== 'none') {
-            const soundUrl = TICKING_SOUNDS[settings.tickingSound];
-            if (soundUrl) {
-              if (!tickingAudioRef.current || tickingAudioRef.current.src !== soundUrl) {
-                tickingAudioRef.current = new Audio(soundUrl);
-              }
-
-              // Reset and play
-              tickingAudioRef.current.currentTime = 0;
-              tickingAudioRef.current.volume = ((settings.tickingVolume || 50) / 100) * 0.3; // Reduce volume to 30% of set volume
-              tickingAudioRef.current.play().catch(e => console.log('Tick sound failed', e));
-            }
-          }
-        }
-      }, 1000);
-    } else if (!isActive && seconds !== 0) {
-      clearInterval(interval);
-      document.title = 'Pomodoro Focus';
-    }
-
-    // Update Title
-    if (isActive) {
-      const titleMinutes = Math.max(0, Number(minutes) || 0);
-      const titleSeconds = Math.max(0, Number(seconds) || 0);
-      const timeString = `${String(titleMinutes).padStart(2, '0')}:${String(titleSeconds).padStart(2, '0')}`;
-      const modeString = mode === 'focus' ? 'Focus' : 'Break';
-      document.title = `${timeString} - ${modeString}`;
-    }
-
-    return () => clearInterval(interval);
-  }, [isActive, seconds, minutes, settings, mode]);
-
-  const playClickSound = () => {
+  // Stable click sound callback
+  const playClickSound = useCallback(() => {
     // Create a simple click sound using Web Audio API
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
@@ -184,24 +62,200 @@ const Timer = ({ settings }) => {
 
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.1);
-  };
+  }, []);
 
-  const toggleTimer = () => {
+  // Stable toggle callback using functional update to avoid stale isActive
+  const toggleTimer = useCallback(() => {
     playClickSound();
-    setIsActive(!isActive);
-  };
+    setIsActive(prev => {
+      if (!prev) {
+        // Starting: set end time based on remaining time
+        endAtRef.current = Date.now() + remainingMsRef.current;
+      } else {
+        // Pausing: save remaining time
+        remainingMsRef.current = Math.max(0, endAtRef.current - Date.now());
+        endAtRef.current = null;
+      }
+      return !prev;
+    });
+  }, [playClickSound]);
 
-  const resetTimer = () => {
+  // Stable reset callback using refs to access current mode/settings
+  const resetTimer = useCallback(() => {
     setIsActive(false);
-    setMinutes(getModeMinutes(mode, settings));
+    const mins = getModeMinutes(modeRef.current, settingsRef.current);
+    remainingMsRef.current = mins * 60 * 1000;
+    endAtRef.current = null;
+    setMinutes(mins);
     setSeconds(0);
-  };
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('timer-toggle', toggleTimer);
+    window.addEventListener('timer-reset', resetTimer);
+
+    return () => {
+      window.removeEventListener('timer-toggle', toggleTimer);
+      window.removeEventListener('timer-reset', resetTimer);
+    };
+  }, [toggleTimer, resetTimer]);
+
+  useEffect(() => {
+    // Sync time when settings or mode change IF not active to prevent jumping
+    if (!isActive) {
+      const mins = getModeMinutes(mode, settings);
+      remainingMsRef.current = mins * 60 * 1000;
+      setMinutes(mins);
+      setSeconds(0);
+    }
+  }, [settings, mode]); // isActive excluded to avoid reset during countdown if settings panel is opened
+
+  // Helper to handle timer completion
+  const handleTimerComplete = useCallback(() => {
+    const currentSettings = settingsRef.current;
+    
+    // Play alarm sound with repeat
+    const playAlarm = (times = 1, { fallback } = {}) => {
+      if (times <= 0) return;
+      const resolvedUrl = ALARM_SOUNDS[currentSettings.sound] || ALARM_SOUNDS.bell;
+      const audio = new Audio(resolvedUrl);
+      audio.volume = (currentSettings.alarmVolume || 70) / 100;
+      audio.onended = () => {
+        if (times > 1) {
+          setTimeout(() => playAlarm(times - 1), 200);
+        }
+      };
+      audio.play().catch(e => {
+        const fallbackUrl = fallback || ALARM_SOUNDS.bell;
+        if (fallbackUrl && fallbackUrl !== resolvedUrl) {
+          const retry = new Audio(fallbackUrl);
+          retry.volume = (currentSettings.alarmVolume || 70) / 100;
+          retry.onended = audio.onended;
+          retry.play().catch(err => console.log('Audio play failed', err));
+          return;
+        }
+        console.log('Audio play failed', e);
+      });
+    };
+
+    playAlarm(currentSettings.alarmRepeat || 3);
+
+    // Emit pomodoro completion event
+    if (modeRef.current === 'focus') {
+      window.dispatchEvent(new CustomEvent('pomodoroCompleted', {
+        detail: { duration: currentSettings.focusDuration }
+      }));
+    }
+
+    // Auto start next timer after 1 second
+    setTimeout(() => {
+      const currentMode = modeRef.current;
+      const latestSettings = settingsRef.current;
+      
+      if (currentMode === 'focus') {
+        setPomodorosCompleted(prev => {
+          const newCompleted = prev + 1;
+          const nextMode = newCompleted % 4 === 0 ? 'longBreak' : 'shortBreak';
+          const nextMins = getModeMinutes(nextMode, latestSettings);
+          
+          setMode(nextMode);
+          remainingMsRef.current = nextMins * 60 * 1000;
+          setMinutes(nextMins);
+          setSeconds(0);
+          
+          if (latestSettings.autoStartBreaks) {
+            endAtRef.current = Date.now() + remainingMsRef.current;
+            setIsActive(true);
+          }
+          
+          return newCompleted;
+        });
+      } else {
+        const nextMins = getModeMinutes('focus', latestSettings);
+        setMode('focus');
+        remainingMsRef.current = nextMins * 60 * 1000;
+        setMinutes(nextMins);
+        setSeconds(0);
+        
+        if (latestSettings.autoStartPomodoros) {
+          endAtRef.current = Date.now() + remainingMsRef.current;
+          setIsActive(true);
+        }
+      }
+    }, 1000);
+  }, []);
+
+  // Track previous second for ticking sound
+  const prevSecondRef = useRef(-1);
+
+  useEffect(() => {
+    if (!isActive) {
+      document.title = 'Pomodoro Focus';
+      prevSecondRef.current = -1;
+      return;
+    }
+
+    const tick = () => {
+      const now = Date.now();
+      const remaining = Math.max(0, endAtRef.current - now);
+      remainingMsRef.current = remaining;
+      
+      const totalSeconds = Math.ceil(remaining / 1000);
+      const displayMinutes = Math.floor(totalSeconds / 60);
+      const displaySeconds = totalSeconds % 60;
+      
+      setMinutes(displayMinutes);
+      setSeconds(displaySeconds);
+      
+      // Update document title
+      const timeString = `${String(displayMinutes).padStart(2, '0')}:${String(displaySeconds).padStart(2, '0')}`;
+      const modeString = modeRef.current === 'focus' ? 'Focus' : 'Break';
+      document.title = `${timeString} - ${modeString}`;
+      
+      // Play ticking sound if enabled (only when second changes)
+      const currentSettings = settingsRef.current;
+      if (displaySeconds !== prevSecondRef.current && remaining > 0) {
+        prevSecondRef.current = displaySeconds;
+        if (currentSettings.tickingSound && currentSettings.tickingSound !== 'none') {
+          const soundUrl = TICKING_SOUNDS[currentSettings.tickingSound];
+          if (soundUrl) {
+            if (!tickingAudioRef.current || tickingAudioRef.current.src !== soundUrl) {
+              tickingAudioRef.current = new Audio(soundUrl);
+            }
+            tickingAudioRef.current.currentTime = 0;
+            tickingAudioRef.current.volume = ((currentSettings.tickingVolume || 50) / 100) * 0.3;
+            tickingAudioRef.current.play().catch(e => console.log('Tick sound failed', e));
+          }
+        }
+      }
+      
+      // Timer completed
+      if (remaining <= 0) {
+        setIsActive(false);
+        endAtRef.current = null;
+        setMinutes(0);
+        setSeconds(0);
+        handleTimerComplete();
+      }
+    };
+
+    // Run immediately, then every 100ms for accuracy
+    tick();
+    const interval = setInterval(tick, 100);
+
+    return () => clearInterval(interval);
+  }, [isActive, handleTimerComplete]);
+
+
 
   const setTimerMode = (newMode) => {
     setMode(newMode);
     setIsActive(false);
+    const mins = getModeMinutes(newMode, settings);
+    remainingMsRef.current = mins * 60 * 1000;
+    endAtRef.current = null;
+    setMinutes(mins);
     setSeconds(0);
-    setMinutes(getModeMinutes(newMode, settings));
   };
 
   return (

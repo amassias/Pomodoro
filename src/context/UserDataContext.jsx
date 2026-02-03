@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../utils/supabase';
 import { readJson, removeKey, scopedKey, storageKeys, writeJson } from '../utils/storage';
+import { getLocalDateKey } from '../utils/dateUtils';
 import { useAuth } from './AuthContext.jsx';
 
 const UserDataContext = createContext(null);
@@ -407,7 +408,7 @@ export const UserDataProvider = ({ children }) => {
       clearSpotifySecretsFromLocalStorage,
 
       getTodayProgress: () => {
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDateKey();
         const sessions = pomodoroHistory[today] || [];
         return sessions.reduce((acc, session) => acc + (session.duration || 0), 0);
       },

@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useUserData } from '../context/UserDataContext.jsx';
 import Achievements from './Achievements';
 import { generateCSV, downloadFile } from '../utils/exportUtils';
+import { getLocalDateKey, parseLocalDateKey } from '../utils/dateUtils';
 
 const Report = ({ onPomodoroComplete }) => {
   const [showReport, setShowReport] = useState(false);
@@ -207,12 +208,12 @@ const Report = ({ onPomodoroComplete }) => {
   const handlePomodoroComplete = (event) => {
     const { duration } = event.detail;
     savePomodoroData(duration);
-    loadStats();
+    // loadStats is called automatically via useEffect([pomodoroHistory])
   };
 
   // No longer rely on stable `pomodoroHistory` in this closure.
   const savePomodoroData = (durationMinutes) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateKey();
 
     setPomodoroHistory(prevHistory => {
       const history = prevHistory && typeof prevHistory === 'object' ? { ...prevHistory } : {};
@@ -246,19 +247,19 @@ const Report = ({ onPomodoroComplete }) => {
       totalMinutes += dayMinutes;
       totalPomodoros += sessions.length;
 
-      // Weekly data
-      const dateObj = new Date(date);
+      // Weekly data - parse as local date
+      const dateObj = parseLocalDateKey(date);
       const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
       const dayNum = dateObj.getDate();
       weeklyData[`${dayName} ${dayNum}`] = dayMinutes / 60;
     });
 
-    // Calculate streak
+    // Calculate streak using local dates
     const today = new Date();
     for (let i = 0; i < 100; i++) {
       const checkDate = new Date(today);
       checkDate.setDate(checkDate.getDate() - i);
-      const dateStr = checkDate.toISOString().split('T')[0];
+      const dateStr = getLocalDateKey(checkDate);
 
       if (history[dateStr]) {
         currentStreak++;
@@ -307,7 +308,7 @@ const Report = ({ onPomodoroComplete }) => {
       for (let i = 0; i < 7; i++) {
         const date = new Date(monday);
         date.setDate(monday.getDate() + i);
-        const dateStr = date.toISOString().split('T')[0];
+        const dateStr = getLocalDateKey(date);
         const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
         const dayNum = date.getDate();
         data[dateStr] = {
@@ -323,7 +324,7 @@ const Report = ({ onPomodoroComplete }) => {
       for (let daysAgo = 0; daysAgo < 28; daysAgo++) {
         const d = new Date(today);
         d.setDate(d.getDate() - daysAgo);
-        const dateStr = d.toISOString().split('T')[0];
+        const dateStr = getLocalDateKey(d);
         const bucketIndex = Math.floor((27 - daysAgo) / 7); // 0=oldest, 3=newest
         buckets[bucketIndex] += dailyHours[dateStr] || 0;
       }
@@ -332,7 +333,7 @@ const Report = ({ onPomodoroComplete }) => {
         const startDaysAgo = 27 - i * 7;
         const start = new Date(today);
         start.setDate(start.getDate() - startDaysAgo);
-        const key = start.toISOString().split('T')[0];
+        const key = getLocalDateKey(start);
         const monthLabel = start.toLocaleDateString('en-US', { month: 'short' });
         const dayLabel = start.getDate();
 
@@ -600,7 +601,7 @@ const Report = ({ onPomodoroComplete }) => {
             <div className="report-actions">
               <button className="export-btn" onClick={() => {
                 const csv = generateCSV(pomodoroHistory);
-                const dateStr = new Date().toISOString().split('T')[0];
+                const dateStr = getLocalDateKey();
                 downloadFile(csv, `pomodoro_history_${dateStr}.csv`, 'text/csv');
               }}>
                 Export CSV
