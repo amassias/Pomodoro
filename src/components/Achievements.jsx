@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ACHIEVEMENTS, getUnlockedAchievements } from '../utils/achievements';
+import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, getUnlockedAchievements, getAchievementsByCategory } from '../utils/achievements';
 
 const Achievements = ({ history }) => {
     const unlocked = useMemo(() => {
@@ -7,29 +7,53 @@ const Achievements = ({ history }) => {
         return new Set(unlockedList.map(a => a.id));
     }, [history]);
 
+    const unlockedCount = unlocked.size;
+    const totalCount = ACHIEVEMENTS.length;
+
     return (
         <div className="achievements-container">
-            <h3>Achievements</h3>
-            <div className="achievements-grid">
-                {ACHIEVEMENTS.map(achievement => {
-                    const isUnlocked = unlocked.has(achievement.id);
-                    return (
-                        <div
-                            key={achievement.id}
-                            className={`achievement-card ${isUnlocked ? 'unlocked' : 'locked'}`}
-                            title={isUnlocked ? 'Unlocked!' : 'Locked'}
-                        >
-                            <div className="achievement-icon">
-                                {isUnlocked ? achievement.icon : '🔒'}
-                            </div>
-                            <div className="achievement-details">
-                                <div className="achievement-title">{achievement.title}</div>
-                                <div className="achievement-desc">{achievement.description}</div>
-                            </div>
-                        </div>
-                    );
-                })}
+            <div className="achievements-header">
+                <h3>Achievements</h3>
+                <span className="achievements-progress">
+                    {unlockedCount}/{totalCount} unlocked
+                </span>
             </div>
+
+            {ACHIEVEMENT_CATEGORIES.map(category => {
+                const categoryAchievements = getAchievementsByCategory(category.id);
+                const categoryUnlocked = categoryAchievements.filter(a => unlocked.has(a.id)).length;
+
+                return (
+                    <div key={category.id} className="achievement-category">
+                        <div className="category-header">
+                            <span className="category-title">{category.title}</span>
+                            <span className="category-progress">
+                                {categoryUnlocked}/{categoryAchievements.length}
+                            </span>
+                        </div>
+                        <div className="achievements-grid">
+                            {categoryAchievements.map(achievement => {
+                                const isUnlocked = unlocked.has(achievement.id);
+                                return (
+                                    <div
+                                        key={achievement.id}
+                                        className={`achievement-card ${isUnlocked ? 'unlocked' : 'locked'}`}
+                                        title={isUnlocked ? 'Unlocked!' : 'Locked'}
+                                    >
+                                        <div className="achievement-icon">
+                                            {isUnlocked ? achievement.icon : '🔒'}
+                                        </div>
+                                        <div className="achievement-details">
+                                            <div className="achievement-title">{achievement.title}</div>
+                                            <div className="achievement-desc">{achievement.description}</div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                );
+            })}
 
             <style jsx>{`
         .achievements-container {
@@ -37,26 +61,65 @@ const Achievements = ({ history }) => {
           width: 100%;
         }
 
-        .achievements-container h3 {
-          margin-bottom: 1rem;
+        .achievements-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 1.5rem;
+        }
+
+        .achievements-header h3 {
+          margin: 0;
           font-weight: 500;
           color: rgba(255, 255, 255, 0.9);
         }
 
+        .achievements-progress {
+          font-size: 0.85rem;
+          color: rgba(255, 255, 255, 0.6);
+          background: rgba(255, 255, 255, 0.1);
+          padding: 0.3rem 0.8rem;
+          border-radius: 20px;
+        }
+
+        .achievement-category {
+          margin-bottom: 1.5rem;
+        }
+
+        .category-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 0.75rem;
+          padding-bottom: 0.5rem;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .category-title {
+          font-size: 0.95rem;
+          font-weight: 500;
+          color: rgba(255, 255, 255, 0.85);
+        }
+
+        .category-progress {
+          font-size: 0.75rem;
+          color: rgba(255, 255, 255, 0.5);
+        }
+
         .achievements-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-          gap: 1rem;
+          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+          gap: 0.75rem;
         }
 
         .achievement-card {
           display: flex;
           align-items: center;
-          gap: 1rem;
-          padding: 1rem;
+          gap: 0.75rem;
+          padding: 0.75rem;
           background: rgba(255, 255, 255, 0.05);
           border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 12px;
+          border-radius: 10px;
           transition: all 0.3s ease;
         }
 
@@ -72,27 +135,29 @@ const Achievements = ({ history }) => {
         }
 
         .achievement-icon {
-          font-size: 2rem;
+          font-size: 1.5rem;
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 48px;
-          height: 48px;
+          width: 40px;
+          height: 40px;
+          flex-shrink: 0;
         }
 
         .achievement-details {
           flex: 1;
+          min-width: 0;
         }
 
         .achievement-title {
           font-weight: 600;
-          font-size: 0.95rem;
-          margin-bottom: 0.2rem;
+          font-size: 0.85rem;
+          margin-bottom: 0.15rem;
           color: rgba(255, 255, 255, 0.95);
         }
 
         .achievement-desc {
-          font-size: 0.8rem;
+          font-size: 0.7rem;
           color: rgba(255, 255, 255, 0.6);
           line-height: 1.3;
         }
