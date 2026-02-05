@@ -1,7 +1,7 @@
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-const ToastContext = createContext(null);
+export const ToastContext = createContext(null);
 
 let toastId = 0;
 
@@ -160,8 +160,4 @@ export const ToastProvider = ({ children }) => {
   );
 };
 
-export const useToast = () => {
-  const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error('useToast must be used within ToastProvider');
-  return ctx;
-};
+

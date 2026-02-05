@@ -73,7 +73,7 @@ const Timer = ({ settings }) => {
 
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.1);
-    } catch (e) {
+    } catch {
       // Silently fail — click sound is non-critical
     }
   }, []);

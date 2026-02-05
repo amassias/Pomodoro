@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { getUnlockedAchievements } from '../../lib/achievements';
-import { useToast } from '../../shared/ui/Toast.jsx';
+import { useToast } from '../../shared/ui/useToast.js';
 import { useUserData } from '../../providers/UserDataProvider.jsx';
 
 /**

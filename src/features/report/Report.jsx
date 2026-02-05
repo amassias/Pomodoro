@@ -82,7 +82,7 @@ const Report = () => {
     });
 
     const today = new Date();
-    let streakStarted = false;
+    let _streakStarted = false;
     for (let i = 0; i < 100; i++) {
       const checkDate = new Date(today);
       checkDate.setDate(checkDate.getDate() - i);
@@ -90,7 +90,7 @@ const Report = () => {
 
       if (history[dateStr]) {
         currentStreak++;
-        streakStarted = true;
+        _streakStarted = true;
       } else if (i === 0) {
         // Today has no sessions yet — check if yesterday continues a streak
         continue;
