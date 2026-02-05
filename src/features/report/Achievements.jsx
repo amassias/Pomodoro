@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, getUnlockedAchievements, getAchievementsByCategory } from '../utils/achievements';
+import { ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, getUnlockedAchievements, getAchievementsByCategory } from '../../lib/achievements';
 
 const Achievements = ({ history }) => {
     const unlocked = useMemo(() => {

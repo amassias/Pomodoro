@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { clearPkceValues, exchangeCodeForToken, getRedirectUri, loadPkceValues } from '../utils/spotify';
+import { clearPkceValues, exchangeCodeForToken, getRedirectUri, loadPkceValues } from '../../lib/spotify';
 
 const postBack = (payload) => {
     if (window.opener) {

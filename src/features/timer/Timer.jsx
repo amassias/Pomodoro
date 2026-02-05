@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ALARM_SOUNDS, TICKING_SOUNDS } from '../utils/sounds';
+import { ALARM_SOUNDS, TICKING_SOUNDS } from '../../lib/sounds';
 
 const DEFAULT_DURATIONS = {
   focus: 25,

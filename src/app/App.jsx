@@ -1,20 +1,21 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { Analytics } from '@vercel/analytics/react';
-import BackgroundVideo from './components/BackgroundVideo';
-import Timer from './components/Timer';
-import CitySelector from './components/CitySelector';
-import TaskList from './components/TaskList';
-import LofiPlayer from './components/LofiPlayer';
-import SpotifyPlayer from './components/SpotifyPlayer';
-import Report from './components/Report';
-import SettingsModal from './components/SettingsModal';
-import FeedbackModal from './components/FeedbackModal';
-import DailyProgress from './components/DailyProgress';
-import WelcomeModal from './components/WelcomeModal';
-import OnboardingTour from './components/OnboardingTour';
-import { getMe, isTokenExpired, refreshAccessToken } from './utils/spotify';
-import { useUserData } from './context/UserDataContext.jsx';
-import { markBadYoutubeVideoId, readBadYoutubeVideoIds, scopedKey, storageKeys, hasCompletedOnboarding, setOnboardingCompleted } from './utils/storage.js';
+import BackgroundVideo from '../features/location/BackgroundVideo';
+import Timer from '../features/timer/Timer';
+import CitySelector from '../features/location/CitySelector';
+import TaskList from '../features/tasks/TaskList';
+import DailyProgress from '../features/location/DailyProgress';
+import { getMe, isTokenExpired, refreshAccessToken } from '../lib/spotify';
+import { useUserData } from '../providers/UserDataProvider.jsx';
+import { markBadYoutubeVideoId, readBadYoutubeVideoIds, scopedKey, storageKeys, hasCompletedOnboarding, setOnboardingCompleted } from '../lib/storage.js';
+
+const LofiPlayer = lazy(() => import('../features/audio/LofiPlayer'));
+const SpotifyPlayer = lazy(() => import('../features/audio/SpotifyPlayer'));
+const Report = lazy(() => import('../features/report/Report'));
+const SettingsModal = lazy(() => import('../features/settings/SettingsModal'));
+const FeedbackModal = lazy(() => import('../features/feedback/FeedbackModal'));
+const WelcomeModal = lazy(() => import('../features/onboarding/WelcomeModal'));
+const OnboardingTour = lazy(() => import('../features/onboarding/OnboardingTour'));
 
 const CITIES = {
   // Urban Night
@@ -501,7 +502,9 @@ function App() {
         />
       </div>
 
-      <Report />
+      <Suspense fallback={null}>
+        <Report />
+      </Suspense>
       <button
         className="settings-btn"
         onClick={() => setShowSettings(true)}
@@ -520,42 +523,52 @@ function App() {
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><line x1="9" y1="9" x2="15" y2="9"></line><line x1="9" y1="13" x2="15" y2="13"></line></svg>
       </button>
 
-      {settings.musicProvider === 'spotify' ? (
-        <SpotifyPlayer
-          token={settings.spotifyToken}
-          isPremium={spotifyProduct === 'premium'}
-          playing={false}
-          uri={settings.spotifySelectedPlaylistUri}
-        />
-      ) : (
-        <LofiPlayer />
-      )}
+      <Suspense fallback={null}>
+        {settings.musicProvider === 'spotify' ? (
+          <SpotifyPlayer
+            token={settings.spotifyToken}
+            isPremium={spotifyProduct === 'premium'}
+            playing={false}
+            uri={settings.spotifySelectedPlaylistUri}
+          />
+        ) : (
+          <LofiPlayer />
+        )}
+      </Suspense>
 
       {showSettings && (
-        <SettingsModal
-          settings={settings}
-          updateSettings={setSettings}
-          onClose={() => setShowSettings(false)}
-          onRestartTour={handleRestartTour}
-        />
+        <Suspense fallback={null}>
+          <SettingsModal
+            settings={settings}
+            updateSettings={setSettings}
+            onClose={() => setShowSettings(false)}
+            onRestartTour={handleRestartTour}
+          />
+        </Suspense>
       )}
 
-      <FeedbackModal
-        open={showFeedbackModal}
-        onClose={() => setShowFeedbackModal(false)}
-        currentStreamId={currentCity?.id}
-        currentStreamName={currentCity?.name}
-      />
+      <Suspense fallback={null}>
+        <FeedbackModal
+          open={showFeedbackModal}
+          onClose={() => setShowFeedbackModal(false)}
+          currentStreamId={currentCity?.id}
+          currentStreamName={currentCity?.name}
+        />
+      </Suspense>
 
       {showWelcome && (
-        <WelcomeModal 
-          onStartTour={handleStartTour} 
-          onSkip={handleSkipOnboarding} 
-        />
+        <Suspense fallback={null}>
+          <WelcomeModal
+            onStartTour={handleStartTour}
+            onSkip={handleSkipOnboarding}
+          />
+        </Suspense>
       )}
 
       {showTour && (
-        <OnboardingTour onComplete={handleTourComplete} />
+        <Suspense fallback={null}>
+          <OnboardingTour onComplete={handleTourComplete} />
+        </Suspense>
       )}
 
       <style jsx>{`

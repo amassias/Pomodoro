@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { ALARM_SOUNDS, TICKING_SOUNDS } from '../utils/sounds';
-import { fetchUserPlaylists, getLoginUrl, getRedirectUri } from '../utils/spotify';
+import { ALARM_SOUNDS, TICKING_SOUNDS } from '../../lib/sounds';
+import { fetchUserPlaylists, getLoginUrl, getRedirectUri } from '../../lib/spotify';
 
 const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => {
     const modalContentRef = useRef(null);

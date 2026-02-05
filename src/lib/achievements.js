@@ -1,4 +1,4 @@
-import { daysBetween } from './dateUtils';
+import { daysBetween } from './date';
 
 // Helper function to calculate max streak from history
 const calculateMaxStreak = (history) => {

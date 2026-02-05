@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useUserData } from '../context/UserDataContext.jsx';
+import { useUserData } from '../../providers/UserDataProvider.jsx';
 
 // Extract YouTube video ID from various URL formats
 const extractYouTubeId = (input) => {

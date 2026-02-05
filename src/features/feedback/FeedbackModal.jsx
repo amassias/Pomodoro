@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { supabase } from '../utils/supabase';
+import { supabase } from '../../lib/supabase';
 
 const FeedbackModal = ({ open, onClose, currentStreamId, currentStreamName }) => {
   const [feedbackType, setFeedbackType] = useState('stream_bug');

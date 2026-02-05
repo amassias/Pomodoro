@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { daysBetween, getLocalDateKey, parseLocalDateKey } from './dateUtils';
+import { daysBetween, getLocalDateKey, parseLocalDateKey } from './date';
 
 describe('dateUtils', () => {
   it('formats local date keys as YYYY-MM-DD', () => {

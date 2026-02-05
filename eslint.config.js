@@ -27,7 +27,7 @@ export default defineConfig([
     },
   },
   {
-    files: ['src/context/**/*.jsx'],
+    files: ['src/providers/**/*.jsx'],
     rules: {
       'react-refresh/only-export-components': 'off',
     },

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import lofiGirlImg from '../assets/lofi-girl.jpg';
+import lofiGirlImg from '../../assets/lofi-girl.jpg';
 
 const LofiPlayer = () => {
   const [isPlaying, setIsPlaying] = useState(false);

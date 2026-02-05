@@ -1,5 +1,5 @@
 import React from 'react';
-import { useUserData } from '../context/UserDataContext';
+import { useUserData } from '../../providers/UserDataProvider';
 
 const DailyProgress = () => {
     const { settings, getTodayProgress } = useUserData();

@@ -1,8 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { supabase } from '../utils/supabase';
-import { readJson, removeKey, scopedKey, storageKeys, writeJson } from '../utils/storage';
-import { getLocalDateKey } from '../utils/dateUtils';
-import { useAuth } from './AuthContext.jsx';
+import { supabase } from '../lib/supabase';
+import { readJson, removeKey, scopedKey, storageKeys, writeJson } from '../lib/storage';
+import { getLocalDateKey } from '../lib/date';
+import { useAuth } from './AuthProvider.jsx';
 
 const UserDataContext = createContext(null);
 

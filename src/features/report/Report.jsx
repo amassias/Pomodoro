@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useAuth } from '../context/AuthContext.jsx';
-import { useUserData } from '../context/UserDataContext.jsx';
+import { useAuth } from '../../providers/AuthProvider.jsx';
+import { useUserData } from '../../providers/UserDataProvider.jsx';
 import Achievements from './Achievements';
-import { generateCSV, downloadFile } from '../utils/exportUtils';
-import { getLocalDateKey, parseLocalDateKey } from '../utils/dateUtils';
+import { generateCSV, downloadFile } from '../../lib/export';
+import { getLocalDateKey, parseLocalDateKey } from '../../lib/date';
 
 const Report = () => {
   const [showReport, setShowReport] = useState(false);
