@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { supabase } from '../utils/supabase';
 
 const FeedbackModal = ({ open, onClose, currentStreamId, currentStreamName }) => {
@@ -21,10 +21,24 @@ const FeedbackModal = ({ open, onClose, currentStreamId, currentStreamName }) =>
   const [otherTopic, setOtherTopic] = useState('');
   const [otherMessage, setOtherMessage] = useState('');
 
-  const handleClose = () => {
+  const resetForm = useCallback(() => {
+    setFeedbackType('stream_bug');
+    setProblemType('');
+    setSinceWhen('');
+    setBugMessage('');
+    setYoutubeLinks('');
+    setAmbience('');
+    setCity('');
+    setSuggestionMessage('');
+    setOtherTopic('');
+    setOtherMessage('');
+    setSubmitError(null);
+  }, []);
+
+  const handleClose = useCallback(() => {
     resetForm();
     onClose();
-  };
+  }, [onClose, resetForm]);
 
   React.useEffect(() => {
     const handleEscape = (e) => {
@@ -37,21 +51,7 @@ const FeedbackModal = ({ open, onClose, currentStreamId, currentStreamName }) =>
       window.addEventListener('keydown', handleEscape);
       return () => window.removeEventListener('keydown', handleEscape);
     }
-  }, [open]);
-
-  const resetForm = () => {
-    setFeedbackType('stream_bug');
-    setProblemType('');
-    setSinceWhen('');
-    setBugMessage('');
-    setYoutubeLinks('');
-    setAmbience('');
-    setCity('');
-    setSuggestionMessage('');
-    setOtherTopic('');
-    setOtherMessage('');
-    setSubmitError(null);
-  };
+  }, [open, handleClose]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

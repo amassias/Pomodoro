@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useUserData } from '../context/UserDataContext.jsx';
 
@@ -9,12 +9,12 @@ const TaskList = () => {
     const [animatingTaskId, setAnimatingTaskId] = useState(null);
     const [selectedArchivedIds, setSelectedArchivedIds] = useState(() => new Set());
 
-    const closeArchive = () => {
+    const closeArchive = useCallback(() => {
         setShowArchive(false);
         if (selectedArchivedIds.size > 0) {
             setSelectedArchivedIds(new Set());
         }
-    };
+    }, [selectedArchivedIds.size]);
 
     useEffect(() => {
         const handleEsc = (e) => {
@@ -24,7 +24,7 @@ const TaskList = () => {
         };
         window.addEventListener('keydown', handleEsc);
         return () => window.removeEventListener('keydown', handleEsc);
-    }, [showArchive]);
+    }, [showArchive, closeArchive]);
 
     const toggleArchive = () => {
         setShowArchive(prev => {
@@ -77,7 +77,8 @@ const TaskList = () => {
         setArchivedTasks(prev => {
             const task = prev.find(t => t.id === id);
             if (task) {
-                const { archivedAt: _archivedAt, ...restoredTask } = task;
+                const restoredTask = { ...task };
+                delete restoredTask.archivedAt;
                 setTasks(prevTasks => [...prevTasks, { ...restoredTask, completed: false }]);
                 closeArchive();
                 return prev.filter(t => t.id !== id);
@@ -123,7 +124,11 @@ const TaskList = () => {
 
         const toRestore = archivedTasks
             .filter(t => ids.includes(t.id))
-            .map(({ archivedAt: _archivedAt, ...restoredTask }) => ({ ...restoredTask, completed: false }));
+            .map((task) => {
+                const restoredTask = { ...task };
+                delete restoredTask.archivedAt;
+                return { ...restoredTask, completed: false };
+            });
 
         setArchivedTasks(prev => prev.filter(t => !ids.includes(t.id)));
         setTasks(prev => [...prev, ...toRestore]);

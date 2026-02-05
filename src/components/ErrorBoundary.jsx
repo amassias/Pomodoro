@@ -11,7 +11,6 @@ export default class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    // eslint-disable-next-line no-console
     console.error('Unhandled UI error:', error, errorInfo);
   }
 

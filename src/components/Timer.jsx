@@ -25,7 +25,7 @@ const Timer = ({ settings }) => {
   const [seconds, setSeconds] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [mode, setMode] = useState('focus'); // focus, shortBreak, longBreak
-  const [pomodorosCompleted, setPomodorosCompleted] = useState(0);
+  const pomodorosCompletedRef = useRef(0);
 
   const tickingAudioRef = useRef(null);
   const modeRef = useRef(mode);
@@ -102,13 +102,17 @@ const Timer = ({ settings }) => {
 
   useEffect(() => {
     // Sync time when settings or mode change IF not active to prevent jumping
-    if (!isActive) {
-      const mins = getModeMinutes(mode, settings);
-      remainingMsRef.current = mins * 60 * 1000;
+    if (isActive) return;
+    const mins = getModeMinutes(mode, settings);
+    remainingMsRef.current = mins * 60 * 1000;
+
+    const timeoutId = setTimeout(() => {
       setMinutes(mins);
       setSeconds(0);
-    }
-  }, [settings, mode]); // isActive excluded to avoid reset during countdown if settings panel is opened
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [settings, mode, isActive]);
 
   // Helper to handle timer completion
   const handleTimerComplete = useCallback(() => {
@@ -153,23 +157,19 @@ const Timer = ({ settings }) => {
       const latestSettings = settingsRef.current;
       
       if (currentMode === 'focus') {
-        setPomodorosCompleted(prev => {
-          const newCompleted = prev + 1;
-          const nextMode = newCompleted % 4 === 0 ? 'longBreak' : 'shortBreak';
-          const nextMins = getModeMinutes(nextMode, latestSettings);
-          
-          setMode(nextMode);
-          remainingMsRef.current = nextMins * 60 * 1000;
-          setMinutes(nextMins);
-          setSeconds(0);
-          
-          if (latestSettings.autoStartBreaks) {
-            endAtRef.current = Date.now() + remainingMsRef.current;
-            setIsActive(true);
-          }
-          
-          return newCompleted;
-        });
+        pomodorosCompletedRef.current += 1;
+        const nextMode = pomodorosCompletedRef.current % 4 === 0 ? 'longBreak' : 'shortBreak';
+        const nextMins = getModeMinutes(nextMode, latestSettings);
+
+        setMode(nextMode);
+        remainingMsRef.current = nextMins * 60 * 1000;
+        setMinutes(nextMins);
+        setSeconds(0);
+
+        if (latestSettings.autoStartBreaks) {
+          endAtRef.current = Date.now() + remainingMsRef.current;
+          setIsActive(true);
+        }
       } else {
         const nextMins = getModeMinutes('focus', latestSettings);
         setMode('focus');

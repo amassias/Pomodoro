@@ -1,11 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useUserData } from '../context/UserDataContext.jsx';
 import Achievements from './Achievements';
 import { generateCSV, downloadFile } from '../utils/exportUtils';
 import { getLocalDateKey, parseLocalDateKey } from '../utils/dateUtils';
 
-const Report = ({ onPomodoroComplete }) => {
+const Report = () => {
   const [showReport, setShowReport] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [authEmail, setAuthEmail] = useState('');
@@ -27,81 +27,89 @@ const Report = ({ onPomodoroComplete }) => {
   const [timeRange, setTimeRange] = useState('week'); // week, month, year
   const [selectedDay, setSelectedDay] = useState(null);
 
-  // Load stats when underlying data changes
+  const savePomodoroData = useCallback((durationMinutes) => {
+    const today = getLocalDateKey();
+
+    setPomodoroHistory((prevHistory) => {
+      const history = prevHistory && typeof prevHistory === 'object' ? { ...prevHistory } : {};
+
+      if (!history[today]) {
+        history[today] = [];
+      }
+
+      history[today].push({
+        duration: durationMinutes,
+        timestamp: new Date().toISOString(),
+        completed: true
+      });
+
+      return history;
+    });
+  }, [setPomodoroHistory]);
+
+  const handlePomodoroComplete = useCallback((event) => {
+    const duration = event?.detail?.duration;
+    if (!duration) return;
+    savePomodoroData(duration);
+  }, [savePomodoroData]);
+
+  const loadStats = useCallback(() => {
+    const history = pomodoroHistory && typeof pomodoroHistory === 'object' ? pomodoroHistory : {};
+    const tasks = Array.isArray(archivedTasks) ? archivedTasks : [];
+
+    let totalMinutes = 0;
+    let totalPomodoros = 0;
+    const weeklyData = {};
+    let currentStreak = 0;
+
+    Object.entries(history).forEach(([date, sessions]) => {
+      const dayMinutes = sessions.reduce((sum, s) => sum + (s.duration || 25), 0);
+      totalMinutes += dayMinutes;
+      totalPomodoros += sessions.length;
+
+      const dateObj = parseLocalDateKey(date);
+      const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+      const dayNum = dateObj.getDate();
+      weeklyData[`${dayName} ${dayNum}`] = dayMinutes / 60;
+    });
+
+    const today = new Date();
+    for (let i = 0; i < 100; i++) {
+      const checkDate = new Date(today);
+      checkDate.setDate(checkDate.getDate() - i);
+      const dateStr = getLocalDateKey(checkDate);
+
+      if (history[dateStr]) {
+        currentStreak++;
+      } else if (i > 0) {
+        break;
+      }
+    }
+
+    setStats({
+      totalHours: (totalMinutes / 60).toFixed(1),
+      pomodorosCompleted: totalPomodoros,
+      currentStreak,
+      weeklyData,
+      archivedTasks: tasks
+    });
+  }, [archivedTasks, pomodoroHistory]);
+
   useEffect(() => {
     loadStats();
-  }, [pomodoroHistory, archivedTasks]);
+  }, [loadStats]);
 
-  // Listen for pomodoro completions
-  // Listen for pomodoro completions
   useEffect(() => {
-    const handleEvent = (e) => handlePomodoroComplete(e);
-    window.addEventListener('pomodoroCompleted', handleEvent);
-    return () => window.removeEventListener('pomodoroCompleted', handleEvent);
-  }, []); // Functional update in savePomodoroData removes need for history dependency 
-  // Actually handlePomodoroComplete calls savePomodoroData which reads pomodoroHistory from state.
-  // Ideally savePomodoroData should use functional state update or we include dependencies.
-  // looking at savePomodoroData:
-  // const history = pomodoroHistory ...
-  // setPomodoroHistory(history);
-  // It uses the state value from closure. So yes, we need dependencies or better, use functional update.
-  // Let's look at savePomodoroData implementation in the file view from step 71.
-
-  /*
-  const savePomodoroData = (durationMinutes) => {
-    const today = new Date().toISOString().split('T')[0];
-    const history = pomodoroHistory && typeof pomodoroHistory === 'object' ? { ...pomodoroHistory } : {};
-    ...
-    setPomodoroHistory(history);
-  };
-  */
-  // It uses `pomodoroHistory` directly. So `handlePomodoroComplete` is stale if `pomodoroHistory` changes.
-  // And `useEffect` needs to re-run.
-  // BUT `savePomodoroData` isn't using functional update `setPomodoroHistory(prev => ...)` which would be safer.
-  // The current implementation of `savePomodoroData` (lines 155-170) reads `pomodoroHistory` from the scope.
-  // So `handlePomodoroComplete` needs to be recreated or the effect needs to run when `pomodoroHistory` changes.
-
-  // However, I should probably refactor `savePomodoroData` to use functional update to be safe, 
-  // OR just add `pomodoroHistory` to the dependency array of the effect I'm fixing.
-  // The original code was:
-  /*
-  useEffect(() => {
-    if (onPomodoroComplete) {
-      window.addEventListener('pomodoroCompleted', handlePomodoroComplete);
-      return () => window.removeEventListener('pomodoroCompleted', handlePomodoroComplete);
-    }
-  }, []);
-  */
-  // It had an empty dependency array! This means `handlePomodoroComplete` (and `savePomodoroData` inside it) 
-  // was closing over the INITIAL `pomodoroHistory` (probably empty). 
-  // So subsequent saves would overwrite previous ones if `pomodoroHistory` wasn't fresh!
-  // This is a SECOND bug.
-  // I should fix both.
-
-  // Wait, `handlePomodoroComplete` calls `savePomodoroData`. 
-  // `savePomodoroData` is defined in the component body.
-  // If I don't use functional updates, I must include it in dependencies.
-
-  // Let's use functional update in `savePomodoroData` if possible? 
-  // No, `savePomodoroData` is 15 lines of code. 
-  // I'll stick to replacing the useEffect and simple fix for now, but strictly speaking 
-  // I should ensure it has access to the latest state.
-
-  // If I change the dependency array to `[pomodoroHistory]`, the event listener is removed and re-added on every history change.
-  // That's fine.
-
-  // Let's look at `handlePomodoroComplete` (line 149) -> `savePomodoroData` (line 155).
-  // I will just modify the useEffect to match the plan: remove the `if` check.
-  // AND I will add `pomodoroHistory` to the dependency array to fix the stale closure bug as well, 
-  // because otherwise it will definitely lose data.
-
+    window.addEventListener('pomodoroCompleted', handlePomodoroComplete);
+    return () => window.removeEventListener('pomodoroCompleted', handlePomodoroComplete);
+  }, [handlePomodoroComplete]);
 
   useEffect(() => {
     if (showReport) {
       loadStats();
       setSelectedDay(null);
     }
-  }, [showReport]);
+  }, [showReport, loadStats]);
 
   useEffect(() => {
     const handleEsc = (e) => {
@@ -203,78 +211,6 @@ const Report = ({ onPomodoroComplete }) => {
     } finally {
       setAuthBusy(false);
     }
-  };
-
-  const handlePomodoroComplete = (event) => {
-    const { duration } = event.detail;
-    savePomodoroData(duration);
-    // loadStats is called automatically via useEffect([pomodoroHistory])
-  };
-
-  // No longer rely on stable `pomodoroHistory` in this closure.
-  const savePomodoroData = (durationMinutes) => {
-    const today = getLocalDateKey();
-
-    setPomodoroHistory(prevHistory => {
-      const history = prevHistory && typeof prevHistory === 'object' ? { ...prevHistory } : {};
-
-      if (!history[today]) {
-        history[today] = [];
-      }
-
-      history[today].push({
-        duration: durationMinutes,
-        timestamp: new Date().toISOString(),
-        completed: true
-      });
-
-      return history;
-    });
-  };
-
-  const loadStats = () => {
-    const history = pomodoroHistory && typeof pomodoroHistory === 'object' ? pomodoroHistory : {};
-    const tasks = Array.isArray(archivedTasks) ? archivedTasks : [];
-
-    let totalMinutes = 0;
-    let totalPomodoros = 0;
-    let weeklyData = {};
-    let currentStreak = 0;
-
-    // Calculate totals
-    Object.entries(history).forEach(([date, sessions]) => {
-      const dayMinutes = sessions.reduce((sum, s) => sum + (s.duration || 25), 0);
-      totalMinutes += dayMinutes;
-      totalPomodoros += sessions.length;
-
-      // Weekly data - parse as local date
-      const dateObj = parseLocalDateKey(date);
-      const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
-      const dayNum = dateObj.getDate();
-      weeklyData[`${dayName} ${dayNum}`] = dayMinutes / 60;
-    });
-
-    // Calculate streak using local dates
-    const today = new Date();
-    for (let i = 0; i < 100; i++) {
-      const checkDate = new Date(today);
-      checkDate.setDate(checkDate.getDate() - i);
-      const dateStr = getLocalDateKey(checkDate);
-
-      if (history[dateStr]) {
-        currentStreak++;
-      } else if (i > 0) {
-        break;
-      }
-    }
-
-    setStats({
-      totalHours: (totalMinutes / 60).toFixed(1),
-      pomodorosCompleted: totalPomodoros,
-      currentStreak,
-      weeklyData,
-      archivedTasks: tasks
-    });
   };
 
   useEffect(() => {

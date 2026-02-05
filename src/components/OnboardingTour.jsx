@@ -86,6 +86,7 @@ const OnboardingTour = ({ onComplete }) => {
         }
         break;
       case 'top':
+      {
         // For wide elements (like bottom bar), position tooltip higher with more gap
         const extraPadding = rect.width > window.innerWidth * 0.7 ? 24 : 0;
         top = rect.top - tooltipHeight - padding - extraPadding;
@@ -104,6 +105,7 @@ const OnboardingTour = ({ onComplete }) => {
           top = rect.bottom + padding;
         }
         break;
+      }
       case 'bottom':
       default:
         top = rect.bottom + padding;
@@ -119,7 +121,7 @@ const OnboardingTour = ({ onComplete }) => {
   }, [step, isLastStep, onComplete]);
 
   useEffect(() => {
-    updateTargetPosition();
+    const rafId = requestAnimationFrame(updateTargetPosition);
     
     const handleResize = () => updateTargetPosition();
     const handleScroll = () => updateTargetPosition();
@@ -128,6 +130,7 @@ const OnboardingTour = ({ onComplete }) => {
     window.addEventListener('scroll', handleScroll, true);
     
     return () => {
+      cancelAnimationFrame(rafId);
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleScroll, true);
     };

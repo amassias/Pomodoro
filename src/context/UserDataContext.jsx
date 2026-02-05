@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../utils/supabase';
 import { readJson, removeKey, scopedKey, storageKeys, writeJson } from '../utils/storage';
 import { getLocalDateKey } from '../utils/dateUtils';
@@ -337,7 +337,7 @@ export const UserDataProvider = ({ children }) => {
     };
   }, [userId, loading, tasks, archivedTasks, pomodoroHistory, favoriteCities, city, settings]);
 
-  const persistSpotifySecretsToLocalStorage = ({ token, refreshToken, expiresAt }) => {
+  const persistSpotifySecretsToLocalStorage = useCallback(({ token, refreshToken, expiresAt }) => {
     const tokenKey = scopedKey(userId, storageKeys.spotifyToken);
     const refreshTokenKey = scopedKey(userId, storageKeys.spotifyRefreshToken);
     const expiresAtKey = scopedKey(userId, storageKeys.spotifyExpiresAt);
@@ -345,9 +345,9 @@ export const UserDataProvider = ({ children }) => {
     if (token) localStorage.setItem(tokenKey, token);
     if (refreshToken) localStorage.setItem(refreshTokenKey, refreshToken);
     if (expiresAt) localStorage.setItem(expiresAtKey, String(expiresAt));
-  };
+  }, [userId]);
 
-  const clearSpotifySecretsFromLocalStorage = (id) => {
+  const clearSpotifySecretsFromLocalStorage = useCallback((id) => {
     const tokenKey = scopedKey(id, storageKeys.spotifyToken);
     const refreshTokenKey = scopedKey(id, storageKeys.spotifyRefreshToken);
     const expiresAtKey = scopedKey(id, storageKeys.spotifyExpiresAt);
@@ -355,7 +355,7 @@ export const UserDataProvider = ({ children }) => {
     removeKey(tokenKey);
     removeKey(refreshTokenKey);
     removeKey(expiresAtKey);
-  };
+  }, []);
 
   const value = useMemo(() => {
     return {
@@ -413,7 +413,7 @@ export const UserDataProvider = ({ children }) => {
         return sessions.reduce((acc, session) => acc + (session.duration || 0), 0);
       },
     };
-  }, [loading, userId, tasks, archivedTasks, pomodoroHistory, favoriteCities, customLocations, city, settings]);
+  }, [loading, userId, tasks, archivedTasks, pomodoroHistory, favoriteCities, customLocations, city, settings, persistSpotifySecretsToLocalStorage, clearSpotifySecretsFromLocalStorage]);
 
   return <UserDataContext.Provider value={value}>{children}</UserDataContext.Provider>;
 };

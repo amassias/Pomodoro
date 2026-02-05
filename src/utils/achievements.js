@@ -1,4 +1,4 @@
-import { parseLocalDateKey, daysBetween } from './dateUtils';
+import { daysBetween } from './dateUtils';
 
 // Helper function to calculate max streak from history
 const calculateMaxStreak = (history) => {

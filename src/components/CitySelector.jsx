@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useUserData } from '../context/UserDataContext.jsx';
 
 // Extract YouTube video ID from various URL formats
@@ -25,7 +25,7 @@ const extractYouTubeId = (input) => {
 };
 
 const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error = null, validationFailed = false }) => {
-  const { favoriteCities, toggleFavorite, customLocations, addCustomLocation, removeCustomLocation } = useUserData();
+  const { favoriteCities, toggleFavorite, addCustomLocation, removeCustomLocation } = useUserData();
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [newLocationName, setNewLocationName] = useState('');
@@ -50,14 +50,9 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
   );
 
   const [isExpanded, setIsExpanded] = useState(false);
-
-  // Auto-switch to newly appearing category if current active one disappears (unlikely here but good practice)
-  // Also default to Favorites if available on first load
-  useEffect(() => {
-    if (categories.length > 0 && !categories.includes(activeCategory)) {
-      setActiveCategory(categories[0]);
-    }
-  }, [categories, activeCategory]);
+  const effectiveActiveCategory = categories.includes(activeCategory)
+    ? activeCategory
+    : (categories[0] || '');
 
   const currentCityName = cities?.[currentCity]?.name || 'Select Location';
 
@@ -93,18 +88,18 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
     if (!cities || Object.keys(cities).length === 0) return <div className="status-msg">No locations available</div>;
 
     const visibleCitiesEntry = Object.entries(cities).filter(([key, city]) => {
-      if (activeCategory === 'Favorites') {
+      if (effectiveActiveCategory === 'Favorites') {
         return favoriteCities.includes(key);
       }
-      return city.category === activeCategory;
+      return city.category === effectiveActiveCategory;
     });
 
-    if (visibleCitiesEntry.length === 0 && activeCategory === 'Favorites') {
+    if (visibleCitiesEntry.length === 0 && effectiveActiveCategory === 'Favorites') {
       // This can happen if user un-favorites the last item in the list
       return <div className="status-msg">No favorites yet</div>;
     }
 
-    const isCustomCategory = activeCategory === 'Custom';
+    const isCustomCategory = effectiveActiveCategory === 'Custom';
 
     return (
       <div className="expanded-content">
@@ -117,13 +112,13 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
           {categories.map(cat => (
             <button
               key={cat}
-              className={`cat-btn ${activeCategory === cat ? 'active' : ''}`}
+              className={`cat-btn ${effectiveActiveCategory === cat ? 'active' : ''}`}
               onClick={(e) => {
                 e.stopPropagation();
                 setActiveCategory(cat);
               }}
             >
-              {cat === 'Favorites' ? '❤️ Favorites' : cat === 'Custom' ? '➕ Custom' : cat}
+                  {cat === 'Favorites' ? '❤️ Favorites' : cat === 'Custom' ? '➕ Custom' : cat}
             </button>
           ))}
         </div>

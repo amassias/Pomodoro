@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import lofiGirlImg from '../assets/lofi-girl.jpg';
 
 const LofiPlayer = () => {
@@ -17,7 +17,7 @@ const LofiPlayer = () => {
 
   const audioRef = useRef(new Audio());
 
-  const configureAudioSource = React.useCallback(() => {
+  const configureAudioSource = useCallback(() => {
     const audio = audioRef.current;
     audio.preload = 'auto';
 
@@ -39,30 +39,7 @@ const LofiPlayer = () => {
     };
   };
 
-  const handleMouseMove = (e) => {
-    if (!isDraggingRef.current) return;
-
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
-
-    animationFrameRef.current = requestAnimationFrame(() => {
-      setPosition({
-        x: e.clientX - dragOffsetRef.current.x,
-        y: e.clientY - dragOffsetRef.current.y
-      });
-    });
-  };
-
-  const handleMouseUp = () => {
-    isDraggingRef.current = false;
-    setIsDragging(false);
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
-  };
-
-  React.useEffect(() => {
+  useEffect(() => {
     configureAudioSource();
 
     const warmUp = () => {
@@ -81,12 +58,35 @@ const LofiPlayer = () => {
     };
   }, [configureAudioSource]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const audio = audioRef.current;
     audio.volume = volume / 100;
   }, [volume]);
 
-  React.useEffect(() => {
+  const handleMouseMove = useCallback((e) => {
+    if (!isDraggingRef.current) return;
+
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+
+    animationFrameRef.current = requestAnimationFrame(() => {
+      setPosition({
+        x: e.clientX - dragOffsetRef.current.x,
+        y: e.clientY - dragOffsetRef.current.y
+      });
+    });
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+    isDraggingRef.current = false;
+    setIsDragging(false);
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+  }, []);
+
+  useEffect(() => {
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
     return () => {
@@ -96,18 +96,18 @@ const LofiPlayer = () => {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [position]);
+  }, [handleMouseMove, handleMouseUp]);
 
-  React.useEffect(() => {
+  useEffect(() => {
+    const audio = audioRef.current;
     return () => {
-      const audio = audioRef.current;
       audio.pause();
       audio.src = '';
     };
   }, []);
 
   // Autoplay on first user interaction (browsers block autoplay without interaction)
-  React.useEffect(() => {
+  useEffect(() => {
     const attemptAutoplay = () => {
       const audio = configureAudioSource();
       audio.volume = volume / 100;

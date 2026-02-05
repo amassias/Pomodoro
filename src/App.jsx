@@ -343,7 +343,7 @@ function App() {
       cancelled = true;
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [settings.spotifyRefreshToken, settings.spotifyTokenExpiresAt, settings.spotifyClientId]);
+  }, [settings.spotifyRefreshToken, settings.spotifyTokenExpiresAt, settings.spotifyClientId, persistSpotifyTokens]);
 
   // Detect Spotify subscription level (Premium needed for Web Playback SDK)
   useEffect(() => {
@@ -404,7 +404,7 @@ function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showSettings]);
+  }, [showSettings, setSettings]);
 
   // Exhaustive list of video streams with categories
   const visibleCities = React.useMemo(() => {
@@ -451,7 +451,7 @@ function App() {
     if (fallbackKey && fallbackKey !== city) {
       setCity(fallbackKey);
     }
-  }, [city, isValidatingLocations, setCity, visibleCities]);
+  }, [city, cities, isValidatingLocations, setCity, visibleCities]);
 
   const currentCity = visibleCities[city] || null;
 

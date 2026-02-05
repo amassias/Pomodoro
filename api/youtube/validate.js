@@ -74,7 +74,7 @@ export default async function handler(req, res) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=3600');
 
-    const apiKey = process.env.YOUTUBE_API_KEY;
+    const apiKey = globalThis?.process?.env?.YOUTUBE_API_KEY;
     if (!apiKey) {
       res.statusCode = 500;
       res.end(JSON.stringify({ error: 'Missing YOUTUBE_API_KEY env var' }));
