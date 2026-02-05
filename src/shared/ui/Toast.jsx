@@ -1,7 +1,6 @@
-import React, { createContext, useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-
-export const ToastContext = createContext(null);
+import { ToastContext } from './ToastContext.js';
 
 let toastId = 0;
 
