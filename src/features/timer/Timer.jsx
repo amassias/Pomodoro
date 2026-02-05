@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ALARM_SOUNDS, TICKING_SOUNDS } from '../../lib/sounds';
+import { requestNotificationPermission, showNotification } from '../../lib/notifications';
 
 const DEFAULT_DURATIONS = {
   focus: 25,
@@ -44,29 +45,50 @@ const Timer = ({ settings }) => {
     settingsRef.current = settings;
   }, [settings]);
 
+  // Reuse a single AudioContext to avoid hitting browser limits
+  const audioContextRef = useRef(null);
+
   // Stable click sound callback
   const playClickSound = useCallback(() => {
-    // Create a simple click sound using Web Audio API
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
+    try {
+      if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      const audioContext = audioContextRef.current;
+      // Resume if suspended (e.g. after browser auto-suspend)
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
 
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
 
-    oscillator.frequency.value = 800; // Frequency in Hz
-    oscillator.type = 'sine';
+      oscillator.frequency.value = 800;
+      oscillator.type = 'sine';
 
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
 
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.1);
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.1);
+    } catch (e) {
+      // Silently fail — click sound is non-critical
+    }
   }, []);
+
+  // Request notification permission on first interaction
+  const notifPermissionRequested = useRef(false);
 
   // Stable toggle callback using functional update to avoid stale isActive
   const toggleTimer = useCallback(() => {
     playClickSound();
+    // Ask for notification permission once on first start
+    if (!notifPermissionRequested.current) {
+      notifPermissionRequested.current = true;
+      requestNotificationPermission();
+    }
     setIsActive(prev => {
       if (!prev) {
         // Starting: set end time based on remaining time
@@ -123,7 +145,7 @@ const Timer = ({ settings }) => {
       if (times <= 0) return;
       const resolvedUrl = ALARM_SOUNDS[currentSettings.sound] || ALARM_SOUNDS.bell;
       const audio = new Audio(resolvedUrl);
-      audio.volume = (currentSettings.alarmVolume || 70) / 100;
+      audio.volume = (currentSettings.alarmVolume ?? 70) / 100;
       audio.onended = () => {
         if (times > 1) {
           setTimeout(() => playAlarm(times - 1), 200);
@@ -133,7 +155,7 @@ const Timer = ({ settings }) => {
         const fallbackUrl = fallback || ALARM_SOUNDS.bell;
         if (fallbackUrl && fallbackUrl !== resolvedUrl) {
           const retry = new Audio(fallbackUrl);
-          retry.volume = (currentSettings.alarmVolume || 70) / 100;
+          retry.volume = (currentSettings.alarmVolume ?? 70) / 100;
           retry.onended = audio.onended;
           retry.play().catch(err => console.log('Audio play failed', err));
           return;
@@ -142,7 +164,20 @@ const Timer = ({ settings }) => {
       });
     };
 
-    playAlarm(currentSettings.alarmRepeat || 3);
+    playAlarm(currentSettings.alarmRepeat ?? 3);
+
+    // Browser notification (especially useful when tab is in background)
+    if (modeRef.current === 'focus') {
+      showNotification('Focus session complete! 🎯', {
+        body: 'Great work! Time for a break.',
+        tag: 'pomodoro-timer',
+      });
+    } else {
+      showNotification('Break is over! ⏱️', {
+        body: 'Ready to focus again?',
+        tag: 'pomodoro-timer',
+      });
+    }
 
     // Emit pomodoro completion event
     if (modeRef.current === 'focus') {
@@ -219,11 +254,12 @@ const Timer = ({ settings }) => {
         if (currentSettings.tickingSound && currentSettings.tickingSound !== 'none') {
           const soundUrl = TICKING_SOUNDS[currentSettings.tickingSound];
           if (soundUrl) {
-            if (!tickingAudioRef.current || tickingAudioRef.current.src !== soundUrl) {
+            if (!tickingAudioRef.current || tickingAudioRef.current._soundKey !== currentSettings.tickingSound) {
               tickingAudioRef.current = new Audio(soundUrl);
+              tickingAudioRef.current._soundKey = currentSettings.tickingSound;
             }
             tickingAudioRef.current.currentTime = 0;
-            tickingAudioRef.current.volume = ((currentSettings.tickingVolume || 50) / 100) * 0.3;
+            tickingAudioRef.current.volume = ((currentSettings.tickingVolume ?? 50) / 100) * 0.3;
             tickingAudioRef.current.play().catch(e => console.log('Tick sound failed', e));
           }
         }

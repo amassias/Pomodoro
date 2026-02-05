@@ -110,6 +110,7 @@ const FeedbackModal = ({ open, onClose, currentStreamId, currentStreamName }) =>
         throw error;
       }
 
+      setIsSubmitting(false);
       alert('Thanks! Your feedback has been sent.');
       handleClose();
     } catch (err) {

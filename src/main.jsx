@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import ErrorBoundary from './shared/ui/ErrorBoundary.jsx';
 import { AuthProvider } from './providers/AuthProvider.jsx';
 import { UserDataProvider } from './providers/UserDataProvider.jsx';
+import { ToastProvider } from './shared/ui/Toast.jsx';
 import './index.css';
 
 const App = lazy(() => import('./app/App.jsx'));
@@ -27,17 +28,19 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
       <AuthProvider>
-        <Suspense fallback={null}>
-          {isSpotifyCallback ? (
-            <SpotifyCallback />
-          ) : isSupabaseCallback ? (
-            <SupabaseCallback />
-          ) : (
-            <UserDataProvider>
-              <App />
-            </UserDataProvider>
-          )}
-        </Suspense>
+        <ToastProvider>
+          <Suspense fallback={null}>
+            {isSpotifyCallback ? (
+              <SpotifyCallback />
+            ) : isSupabaseCallback ? (
+              <SupabaseCallback />
+            ) : (
+              <UserDataProvider>
+                <App />
+              </UserDataProvider>
+            )}
+          </Suspense>
+        </ToastProvider>
       </AuthProvider>
     </ErrorBoundary>
   </React.StrictMode>,

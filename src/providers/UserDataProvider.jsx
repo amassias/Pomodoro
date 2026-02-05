@@ -49,13 +49,18 @@ const getDefaultSettings = ({ userId }) => {
   };
 };
 
-const sanitizeSettingsForDb = (settings) => {
+const sanitizeSettingsForDb = (settings, { customLocations } = {}) => {
   const {
     spotifyToken: _spotifyToken,
     spotifyRefreshToken: _spotifyRefreshToken,
     spotifyTokenExpiresAt: _spotifyTokenExpiresAt,
     ...rest
   } = settings || {};
+
+  // Embed customLocations in settings JSONB to avoid schema migration
+  if (customLocations && typeof customLocations === 'object' && Object.keys(customLocations).length > 0) {
+    rest._customLocations = customLocations;
+  }
 
   return rest;
 };
@@ -222,7 +227,15 @@ export const UserDataProvider = ({ children }) => {
           setCity(mergedRow.city || DEFAULT_CITY);
 
           const defaults = getDefaultSettings({ userId });
-          setSettings(mergeSettings({ defaults, persisted: mergedRow.settings }));
+          const persistedSettings = mergedRow.settings || {};
+          // Extract embedded custom locations from settings JSONB
+          const { _customLocations: dbCustomLocations, ...cleanPersistedSettings } = persistedSettings;
+          setSettings(mergeSettings({ defaults, persisted: cleanPersistedSettings }));
+          setCustomLocations(
+            dbCustomLocations && typeof dbCustomLocations === 'object'
+              ? dbCustomLocations
+              : {}
+          );
 
           lastLoadedUserIdRef.current = userId;
         }
@@ -323,7 +336,7 @@ export const UserDataProvider = ({ children }) => {
               pomodoro_history:
                 pomodoroHistory && typeof pomodoroHistory === 'object' ? pomodoroHistory : {},
               favorite_cities: favoriteCities,
-              settings: sanitizeSettingsForDb(settings),
+              settings: sanitizeSettingsForDb(settings, { customLocations }),
             },
             { onConflict: 'user_id' }
           );
@@ -335,7 +348,7 @@ export const UserDataProvider = ({ children }) => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [userId, loading, tasks, archivedTasks, pomodoroHistory, favoriteCities, city, settings]);
+  }, [userId, loading, tasks, archivedTasks, pomodoroHistory, favoriteCities, customLocations, city, settings]);
 
   const persistSpotifySecretsToLocalStorage = useCallback(({ token, refreshToken, expiresAt }) => {
     const tokenKey = scopedKey(userId, storageKeys.spotifyToken);
@@ -358,12 +371,17 @@ export const UserDataProvider = ({ children }) => {
   }, []);
 
   const value = useMemo(() => {
+    // The "active task" is the first incomplete task in the list
+    const activeTask = (Array.isArray(tasks) ? tasks : []).find((t) => !t.completed) || null;
+
     return {
       loading,
       userId,
 
       tasks,
       setTasks,
+
+      activeTask,
 
       archivedTasks,
       setArchivedTasks,

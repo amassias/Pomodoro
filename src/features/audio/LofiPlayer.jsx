@@ -128,7 +128,7 @@ const LofiPlayer = () => {
     const startOnInteraction = () => {
       if (!audioRef.current.paused) return; // Already playing
       const audio = configureAudioSource();
-      audio.volume = volume / 100;
+      audio.volume = audioRef.current.volume; // Use current audio volume, not stale closure
       audio.play()
         .then(() => setIsPlaying(true))
         .catch(() => {});
@@ -141,7 +141,8 @@ const LofiPlayer = () => {
       window.removeEventListener('click', startOnInteraction);
       window.removeEventListener('keydown', startOnInteraction);
     };
-  }, [configureAudioSource, volume]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [configureAudioSource]);
 
   const togglePlay = () => {
     const audio = configureAudioSource();

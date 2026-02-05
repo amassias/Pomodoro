@@ -17,6 +17,8 @@ const FeedbackModal = lazy(() => import('../features/feedback/FeedbackModal'));
 const WelcomeModal = lazy(() => import('../features/onboarding/WelcomeModal'));
 const OnboardingTour = lazy(() => import('../features/onboarding/OnboardingTour'));
 
+import AchievementWatcher from '../features/report/AchievementWatcher';
+
 const CITIES = {
   // Urban Night
   shibuya: { name: 'Tokyo (Shibuya)', id: 'tujkoXI8rWM', category: 'Urban Night' },
@@ -501,6 +503,8 @@ function App() {
           validationFailed={validationFailed}
         />
       </div>
+
+      <AchievementWatcher />
 
       <Suspense fallback={null}>
         <Report />

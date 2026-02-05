@@ -16,7 +16,7 @@ const Report = () => {
   const authPopoverRef = useRef(null);
 
   const { loading: authLoading, user, signInWithPassword, signUp, signInWithOAuth, signOut } = useAuth();
-  const { pomodoroHistory, setPomodoroHistory, setTasks, archivedTasks, setArchivedTasks } = useUserData();
+  const { pomodoroHistory, setPomodoroHistory, setTasks, activeTask, archivedTasks, setArchivedTasks } = useUserData();
   const [stats, setStats] = useState({
     totalHours: 0,
     pomodorosCompleted: 0,
@@ -27,7 +27,7 @@ const Report = () => {
   const [timeRange, setTimeRange] = useState('week'); // week, month, year
   const [selectedDay, setSelectedDay] = useState(null);
 
-  const savePomodoroData = useCallback((durationMinutes) => {
+  const savePomodoroData = useCallback((durationMinutes, { taskId, taskName } = {}) => {
     const today = getLocalDateKey();
 
     setPomodoroHistory((prevHistory) => {
@@ -37,11 +37,16 @@ const Report = () => {
         history[today] = [];
       }
 
-      history[today].push({
+      const entry = {
         duration: durationMinutes,
         timestamp: new Date().toISOString(),
         completed: true
-      });
+      };
+
+      if (taskId) entry.taskId = taskId;
+      if (taskName) entry.taskName = taskName;
+
+      history[today].push(entry);
 
       return history;
     });
@@ -50,8 +55,11 @@ const Report = () => {
   const handlePomodoroComplete = useCallback((event) => {
     const duration = event?.detail?.duration;
     if (!duration) return;
-    savePomodoroData(duration);
-  }, [savePomodoroData]);
+    savePomodoroData(duration, {
+      taskId: activeTask?.id || null,
+      taskName: activeTask?.text || null,
+    });
+  }, [savePomodoroData, activeTask]);
 
   const loadStats = useCallback(() => {
     const history = pomodoroHistory && typeof pomodoroHistory === 'object' ? pomodoroHistory : {};
@@ -74,6 +82,7 @@ const Report = () => {
     });
 
     const today = new Date();
+    let streakStarted = false;
     for (let i = 0; i < 100; i++) {
       const checkDate = new Date(today);
       checkDate.setDate(checkDate.getDate() - i);
@@ -81,7 +90,11 @@ const Report = () => {
 
       if (history[dateStr]) {
         currentStreak++;
-      } else if (i > 0) {
+        streakStarted = true;
+      } else if (i === 0) {
+        // Today has no sessions yet — check if yesterday continues a streak
+        continue;
+      } else {
         break;
       }
     }
@@ -320,7 +333,7 @@ const Report = () => {
     if (!selectedDay) return null;
 
     const tasksForDay = getTasksForDate(selectedDay.date);
-    const dateObj = new Date(selectedDay.date);
+    const dateObj = parseLocalDateKey(selectedDay.date);
     const formattedDate = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
     return (
