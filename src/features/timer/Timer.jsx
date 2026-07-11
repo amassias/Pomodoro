@@ -374,6 +374,9 @@ const Timer = ({ settings, updateSettings }) => {
         <button onClick={() => applyPreset(50, 10, 20)} disabled={sharedLocked}>Deep 50</button>
         <button onClick={() => applyPreset(90, 15, 30)} disabled={sharedLocked}>Flow 90</button>
         <button onClick={toggleFullscreen}>Full screen</button>
+        {(Array.isArray(settings.customPresets) ? settings.customPresets : []).map(preset => (
+          <button key={preset.id} onClick={() => applyPreset(preset.focusDuration, preset.shortBreakDuration, preset.longBreakDuration)} disabled={sharedLocked}>{preset.name}</button>
+        ))}
       </div>
       <CalendarActions />
 

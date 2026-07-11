@@ -42,6 +42,11 @@ const getDefaultSettings = ({ userId }) => {
     weeklyGoal: 600,
     activeTaskId: null,
     shortcutsEnabled: true,
+    shortcutToggle: 'Space',
+    shortcutReset: 'r',
+    shortcutMute: 'm',
+    customPresets: [],
+    atmosphereCollections: [],
 
     // Spotify preferences + local-only secrets
     spotifyClientId: savedSpotifyClientId,
@@ -131,6 +136,8 @@ export const UserDataProvider = ({ children }) => {
   const userId = user?.id ?? null;
 
   const [loading, setLoading] = useState(true);
+  const [syncStatus, setSyncStatus] = useState('local');
+  const [lastSyncedAt, setLastSyncedAt] = useState(null);
 
   const [tasks, setTasks] = useState([]);
   const [archivedTasks, setArchivedTasks] = useState([]);
@@ -142,6 +149,8 @@ export const UserDataProvider = ({ children }) => {
 
   const debounceRef = useRef(null);
   const lastLoadedUserIdRef = useRef(null);
+  const lastRemoteUpdatedAtRef = useRef(null);
+  const skipNextPersistRef = useRef(false);
 
   // Load user state from DB (or guest state from localStorage).
   useEffect(() => {
@@ -161,7 +170,7 @@ export const UserDataProvider = ({ children }) => {
       // Try fetching first.
       const { data, error } = await supabase
         .from('user_state')
-        .select('user_id, city, tasks, archived_tasks, pomodoro_history, settings, favorite_cities')
+        .select('user_id, city, tasks, archived_tasks, pomodoro_history, settings, favorite_cities, updated_at')
         .eq('user_id', id)
         .maybeSingle();
 
@@ -243,6 +252,9 @@ export const UserDataProvider = ({ children }) => {
           );
 
           lastLoadedUserIdRef.current = userId;
+          lastRemoteUpdatedAtRef.current = mergedRow.updated_at || null;
+          setLastSyncedAt(mergedRow.updated_at || null);
+          setSyncStatus('synced');
         }
 
         if (shouldMigrate) {
@@ -325,12 +337,17 @@ export const UserDataProvider = ({ children }) => {
 
     // If the auth user changed and we haven't loaded yet, skip.
     if (lastLoadedUserIdRef.current && lastLoadedUserIdRef.current !== userId) return;
+    if (skipNextPersistRef.current) {
+      skipNextPersistRef.current = false;
+      return;
+    }
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     debounceRef.current = setTimeout(async () => {
+      setSyncStatus('syncing');
       try {
-        await supabase
+        const result = await supabase
           .from('user_state')
           .upsert(
             {
@@ -345,8 +362,12 @@ export const UserDataProvider = ({ children }) => {
             },
             { onConflict: 'user_id' }
           );
+        if (result.error) throw result.error;
+        setSyncStatus('synced');
+        setLastSyncedAt(new Date().toISOString());
       } catch (err) {
         console.warn('Failed to persist user state', err);
+        setSyncStatus('error');
       }
     }, 600);
 
@@ -354,6 +375,29 @@ export const UserDataProvider = ({ children }) => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, [userId, loading, tasks, archivedTasks, pomodoroHistory, favoriteCities, customLocations, city, settings]);
+
+  useEffect(() => {
+    if (!userId || loading) return undefined;
+    const channel = supabase.channel(`user-state-sync:${userId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'user_state', filter: `user_id=eq.${userId}` }, ({ new: row }) => {
+        if (!row?.updated_at || row.updated_at === lastRemoteUpdatedAtRef.current) return;
+        lastRemoteUpdatedAtRef.current = row.updated_at;
+        skipNextPersistRef.current = true;
+        setTasks(normalizeTasks(row.tasks));
+        setArchivedTasks(normalizeArchivedTasks(row.archived_tasks));
+        setPomodoroHistory(row.pomodoro_history && typeof row.pomodoro_history === 'object' ? row.pomodoro_history : {});
+        setFavoriteCities(Array.isArray(row.favorite_cities) ? row.favorite_cities : []);
+        setCity(row.city || DEFAULT_CITY);
+        const persistedSettings = row.settings || {};
+        const { _customLocations: remoteLocations, ...cleanSettings } = persistedSettings;
+        setCustomLocations(remoteLocations && typeof remoteLocations === 'object' ? remoteLocations : {});
+        setSettings(mergeSettings({ defaults: getDefaultSettings({ userId }), persisted: cleanSettings }));
+        setLastSyncedAt(row.updated_at);
+        setSyncStatus('synced');
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [loading, userId]);
 
   const persistSpotifySecretsToLocalStorage = useCallback(({ token, refreshToken, expiresAt }) => {
     const tokenKey = scopedKey(userId, storageKeys.spotifyToken);
@@ -382,6 +426,8 @@ export const UserDataProvider = ({ children }) => {
     return {
       loading,
       userId,
+      syncStatus,
+      lastSyncedAt,
 
       tasks,
       setTasks,
@@ -436,7 +482,7 @@ export const UserDataProvider = ({ children }) => {
         return sessions.reduce((acc, session) => acc + (session.duration || 0), 0);
       },
     };
-  }, [loading, userId, tasks, archivedTasks, pomodoroHistory, favoriteCities, customLocations, city, settings, persistSpotifySecretsToLocalStorage, clearSpotifySecretsFromLocalStorage]);
+  }, [loading, userId, syncStatus, lastSyncedAt, tasks, archivedTasks, pomodoroHistory, favoriteCities, customLocations, city, settings, persistSpotifySecretsToLocalStorage, clearSpotifySecretsFromLocalStorage]);
 
   return <UserDataContext.Provider value={value}>{children}</UserDataContext.Provider>;
 };

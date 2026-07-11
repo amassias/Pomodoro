@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../providers/AuthProvider.jsx';
 import { useUserData } from '../../providers/UserDataProvider.jsx';
 import Achievements from './Achievements';
 import { generateCSV, downloadFile } from '../../lib/export';
 import { getLocalDateKey, parseLocalDateKey } from '../../lib/date';
 import { useDialogFocus } from '../../shared/ui/useDialogFocus';
+import { getWeeklyComparison } from '../../lib/insights';
 
 const Report = () => {
   const [showReport, setShowReport] = useState(false);
@@ -34,6 +35,7 @@ const Report = () => {
   });
   const [timeRange, setTimeRange] = useState('week'); // week, month, year
   const [selectedDay, setSelectedDay] = useState(null);
+  const weeklyComparison = useMemo(() => getWeeklyComparison(pomodoroHistory), [pomodoroHistory]);
 
   const savePomodoroData = useCallback((durationMinutes, { taskId, taskName } = {}) => {
     const today = getLocalDateKey();
@@ -515,6 +517,13 @@ const Report = () => {
                 <div className="stat-label">Day Streak</div>
               </div>
             </div>
+            <div className="weekly-insight" role="status">
+              <div><span>This week</span><strong>{(weeklyComparison.currentMinutes / 60).toFixed(1)}h</strong></div>
+              <div><span>Previous week</span><strong>{(weeklyComparison.previousMinutes / 60).toFixed(1)}h</strong></div>
+              <p className={weeklyComparison.changePercent >= 0 ? 'positive' : 'negative'}>
+                {weeklyComparison.changePercent >= 0 ? '↑' : '↓'} {Math.abs(weeklyComparison.changePercent)}% versus last week
+              </p>
+            </div>
 
             <div className="report-timerange">
               <button
@@ -964,6 +973,13 @@ const Report = () => {
           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
           gap: 1.5rem;
         }
+        .weekly-insight { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)) auto; align-items: center; gap: 1rem; padding: 1rem; border: 1px solid var(--glass-border); border-radius: 14px; background: rgba(255,255,255,0.04); }
+        .weekly-insight div { display: flex; flex-direction: column; gap: 0.2rem; }
+        .weekly-insight span { color: var(--text-muted); font-size: 0.7rem; }
+        .weekly-insight strong { font-size: 1.1rem; }
+        .weekly-insight p { margin: 0; font-size: 0.78rem; }
+        .weekly-insight .positive { color: var(--success-color); }
+        .weekly-insight .negative { color: var(--accent-color); }
 
         .stat-card {
           background: rgba(255, 255, 255, 0.05);

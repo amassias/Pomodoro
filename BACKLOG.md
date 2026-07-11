@@ -41,3 +41,12 @@ This backlog separates the cinematic UX refresh from future product work. Value 
 - [x] P3 — Anonymous shared focus rooms via link with Supabase Realtime presence and host-synchronized timers.
 - [x] P3 — English-only interface retained by product decision.
 - [x] P3 — Google Calendar, Outlook and portable ICS focus-block creation without sensitive OAuth access.
+- [x] P1 — Custom saved presets and remappable timer shortcuts.
+- [x] P1 — Current-versus-previous-week insight cards.
+- [x] P2 — Contextual next-achievement guidance.
+- [x] P2 — Saved atmosphere collections combining location and music provider.
+- [x] P2 — Installable PWA shell with offline timer/task access after first load.
+- [x] P3 — Expiring secret room links and automatic host failover for shared sessions.
+- [x] P2 — Realtime cross-device state refresh with visible sync status and server-timestamp last-write-wins policy.
+- [x] Quality — DOM interaction test coverage for the complete active-task lifecycle.
+- [x] Quality — Privacy-preserving third-party resource timing grouped by provider.

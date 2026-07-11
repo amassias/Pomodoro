@@ -58,3 +58,17 @@ create policy user_state_delete_own
 on public.user_state
 for delete
 using (auth.uid() = user_id);
+
+-- Enable cross-device live updates. Safe to run repeatedly.
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'user_state'
+  ) then
+    alter publication supabase_realtime add table public.user_state;
+  end if;
+end
+$$;

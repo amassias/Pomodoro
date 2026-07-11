@@ -9,6 +9,7 @@ import SharedSessionControl from '../features/shared/SharedSessionControl';
 import { getMe, isTokenExpired, refreshAccessToken } from '../lib/spotify';
 import { useUserData } from '../providers/UserDataProvider.jsx';
 import { markBadYoutubeVideoId, readBadYoutubeVideoIds, scopedKey, storageKeys, hasCompletedOnboarding, setOnboardingCompleted } from '../lib/storage.js';
+import { startThirdPartyPerformanceMonitoring } from '../lib/performanceMonitoring';
 
 const LofiPlayer = lazy(() => import('../features/audio/LofiPlayer'));
 const SpotifyPlayer = lazy(() => import('../features/audio/SpotifyPlayer'));
@@ -65,12 +66,14 @@ function App() {
     setSettings,
     persistSpotifySecretsToLocalStorage,
     customLocations,
+    syncStatus,
   } = useUserData();
 
   const [showSettings, setShowSettings] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [showTour, setShowTour] = useState(false);
+  useEffect(() => startThirdPartyPerformanceMonitoring(), []);
   const spotifyProductKey = scopedKey(userId, storageKeys.spotifyProduct);
   const [spotifyProduct, setSpotifyProduct] = useState(localStorage.getItem(spotifyProductKey) || null);
 
@@ -392,12 +395,12 @@ function App() {
 
       if (e.key === 'Escape' && showSettings) {
         setShowSettings(false);
-      } else if (settings.shortcutsEnabled !== false && e.code === 'Space') {
+      } else if (settings.shortcutsEnabled !== false && (e.code === settings.shortcutToggle || e.key.toLowerCase() === String(settings.shortcutToggle || 'Space').toLowerCase())) {
         e.preventDefault();
         window.dispatchEvent(new CustomEvent('timer-toggle'));
-      } else if (settings.shortcutsEnabled !== false && e.key.toLowerCase() === 'r') {
+      } else if (settings.shortcutsEnabled !== false && e.key.toLowerCase() === String(settings.shortcutReset || 'r').toLowerCase()) {
         window.dispatchEvent(new CustomEvent('timer-reset'));
-      } else if (settings.shortcutsEnabled !== false && e.key.toLowerCase() === 'm') {
+      } else if (settings.shortcutsEnabled !== false && e.key.toLowerCase() === String(settings.shortcutMute || 'm').toLowerCase()) {
         // Toggle Mute: Toggle between 0 and defaults (70/50)
         setSettings(prev => {
           const newAlarmVol = prev.alarmVolume === 0 ? 70 : 0;
@@ -408,7 +411,7 @@ function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showSettings, setSettings, settings.shortcutsEnabled]);
+  }, [showSettings, setSettings, settings.shortcutsEnabled, settings.shortcutToggle, settings.shortcutReset, settings.shortcutMute]);
 
   // Exhaustive list of video streams with categories
   const visibleCities = React.useMemo(() => {
@@ -493,6 +496,7 @@ function App() {
               <span>Make this session count</span>
             </div>
           </div>
+          <div className={`sync-indicator ${syncStatus}`} title={`Data status: ${syncStatus}`} aria-label={`Data ${syncStatus}`}>{syncStatus === 'local' ? 'Local' : syncStatus}</div>
           <div className="top-widget-area">
             <SharedSessionControl />
             <DailyProgress />
@@ -629,6 +633,9 @@ function App() {
         .brand-block strong { font-size: 0.92rem; letter-spacing: 0.04em; }
         .brand-block span:not(.brand-mark) { color: var(--text-muted); font-size: 0.72rem; }
         .brand-mark { width: 10px; height: 10px; border-radius: 50%; background: var(--accent-color); box-shadow: 0 0 18px var(--accent-color); }
+        .sync-indicator { margin-right: auto; padding: 0.3rem 0.5rem; border-radius: 999px; color: var(--text-muted); background: rgba(255,255,255,0.04); font-size: 0.62rem; text-transform: capitalize; }
+        .sync-indicator.synced { color: var(--success-color); }
+        .sync-indicator.error { color: var(--accent-color); }
         .ambient-label { position: fixed; left: 1.25rem; bottom: 1.3rem; display: flex; align-items: center; gap: 0.45rem; color: var(--text-secondary); font-size: 0.72rem; z-index: 90; text-transform: uppercase; letter-spacing: 0.12em; }
         .live-dot { width: 6px; height: 6px; background: var(--success-color); border-radius: 50%; box-shadow: 0 0 10px var(--success-color); }
         @supports (min-height: 100dvh) {

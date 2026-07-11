@@ -26,7 +26,7 @@ const extractYouTubeId = (input) => {
 };
 
 const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error = null, validationFailed = false }) => {
-  const { favoriteCities, toggleFavorite, addCustomLocation, removeCustomLocation } = useUserData();
+  const { favoriteCities, toggleFavorite, addCustomLocation, removeCustomLocation, settings, setSettings } = useUserData();
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [newLocationName, setNewLocationName] = useState('');
@@ -59,6 +59,19 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
     : (categories[0] || '');
 
   const currentCityName = cities?.[currentCity]?.name || 'Select Location';
+
+  const saveAtmosphere = () => {
+    const name = window.prompt('Atmosphere name');
+    if (!name?.trim()) return;
+    const collection = { id: crypto.randomUUID(), name: name.trim().slice(0, 24), city: currentCity, musicProvider: settings.musicProvider || 'lofi', createdAt: new Date().toISOString() };
+    setSettings({ ...settings, atmosphereCollections: [...(Array.isArray(settings.atmosphereCollections) ? settings.atmosphereCollections : []), collection].slice(-8) });
+  };
+
+  const applyAtmosphere = (collection) => {
+    if (cities?.[collection.city]) onSelect(collection.city);
+    setSettings({ ...settings, musicProvider: collection.musicProvider || 'lofi' });
+    setIsExpanded(false);
+  };
 
   const handleAddLocation = () => {
     setAddError('');
@@ -107,6 +120,15 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
 
     return (
       <div className="expanded-content">
+        <div className="atmosphere-collections">
+          <button className="save-atmosphere" onClick={saveAtmosphere}>Save current atmosphere</button>
+          {(Array.isArray(settings.atmosphereCollections) ? settings.atmosphereCollections : []).map(collection => (
+            <div key={collection.id}>
+              <button onClick={() => applyAtmosphere(collection)}>{collection.name}</button>
+              <button aria-label={`Delete ${collection.name}`} onClick={() => setSettings({ ...settings, atmosphereCollections: settings.atmosphereCollections.filter(item => item.id !== collection.id) })}>×</button>
+            </div>
+          ))}
+        </div>
         {validationFailed && (
           <div className="validation-warning">
             ⚠️ Some streams may be offline. Couldn't verify availability.
@@ -280,6 +302,10 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
       )}
 
       <style>{`
+        .atmosphere-collections { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-bottom: 0.75rem; }
+        .atmosphere-collections > div { display: flex; border: 1px solid var(--glass-border); border-radius: 999px; overflow: hidden; }
+        .atmosphere-collections button { padding: 0.38rem 0.58rem; background: rgba(255,255,255,0.05); color: var(--text-secondary); font-size: 0.68rem; }
+        .atmosphere-collections .save-atmosphere { color: var(--accent-color); border: 1px dashed rgba(255,113,107,0.45); border-radius: 999px; }
         .bottom-bar {
           position: fixed;
           bottom: 1rem;

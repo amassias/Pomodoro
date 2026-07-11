@@ -1,0 +1,10 @@
+{
+  "name": "World Focus",
+  "short_name": "World Focus",
+  "description": "An immersive Pomodoro timer for focused work.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090a0c",
+  "theme_color": "#090a0c",
+  "icons": [{ "src": "/world-focus-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

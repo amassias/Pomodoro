@@ -270,6 +270,20 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                         </div>
                     </div>
                 </div>
+                <div className="setting-group">
+                    <h3>Custom Presets</h3>
+                    <button className="tutorial-btn" onClick={() => {
+                        const name = window.prompt('Preset name');
+                        if (!name?.trim()) return;
+                        const preset = { id: crypto.randomUUID(), name: name.trim().slice(0, 24), focusDuration: Number(durationDrafts.focusDuration) || 25, shortBreakDuration: Number(durationDrafts.shortBreakDuration) || 5, longBreakDuration: Number(durationDrafts.longBreakDuration) || 15 };
+                        updateSettings({ ...settings, customPresets: [...(Array.isArray(settings.customPresets) ? settings.customPresets : []), preset].slice(-6) });
+                    }}>Save current durations</button>
+                    <div className="preset-list">
+                        {(Array.isArray(settings.customPresets) ? settings.customPresets : []).map(preset => (
+                            <div key={preset.id}><span>{preset.name} · {preset.focusDuration}/{preset.shortBreakDuration}/{preset.longBreakDuration}</span><button aria-label={`Delete ${preset.name}`} onClick={() => updateSettings({ ...settings, customPresets: settings.customPresets.filter(item => item.id !== preset.id) })}>×</button></div>
+                        ))}
+                    </div>
+                </div>
 
                 <div className="setting-group">
                     <h3>Daily Goal</h3>
@@ -501,6 +515,11 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                         <span>Keyboard shortcuts</span>
                         <input type="checkbox" name="shortcutsEnabled" checked={settings.shortcutsEnabled !== false} onChange={handleChange} />
                     </label>
+                    <div className="shortcut-grid">
+                        <label>Start / pause<select name="shortcutToggle" value={settings.shortcutToggle || 'Space'} onChange={handleChange}><option value="Space">Space</option><option value="Enter">Enter</option><option value="p">P</option></select></label>
+                        <label>Reset<select name="shortcutReset" value={settings.shortcutReset || 'r'} onChange={handleChange}><option value="r">R</option><option value="x">X</option><option value="Backspace">Backspace</option></select></label>
+                        <label>Mute<select name="shortcutMute" value={settings.shortcutMute || 'm'} onChange={handleChange}><option value="m">M</option><option value="u">U</option><option value="v">V</option></select></label>
+                    </div>
                     <button
                         className="tutorial-btn"
                         onClick={onRestartTour}
@@ -531,6 +550,12 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                                  calc(1rem + env(safe-area-inset-left, 0px));
                         box-sizing: border-box;
                     }
+                    .preset-list { display: grid; gap: 0.4rem; margin-top: 0.65rem; }
+                    .preset-list > div { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; color: var(--text-secondary); font-size: 0.75rem; }
+                    .preset-list button { background: transparent; color: var(--accent-color); padding: 0.25rem; }
+                    .shortcut-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.65rem; }
+                    .shortcut-grid label { display: grid; gap: 0.3rem; color: var(--text-muted); font-size: 0.68rem; }
+                    .shortcut-grid select { background: rgba(255,255,255,0.08); color: #fff; border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.45rem; }
                     .modal-content {
                         width: 100%;
                         max-width: 450px;
