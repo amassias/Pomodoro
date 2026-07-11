@@ -3,8 +3,11 @@ import { ALARM_SOUNDS, TICKING_SOUNDS } from '../../lib/sounds';
 import { requestNotificationPermission, showNotification } from '../../lib/notifications';
 import { getModeMinutes } from '../../lib/timer';
 import { clearTimerSession, readTimerSession, writeTimerSession } from '../../lib/timerSession';
+import { useSharedSession } from '../../providers/SharedSessionProvider';
 
 const Timer = ({ settings, updateSettings }) => {
+  const { roomId, isHost, remoteTimerState, publishTimerState } = useSharedSession();
+  const sharedLocked = Boolean(roomId && !isHost);
   const [initialSession] = useState(() => readTimerSession());
   const initialRemainingMs = initialSession?.remainingMs ?? getModeMinutes('focus', settings) * 60 * 1000;
   const initialTotalSeconds = Math.ceil(initialRemainingMs / 1000);
@@ -136,6 +139,28 @@ const Timer = ({ settings, updateSettings }) => {
       remainingMs: remainingMsRef.current,
     });
   }, [mode, isActive, minutes, seconds]);
+
+  useEffect(() => {
+    if (!roomId || !isHost) return;
+    publishTimerState({ mode, isActive, endAt: endAtRef.current, remainingMs: remainingMsRef.current, sentAt: Date.now() });
+  }, [roomId, isHost, mode, isActive, minutes, seconds, publishTimerState]);
+
+  useEffect(() => {
+    if (!sharedLocked || !remoteTimerState) return;
+    const timeoutId = window.setTimeout(() => {
+      const remaining = remoteTimerState.isActive && remoteTimerState.endAt
+        ? Math.max(0, remoteTimerState.endAt - Date.now())
+        : Math.max(0, Number(remoteTimerState.remainingMs) || 0);
+      const totalSeconds = Math.ceil(remaining / 1000);
+      setMode(remoteTimerState.mode);
+      setIsActive(Boolean(remoteTimerState.isActive && remaining > 0));
+      endAtRef.current = remoteTimerState.isActive ? remoteTimerState.endAt : null;
+      remainingMsRef.current = remaining;
+      setMinutes(Math.floor(totalSeconds / 60));
+      setSeconds(totalSeconds % 60);
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [remoteTimerState, sharedLocked]);
 
   // Helper to handle timer completion
   const handleTimerComplete = useCallback(() => {
@@ -324,39 +349,42 @@ const Timer = ({ settings, updateSettings }) => {
         <button
           className={mode === 'focus' ? 'active' : ''}
           onClick={() => setTimerMode('focus')}
+          disabled={sharedLocked}
         >
           Focus
         </button>
         <button
           className={mode === 'shortBreak' ? 'active' : ''}
           onClick={() => setTimerMode('shortBreak')}
+          disabled={sharedLocked}
         >
           Short
         </button>
         <button
           className={mode === 'longBreak' ? 'active' : ''}
           onClick={() => setTimerMode('longBreak')}
+          disabled={sharedLocked}
         >
           Long
         </button>
       </div>
       <div className="timer-tools" aria-label="Focus presets">
-        <button onClick={() => applyPreset(25, 5, 15)}>Classic</button>
-        <button onClick={() => applyPreset(50, 10, 20)}>Deep 50</button>
-        <button onClick={() => applyPreset(90, 15, 30)}>Flow 90</button>
+        <button onClick={() => applyPreset(25, 5, 15)} disabled={sharedLocked}>Classic</button>
+        <button onClick={() => applyPreset(50, 10, 20)} disabled={sharedLocked}>Deep 50</button>
+        <button onClick={() => applyPreset(90, 15, 30)} disabled={sharedLocked}>Flow 90</button>
         <button onClick={toggleFullscreen}>Full screen</button>
       </div>
 
       <div className="time-display">
         {String(Math.max(0, Number(minutes) || 0)).padStart(2, '0')}:{String(Math.max(0, Number(seconds) || 0)).padStart(2, '0')}
       </div>
-      <p className="timer-caption">{mode === 'focus' ? 'Protect this time. One thing at a time.' : 'Step away and let your attention reset.'}</p>
+      <p className="timer-caption">{sharedLocked ? 'Following the host timer.' : mode === 'focus' ? 'Protect this time. One thing at a time.' : 'Step away and let your attention reset.'}</p>
 
       <div className="timer-controls">
-        <button className="primary-btn" onClick={toggleTimer}>
-          {isActive ? 'Pause session' : 'Start focus'}
+        <button className="primary-btn" onClick={toggleTimer} disabled={sharedLocked}>
+          {sharedLocked ? 'Host controls timer' : isActive ? 'Pause session' : 'Start focus'}
         </button>
-        <button className="reset-btn" onClick={resetTimer}>
+        <button className="reset-btn" onClick={resetTimer} disabled={sharedLocked}>
           Reset
         </button>
       </div>

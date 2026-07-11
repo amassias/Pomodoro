@@ -5,6 +5,7 @@ import Timer from '../features/timer/Timer';
 import CitySelector from '../features/location/CitySelector';
 import TaskList from '../features/tasks/TaskList';
 import DailyProgress from '../features/location/DailyProgress';
+import SharedSessionControl from '../features/shared/SharedSessionControl';
 import { getMe, isTokenExpired, refreshAccessToken } from '../lib/spotify';
 import { useUserData } from '../providers/UserDataProvider.jsx';
 import { markBadYoutubeVideoId, readBadYoutubeVideoIds, scopedKey, storageKeys, hasCompletedOnboarding, setOnboardingCompleted } from '../lib/storage.js';
@@ -493,6 +494,7 @@ function App() {
             </div>
           </div>
           <div className="top-widget-area">
+            <SharedSessionControl />
             <DailyProgress />
           </div>
         </header>
@@ -721,7 +723,16 @@ function App() {
             border: 1px solid rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(5px);
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
         }
+        .shared-session-create, .shared-session button { color: #fff; background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); border-radius: 999px; padding: 0.45rem 0.7rem; font-size: 0.68rem; }
+        .shared-session { display: flex; align-items: center; gap: 0.45rem; padding: 0 0.2rem; color: var(--text-muted); font-size: 0.68rem; }
+        .shared-session strong { color: #fff; }
+        .shared-status { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); }
+        .shared-status.connected { background: var(--success-color); box-shadow: 0 0 8px var(--success-color); }
+        .shared-status.error { background: var(--accent-color); }
 
         .top-widget-area:hover {
             background: rgba(255, 255, 255, 0.15);
@@ -817,6 +828,7 @@ function App() {
           }
           .main-content { align-items: flex-start; padding-top: 2rem; margin-bottom: 7rem; }
           .brand-block > div span { display: none; }
+          .shared-session > span:not(.shared-status), .shared-session strong { display: none; }
           .settings-btn span, .recommend-btn span { display: none; }
           .settings-btn, .recommend-btn { width: 42px; min-width: 42px; padding: 0; }
           .ambient-label { display: none; }

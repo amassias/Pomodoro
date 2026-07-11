@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import ErrorBoundary from './shared/ui/ErrorBoundary.jsx';
 import { AuthProvider } from './providers/AuthProvider.jsx';
 import { UserDataProvider } from './providers/UserDataProvider.jsx';
+import { SharedSessionProvider } from './providers/SharedSessionProvider.jsx';
 import { ToastProvider } from './shared/ui/Toast.jsx';
 import './index.css';
 
@@ -36,7 +37,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <SupabaseCallback />
             ) : (
               <UserDataProvider>
-                <App />
+                <SharedSessionProvider>
+                  <App />
+                </SharedSessionProvider>
               </UserDataProvider>
             )}
           </Suspense>

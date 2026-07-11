@@ -38,3 +38,5 @@ This backlog separates the cinematic UX refresh from future product work. Value 
 - [x] P1 — User-controlled keyboard shortcut setting and progressive notification request on first start.
 - [x] P2 — Weekly goal progress and configurable weekly target.
 - [x] P2 — Versioned JSON backup import/export while preserving local Spotify secrets.
+- [x] P3 — Anonymous shared focus rooms via link with Supabase Realtime presence and host-synchronized timers.
+- [x] P3 — English-only interface retained by product decision.
