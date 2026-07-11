@@ -4,6 +4,7 @@ import { requestNotificationPermission, showNotification } from '../../lib/notif
 import { getModeMinutes } from '../../lib/timer';
 import { clearTimerSession, readTimerSession, writeTimerSession } from '../../lib/timerSession';
 import { useSharedSession } from '../../providers/SharedSessionProvider';
+import CalendarActions from '../calendar/CalendarActions';
 
 const Timer = ({ settings, updateSettings }) => {
   const { roomId, isHost, remoteTimerState, publishTimerState } = useSharedSession();
@@ -374,6 +375,7 @@ const Timer = ({ settings, updateSettings }) => {
         <button onClick={() => applyPreset(90, 15, 30)} disabled={sharedLocked}>Flow 90</button>
         <button onClick={toggleFullscreen}>Full screen</button>
       </div>
+      <CalendarActions />
 
       <div className="time-display">
         {String(Math.max(0, Number(minutes) || 0)).padStart(2, '0')}:{String(Math.max(0, Number(seconds) || 0)).padStart(2, '0')}
@@ -427,6 +429,9 @@ const Timer = ({ settings, updateSettings }) => {
         .timer-tools { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem; margin-top: -0.65rem; }
         .timer-tools button { padding: 0.35rem 0.55rem; border-radius: 999px; background: transparent; color: var(--text-muted); font-size: 0.66rem; border: 1px solid rgba(255,255,255,0.08); }
         .timer-tools button:hover { color: #fff; border-color: rgba(255,255,255,0.2); }
+        .calendar-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem; margin-top: -0.9rem; }
+        .calendar-actions a, .calendar-actions button { padding: 0.3rem 0.5rem; border-radius: 999px; background: rgba(255,255,255,0.04); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.08); text-decoration: none; font-size: 0.64rem; }
+        .calendar-actions a:hover, .calendar-actions button:hover { color: #fff; border-color: rgba(255,255,255,0.2); }
         .time-display {
           font-size: clamp(4.5rem, 9vw, 7rem);
           font-weight: 300;
