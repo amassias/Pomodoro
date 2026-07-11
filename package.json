@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "performance:check": "npm run build && node scripts/check-performance.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",

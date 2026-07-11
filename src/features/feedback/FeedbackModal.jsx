@@ -1,10 +1,12 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import { useDialogFocus } from '../../shared/ui/useDialogFocus';
 
 const FeedbackModal = ({ open, onClose, currentStreamId, currentStreamName }) => {
   const [feedbackType, setFeedbackType] = useState('stream_bug');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const dialogRef = useRef(null);
 
   // stream_bug fields
   const [problemType, setProblemType] = useState('');
@@ -40,18 +42,7 @@ const FeedbackModal = ({ open, onClose, currentStreamId, currentStreamName }) =>
     onClose();
   }, [onClose, resetForm]);
 
-  React.useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape') {
-        handleClose();
-      }
-    };
-
-    if (open) {
-      window.addEventListener('keydown', handleEscape);
-      return () => window.removeEventListener('keydown', handleEscape);
-    }
-  }, [open, handleClose]);
+  useDialogFocus({ open, onClose: handleClose, dialogRef });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -124,13 +115,14 @@ const FeedbackModal = ({ open, onClose, currentStreamId, currentStreamName }) =>
 
   return (
     <div className="feedback-modal-overlay" onClick={handleClose}>
-      <div className="feedback-modal-content" onClick={(e) => e.stopPropagation()}>
+      <div ref={dialogRef} className="feedback-modal-content" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="feedback-title">
         <div className="feedback-modal-header">
-          <h2>Send Feedback</h2>
+          <h2 id="feedback-title">Send Feedback</h2>
           <button
             className="feedback-modal-close"
             onClick={handleClose}
             title="Close"
+            aria-label="Close feedback"
           >
             ✕
           </button>

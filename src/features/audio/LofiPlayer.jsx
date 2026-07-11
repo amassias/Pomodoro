@@ -6,6 +6,7 @@ const LofiPlayer = () => {
   const [volume, setVolume] = useState(50);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [audioError, setAudioError] = useState(false);
   const playerRef = useRef(null);
   const isDraggingRef = useRef(false);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
@@ -63,6 +64,16 @@ const LofiPlayer = () => {
     audio.volume = volume / 100;
   }, [volume]);
 
+  useEffect(() => {
+    const audio = audioRef.current;
+    const handleError = () => {
+      setAudioError(true);
+      setIsPlaying(false);
+    };
+    audio.addEventListener('error', handleError);
+    return () => audio.removeEventListener('error', handleError);
+  }, []);
+
   const handleMouseMove = useCallback((e) => {
     if (!isDraggingRef.current) return;
 
@@ -114,7 +125,10 @@ const LofiPlayer = () => {
       const playPromise = audio.play();
       if (playPromise && typeof playPromise.then === 'function') {
         playPromise
-          .then(() => setIsPlaying(true))
+          .then(() => {
+            setAudioError(false);
+            setIsPlaying(true);
+          })
           .catch(() => {
             // Autoplay blocked, will start on first user interaction
           });
@@ -130,7 +144,10 @@ const LofiPlayer = () => {
       const audio = configureAudioSource();
       audio.volume = audioRef.current.volume; // Use current audio volume, not stale closure
       audio.play()
-        .then(() => setIsPlaying(true))
+        .then(() => {
+          setAudioError(false);
+          setIsPlaying(true);
+        })
         .catch(() => {});
     };
 
@@ -156,11 +173,13 @@ const LofiPlayer = () => {
 
     const playPromise = audio.play();
     setIsPlaying(true);
+    setAudioError(false);
 
     if (playPromise && typeof playPromise.catch === 'function') {
       playPromise.catch((e) => {
         console.log('Play/Autoplay blocked', e);
         setIsPlaying(false);
+        setAudioError(true);
       });
     }
   };
@@ -186,7 +205,7 @@ const LofiPlayer = () => {
 
       <div className="track-info">
         <div className="track-name">Lofi Girl</div>
-        <div className="track-artist">Lofi Radio</div>
+        <div className={`track-artist ${audioError ? 'error' : ''}`}>{audioError ? 'Stream unavailable — retry' : 'Lofi Radio'}</div>
       </div>
 
       <div className="player-controls">
@@ -280,6 +299,7 @@ const LofiPlayer = () => {
           cursor: grab;
           height: 100%;
         }
+        .track-artist.error { color: var(--accent-color); }
         .track-info:active {
             cursor: grabbing;
         }

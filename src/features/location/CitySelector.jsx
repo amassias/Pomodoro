@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useUserData } from '../../providers/UserDataProvider.jsx';
+import { useDialogFocus } from '../../shared/ui/useDialogFocus';
 
 // Extract YouTube video ID from various URL formats
 const extractYouTubeId = (input) => {
@@ -31,6 +32,9 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
   const [newLocationName, setNewLocationName] = useState('');
   const [newLocationUrl, setNewLocationUrl] = useState('');
   const [addError, setAddError] = useState('');
+  const addDialogRef = useRef(null);
+  const closeAddDialog = useCallback(() => setShowAddModal(false), []);
+  useDialogFocus({ open: showAddModal, onClose: closeAddDialog, dialogRef: addDialogRef });
 
   const categories = useMemo(() => {
     if (!cities) return [];
@@ -232,11 +236,11 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
 
       {/* Add Location Modal */}
       {showAddModal && (
-        <div className="add-modal-overlay" onClick={() => setShowAddModal(false)}>
-          <div className="add-modal glass-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="add-modal-overlay" onClick={closeAddDialog}>
+          <div ref={addDialogRef} className="add-modal glass-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="add-location-title">
             <div className="add-modal-header">
-              <h3>Add Custom Location</h3>
-              <button className="close-btn" onClick={() => setShowAddModal(false)} aria-label="Close custom location dialog">×</button>
+              <h3 id="add-location-title">Add Custom Location</h3>
+              <button className="close-btn" onClick={closeAddDialog} aria-label="Close custom location dialog">×</button>
             </div>
             
             <div className="add-modal-body">

@@ -4,6 +4,7 @@ import { useUserData } from '../../providers/UserDataProvider.jsx';
 import Achievements from './Achievements';
 import { generateCSV, downloadFile } from '../../lib/export';
 import { getLocalDateKey, parseLocalDateKey } from '../../lib/date';
+import { useDialogFocus } from '../../shared/ui/useDialogFocus';
 
 const Report = () => {
   const [showReport, setShowReport] = useState(false);
@@ -14,6 +15,12 @@ const Report = () => {
   const [authBusy, setAuthBusy] = useState(false);
   const authBtnRef = useRef(null);
   const authPopoverRef = useRef(null);
+  const reportModalRef = useRef(null);
+  const closeAuth = useCallback(() => setShowAuth(false), []);
+  const closeReport = useCallback(() => setShowReport(false), []);
+
+  useDialogFocus({ open: showAuth, onClose: closeAuth, dialogRef: authPopoverRef });
+  useDialogFocus({ open: showReport, onClose: closeReport, dialogRef: reportModalRef });
 
   const { loading: authLoading, user, signInWithPassword, signUp, signInWithOAuth, signOut } = useAuth();
   const { pomodoroHistory, setPomodoroHistory, setTasks, activeTask, archivedTasks, setArchivedTasks } = useUserData();
@@ -393,7 +400,7 @@ const Report = () => {
       </button>
 
       {showAuth && (
-        <div ref={authPopoverRef} className="auth-popover glass-panel" role="dialog" aria-label="Authentication">
+        <div ref={authPopoverRef} className="auth-popover glass-panel" role="dialog" aria-modal="true" aria-label="Authentication">
           <div className="auth-popover-header">
             <div className="auth-title">{user ? 'Account' : 'Sign in'}</div>
             <button className="auth-close" onClick={() => setShowAuth(false)} aria-label="Close">×</button>
@@ -480,11 +487,11 @@ const Report = () => {
       )}
 
       {showReport && (
-        <div className="report-modal-overlay" onClick={() => setShowReport(false)}>
-          <div className="report-modal glass-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="report-modal-overlay" onClick={closeReport}>
+          <div ref={reportModalRef} className="report-modal glass-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="report-title">
             <div className="report-header">
-              <h2>Report</h2>
-              <button className="close-btn" onClick={() => setShowReport(false)} aria-label="Close">✕</button>
+              <h2 id="report-title">Report</h2>
+              <button className="close-btn" onClick={closeReport} aria-label="Close">✕</button>
             </div>
 
             <div className="report-cards">

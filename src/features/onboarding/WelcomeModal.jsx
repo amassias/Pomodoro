@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { useDialogFocus } from '../../shared/ui/useDialogFocus';
 
 const WelcomeModal = ({ onStartTour, onSkip }) => {
+  const dialogRef = useRef(null);
+  useDialogFocus({ open: true, onClose: onSkip, dialogRef });
   return (
     <div className="welcome-overlay" role="presentation">
-      <div className="welcome-modal glass-panel" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
+      <div ref={dialogRef} className="welcome-modal glass-panel" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
         <div className="welcome-kicker"><span></span> Your focus space</div>
         <h1 id="welcome-title">Welcome to World Focus</h1>
         <p className="welcome-description">

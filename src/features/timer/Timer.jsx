@@ -2,12 +2,16 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ALARM_SOUNDS, TICKING_SOUNDS } from '../../lib/sounds';
 import { requestNotificationPermission, showNotification } from '../../lib/notifications';
 import { getModeMinutes } from '../../lib/timer';
+import { clearTimerSession, readTimerSession, writeTimerSession } from '../../lib/timerSession';
 
 const Timer = ({ settings }) => {
-  const [minutes, setMinutes] = useState(() => getModeMinutes('focus', settings));
-  const [seconds, setSeconds] = useState(0);
-  const [isActive, setIsActive] = useState(false);
-  const [mode, setMode] = useState('focus'); // focus, shortBreak, longBreak
+  const [initialSession] = useState(() => readTimerSession());
+  const initialRemainingMs = initialSession?.remainingMs ?? getModeMinutes('focus', settings) * 60 * 1000;
+  const initialTotalSeconds = Math.ceil(initialRemainingMs / 1000);
+  const [minutes, setMinutes] = useState(() => Math.floor(initialTotalSeconds / 60));
+  const [seconds, setSeconds] = useState(() => initialTotalSeconds % 60);
+  const [isActive, setIsActive] = useState(() => initialSession?.isActive ?? false);
+  const [mode, setMode] = useState(() => initialSession?.mode ?? 'focus');
   const pomodorosCompletedRef = useRef(0);
 
   const tickingAudioRef = useRef(null);
@@ -15,8 +19,9 @@ const Timer = ({ settings }) => {
   const settingsRef = useRef(settings);
   
   // Timestamp-based timing to prevent drift in background tabs
-  const endAtRef = useRef(null);
-  const remainingMsRef = useRef(getModeMinutes('focus', settings) * 60 * 1000);
+  const endAtRef = useRef(initialSession?.endAt ?? null);
+  const remainingMsRef = useRef(initialRemainingMs);
+  const restoredSessionRef = useRef(Boolean(initialSession));
 
   // Keep refs in sync with state/props
   useEffect(() => {
@@ -92,6 +97,7 @@ const Timer = ({ settings }) => {
     endAtRef.current = null;
     setMinutes(mins);
     setSeconds(0);
+    clearTimerSession();
   }, []);
 
   useEffect(() => {
@@ -107,6 +113,10 @@ const Timer = ({ settings }) => {
   useEffect(() => {
     // Sync time when settings or mode change IF not active to prevent jumping
     if (isActive) return;
+    if (restoredSessionRef.current) {
+      restoredSessionRef.current = false;
+      return;
+    }
     const mins = getModeMinutes(mode, settings);
     remainingMsRef.current = mins * 60 * 1000;
 
@@ -117,6 +127,15 @@ const Timer = ({ settings }) => {
 
     return () => clearTimeout(timeoutId);
   }, [settings, mode, isActive]);
+
+  useEffect(() => {
+    writeTimerSession({
+      mode,
+      isActive,
+      endAt: endAtRef.current,
+      remainingMs: remainingMsRef.current,
+    });
+  }, [mode, isActive, minutes, seconds]);
 
   // Helper to handle timer completion
   const handleTimerComplete = useCallback(() => {
@@ -274,6 +293,7 @@ const Timer = ({ settings }) => {
     endAtRef.current = null;
     setMinutes(mins);
     setSeconds(0);
+    clearTimerSession();
   };
 
   return (
@@ -332,7 +352,6 @@ const Timer = ({ settings }) => {
         .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); }
         .status-dot.active { background: var(--success-color); box-shadow: 0 0 12px var(--success-color); }
         .timer-caption { margin: -0.6rem 0 0; color: var(--text-muted); font-size: 0.78rem; text-align: center; }
-        }
         .timer-modes {
           display: flex;
           gap: 1rem;

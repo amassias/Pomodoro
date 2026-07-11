@@ -25,3 +25,11 @@ This backlog separates the cinematic UX refresh from future product work. Value 
 | P3 | English/French localization | Medium | High | i18n framework | All UI strings, dates and validation messages can switch language. |
 | P3 | Calendar integrations | Medium | High | OAuth and provider APIs | Focus blocks can be read from and written to a selected calendar. |
 | P3 | Shared focus sessions | Medium | High | Realtime presence | Invited users can join a synchronized session with explicit privacy controls. |
+
+## Implementation status
+
+- [x] P0 — Timer and task logic tests, including session restoration and archive transitions.
+- [x] P0 — Shared modal focus trapping, Escape handling and focus restoration for primary dialogs.
+- [x] P0 — Visible video and Lofi stream failure states with retry behavior.
+- [x] P0 — Versioned active-session persistence using an absolute timer deadline.
+- [x] P0 — Automated production asset budget and documented baseline in `PERFORMANCE.md`.

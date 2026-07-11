@@ -1,7 +1,8 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useUserData } from '../../providers/UserDataProvider.jsx';
 import { archiveTaskById, restoreTaskById } from '../../lib/tasks.js';
+import { useDialogFocus } from '../../shared/ui/useDialogFocus.js';
 
 const TaskList = () => {
     const { loading, tasks, setTasks, archivedTasks, setArchivedTasks } = useUserData();
@@ -11,6 +12,7 @@ const TaskList = () => {
     const [selectedArchivedIds, setSelectedArchivedIds] = useState(() => new Set());
     const [editingTaskId, setEditingTaskId] = useState(null);
     const [editingText, setEditingText] = useState('');
+    const archiveDialogRef = useRef(null);
 
     const closeArchive = useCallback(() => {
         setShowArchive(false);
@@ -19,15 +21,7 @@ const TaskList = () => {
         }
     }, [selectedArchivedIds.size]);
 
-    useEffect(() => {
-        const handleEsc = (e) => {
-            if (e.key === 'Escape' && showArchive) {
-                closeArchive();
-            }
-        };
-        window.addEventListener('keydown', handleEsc);
-        return () => window.removeEventListener('keydown', handleEsc);
-    }, [showArchive, closeArchive]);
+    useDialogFocus({ open: showArchive, onClose: closeArchive, dialogRef: archiveDialogRef });
 
     const toggleArchive = () => {
         setShowArchive(prev => {
@@ -216,9 +210,9 @@ const TaskList = () => {
 
             {showArchive && createPortal(
                 <div className="archive-modal-overlay" onClick={closeArchive}>
-                    <div className="archive-modal glass-panel" onClick={(e) => e.stopPropagation()}>
+                    <div ref={archiveDialogRef} className="archive-modal glass-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="archive-title">
                         <div className="archive-header">
-                            <h2>Archived Tasks</h2>
+                            <h2 id="archive-title">Archived Tasks</h2>
                             <button className="close-btn" onClick={closeArchive} aria-label="Close">✕</button>
                         </div>
                         {archivedTasks.length > 0 && (

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 let youtubeApiPromise;
 
@@ -33,6 +33,8 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
   const playerRef = useRef(null);
   const latestVideoIdRef = useRef(videoId);
   const onVideoErrorRef = useRef(onVideoError);
+  const [status, setStatus] = useState('loading');
+  const [retryNonce, setRetryNonce] = useState(0);
 
   useEffect(() => {
     onVideoErrorRef.current = onVideoError;
@@ -69,6 +71,7 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
             },
             events: {
               onReady: (event) => {
+                setStatus('ready');
                 try {
                   event.target.mute();
                   event.target.playVideo();
@@ -77,6 +80,7 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
                 }
               },
               onError: (event) => {
+                setStatus('failed');
                 const currentId = latestVideoIdRef.current || videoId;
                 onVideoErrorRef.current?.({ videoId: currentId, code: event.data });
               },
@@ -84,6 +88,7 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
           });
         }
       } catch (err) {
+        setStatus('failed');
         // If the API can't load, treat the video as broken for this session.
         const currentId = latestVideoIdRef.current || videoId;
         onVideoErrorRef.current?.({ videoId: currentId, code: 'api_load_failed', error: err });
@@ -96,7 +101,7 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
     };
     // init once
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [retryNonce]);
 
   useEffect(() => {
     latestVideoIdRef.current = videoId;
@@ -131,10 +136,27 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
     };
   }, []);
 
+  const retryVideo = () => {
+    try {
+      playerRef.current?.destroy?.();
+    } catch {
+      // Ignore teardown failures and recreate the player.
+    }
+    playerRef.current = null;
+    setStatus('loading');
+    setRetryNonce((value) => value + 1);
+  };
+
   return (
     <div className="video-background">
       <div className="video-overlay"></div>
       <div ref={containerRef} className="youtube-player" />
+      {status === 'failed' && (
+        <div className="media-fallback" role="status">
+          <span>Live atmosphere unavailable</span>
+          <button type="button" onClick={retryVideo}>Retry video</button>
+        </div>
+      )}
       <style>{`
         .video-background {
           position: fixed;
@@ -143,7 +165,7 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
           width: 100%;
           height: 100vh;
           z-index: -1;
-          pointer-events: none; /* Prevent interaction with video */
+          pointer-events: none;
           overflow: hidden;
           background:
             radial-gradient(circle at 25% 15%, rgba(255, 113, 107, 0.16), transparent 42%),
@@ -184,6 +206,24 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
           width: 100%;
           height: 100%;
         }
+        .media-fallback {
+          position: absolute;
+          left: 50%;
+          bottom: 6rem;
+          transform: translateX(-50%);
+          z-index: 2;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 0.65rem 0.8rem 0.65rem 1rem;
+          border: 1px solid rgba(255,255,255,0.14);
+          border-radius: 999px;
+          background: rgba(8,10,12,0.86);
+          color: var(--text-secondary);
+          font-size: 0.75rem;
+          pointer-events: auto;
+        }
+        .media-fallback button { padding: 0.45rem 0.7rem; border-radius: 999px; background: var(--accent-soft); color: #fff; }
       `}</style>
     </div>
   );

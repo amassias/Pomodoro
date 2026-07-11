@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ALARM_SOUNDS, TICKING_SOUNDS } from '../../lib/sounds';
 import { fetchUserPlaylists, getLoginUrl, getRedirectUri } from '../../lib/spotify';
+import { useDialogFocus } from '../../shared/ui/useDialogFocus';
 
 const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => {
     const modalContentRef = useRef(null);
     const previewAudioRef = useRef(null);
     const previewAudioContextRef = useRef(null);
-    const previousActiveElementRef = useRef(document.activeElement);
     const [connecting, setConnecting] = useState(false);
     const [playlists, setPlaylists] = useState([]);
     const [loadingPlaylists, setLoadingPlaylists] = useState(false);
@@ -89,34 +89,15 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
         });
     };
 
-    const handleClose = () => {
+    const handleClose = useCallback(() => {
         stopPreviewAudio();
         onClose?.();
-    };
+    }, [onClose]);
+
+    useDialogFocus({ open: true, onClose: handleClose, dialogRef: modalContentRef });
 
     useEffect(() => {
-        const modal = modalContentRef.current;
-        const previouslyFocused = previousActiveElementRef.current;
-        const focusable = modal?.querySelectorAll('button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
-        focusable?.[0]?.focus();
-
-        const trapFocus = (event) => {
-            if (event.key !== 'Tab' || !focusable?.length) return;
-            const first = focusable[0];
-            const last = focusable[focusable.length - 1];
-            if (event.shiftKey && document.activeElement === first) {
-                event.preventDefault();
-                last.focus();
-            } else if (!event.shiftKey && document.activeElement === last) {
-                event.preventDefault();
-                first.focus();
-            }
-        };
-
-        document.addEventListener('keydown', trapFocus);
         return () => {
-            document.removeEventListener('keydown', trapFocus);
-            previouslyFocused?.focus?.();
             stopPreviewAudio();
             try {
                 previewAudioContextRef.current?.close?.();
