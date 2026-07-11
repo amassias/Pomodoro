@@ -33,3 +33,8 @@ This backlog separates the cinematic UX refresh from future product work. Value 
 - [x] P0 — Visible video and Lofi stream failure states with retry behavior.
 - [x] P0 — Versioned active-session persistence using an absolute timer deadline.
 - [x] P0 — Automated production asset budget and documented baseline in `PERFORMANCE.md`.
+- [x] P1 — Explicit active task, Pomodoro estimates and completed-session tracking.
+- [x] P1 — Classic, Deep 50 and Flow 90 timer presets plus full-screen focus mode.
+- [x] P1 — User-controlled keyboard shortcut setting and progressive notification request on first start.
+- [x] P2 — Weekly goal progress and configurable weekly target.
+- [x] P2 — Versioned JSON backup import/export while preserving local Spotify secrets.

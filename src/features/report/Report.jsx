@@ -23,7 +23,8 @@ const Report = () => {
   useDialogFocus({ open: showReport, onClose: closeReport, dialogRef: reportModalRef });
 
   const { loading: authLoading, user, signInWithPassword, signUp, signInWithOAuth, signOut } = useAuth();
-  const { pomodoroHistory, setPomodoroHistory, setTasks, activeTask, archivedTasks, setArchivedTasks } = useUserData();
+  const { pomodoroHistory, setPomodoroHistory, tasks, setTasks, activeTask, archivedTasks, setArchivedTasks, settings, setSettings } = useUserData();
+  const importInputRef = useRef(null);
   const [stats, setStats] = useState({
     totalHours: 0,
     pomodorosCompleted: 0,
@@ -66,7 +67,10 @@ const Report = () => {
       taskId: activeTask?.id || null,
       taskName: activeTask?.text || null,
     });
-  }, [savePomodoroData, activeTask]);
+    if (activeTask?.id) {
+      setTasks(prev => prev.map(task => task.id === activeTask.id ? { ...task, completedPomodoros: (task.completedPomodoros || 0) + 1 } : task));
+    }
+  }, [savePomodoroData, activeTask, setTasks]);
 
   const loadStats = useCallback(() => {
     const history = pomodoroHistory && typeof pomodoroHistory === 'object' ? pomodoroHistory : {};
@@ -567,6 +571,28 @@ const Report = () => {
               }}>
                 Export CSV
               </button>
+              <button className="export-btn" onClick={() => {
+                const backup = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), tasks, archivedTasks, pomodoroHistory, settings }, null, 2);
+                downloadFile(backup, `world_focus_backup_${getLocalDateKey()}.json`, 'application/json');
+              }}>Export JSON</button>
+              <button className="export-btn" onClick={() => importInputRef.current?.click()}>Import JSON</button>
+              <input ref={importInputRef} type="file" accept="application/json,.json" hidden onChange={async (event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                try {
+                  const backup = JSON.parse(await file.text());
+                  if (backup.version !== 1 || !Array.isArray(backup.tasks) || !Array.isArray(backup.archivedTasks) || !backup.pomodoroHistory || typeof backup.settings !== 'object') throw new Error('Unsupported backup');
+                  if (!window.confirm('Replace current tasks, history and settings with this backup?')) return;
+                  setTasks(backup.tasks);
+                  setArchivedTasks(backup.archivedTasks);
+                  setPomodoroHistory(backup.pomodoroHistory);
+                  setSettings(prev => ({ ...prev, ...backup.settings, spotifyToken: prev.spotifyToken, spotifyRefreshToken: prev.spotifyRefreshToken, spotifyTokenExpiresAt: prev.spotifyTokenExpiresAt }));
+                } catch {
+                  window.alert('This backup file is invalid or unsupported.');
+                } finally {
+                  event.target.value = '';
+                }
+              }} />
               <button className="reset-btn" onClick={() => {
                 if (confirm('Reset all data?')) {
                   setPomodoroHistory({});

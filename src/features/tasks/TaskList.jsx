@@ -5,7 +5,7 @@ import { archiveTaskById, restoreTaskById } from '../../lib/tasks.js';
 import { useDialogFocus } from '../../shared/ui/useDialogFocus.js';
 
 const TaskList = () => {
-    const { loading, tasks, setTasks, archivedTasks, setArchivedTasks } = useUserData();
+    const { loading, tasks, setTasks, archivedTasks, setArchivedTasks, activeTask, settings, setSettings } = useUserData();
     const [newTask, setNewTask] = useState('');
     const [showArchive, setShowArchive] = useState(false);
     const [animatingTaskId, setAnimatingTaskId] = useState(null);
@@ -36,7 +36,9 @@ const TaskList = () => {
     const addTask = (e) => {
         e.preventDefault();
         if (!newTask.trim()) return;
-        setTasks(prev => [...(Array.isArray(prev) ? prev : []), { id: crypto.randomUUID(), text: newTask.trim(), completed: false }]);
+        const id = crypto.randomUUID();
+        setTasks(prev => [...(Array.isArray(prev) ? prev : []), { id, text: newTask.trim(), completed: false, estimatedPomodoros: 1, completedPomodoros: 0 }]);
+        if (!activeTask) setSettings(prev => ({ ...prev, activeTaskId: id }));
         setNewTask('');
     };
 
@@ -187,7 +189,7 @@ const TaskList = () => {
                 {(Array.isArray(tasks) ? tasks : []).map(task => (
                     <li
                         key={task.id}
-                        className={`task-item ${task.completed ? 'completed' : ''} ${animatingTaskId === task.id ? 'animating' : ''}`}
+                        className={`task-item ${task.completed ? 'completed' : ''} ${activeTask?.id === task.id ? 'active-task' : ''} ${animatingTaskId === task.id ? 'animating' : ''}`}
                     >
                         <button className="checkbox-wrapper" onClick={() => toggleTask(task.id)} aria-label={`Complete ${task.text}`}>
                             {task.completed && <span className="checkmark">✓</span>}
@@ -200,7 +202,10 @@ const TaskList = () => {
                         ) : (
                             <span className="task-text">{task.text}</span>
                         )}
+                        <div className="pomodoro-estimate" aria-label={`${task.completedPomodoros || 0} of ${task.estimatedPomodoros || 1} Pomodoros`}>{task.completedPomodoros || 0}/{task.estimatedPomodoros || 1}</div>
                         <div className="task-item-actions">
+                            <button onClick={() => setSettings({ ...settings, activeTaskId: task.id })} aria-label={`Focus ${task.text}`} aria-pressed={activeTask?.id === task.id}>{activeTask?.id === task.id ? 'Active' : 'Focus'}</button>
+                            <button onClick={() => setTasks(prev => prev.map(item => item.id === task.id ? { ...item, estimatedPomodoros: Math.min(12, (item.estimatedPomodoros || 1) + 1) } : item))} aria-label={`Increase estimate for ${task.text}`}>+🍅</button>
                             <button onClick={() => startEditing(task)} aria-label={`Edit ${task.text}`}>Edit</button>
                             <button className="danger" onClick={() => removeActiveTask(task.id)} aria-label={`Remove ${task.text}`}>Remove</button>
                         </div>
@@ -353,6 +358,8 @@ const TaskList = () => {
                 .task-item-actions button { color: var(--text-secondary); background: transparent; font-size: 0.68rem; padding: 0.3rem; }
                 .task-item-actions button:hover { color: #fff; }
                 .task-item-actions .danger:hover { color: var(--accent-color); }
+                .task-item.active-task { border-color: rgba(255,113,107,0.42); background: rgba(255,113,107,0.08); }
+                .pomodoro-estimate { color: var(--text-muted); font-size: 0.68rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
                 .task-edit-form { flex: 1; display: flex; gap: 0.4rem; }
                 .task-edit-form input { min-width: 0; flex: 1; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.4rem; }
                 .task-edit-form button { color: #fff; background: var(--accent-soft); border-radius: 8px; padding: 0.35rem 0.55rem; }

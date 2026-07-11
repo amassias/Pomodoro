@@ -151,7 +151,7 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
         if (durationFieldNames.has(name)) return;
-        const newValue = type === 'checkbox' ? checked : (name.includes('Volume') || name.includes('Repeat') ? Number(value) : value);
+        const newValue = type === 'checkbox' ? checked : (name.includes('Volume') || name.includes('Repeat') || name.includes('Goal') ? Number(value) : value);
 
         updateSettings({
             ...settings,
@@ -286,6 +286,14 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                             className="slider"
                         />
                         <span className="slider-value">{Math.floor((settings.dailyGoal || 120) / 60)}h {((settings.dailyGoal || 120) % 60) > 0 ? ((settings.dailyGoal || 120) % 60) + 'm' : ''}</span>
+                    </div>
+                </div>
+                <div className="setting-group">
+                    <h3>Weekly Goal</h3>
+                    <div className="slider-group">
+                        <span className="slider-label">Target</span>
+                        <input type="range" name="weeklyGoal" min="120" max="2400" step="30" value={settings.weeklyGoal || 600} onChange={handleChange} className="slider" />
+                        <span className="slider-value">{Math.floor((settings.weeklyGoal || 600) / 60)}h</span>
                     </div>
                 </div>
 
@@ -489,6 +497,10 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                 </div>
                 <div className="setting-group">
                     <h3>Help</h3>
+                    <label className="toggle-label">
+                        <span>Keyboard shortcuts</span>
+                        <input type="checkbox" name="shortcutsEnabled" checked={settings.shortcutsEnabled !== false} onChange={handleChange} />
+                    </label>
                     <button
                         className="tutorial-btn"
                         onClick={onRestartTour}

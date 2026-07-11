@@ -4,7 +4,7 @@ import { requestNotificationPermission, showNotification } from '../../lib/notif
 import { getModeMinutes } from '../../lib/timer';
 import { clearTimerSession, readTimerSession, writeTimerSession } from '../../lib/timerSession';
 
-const Timer = ({ settings }) => {
+const Timer = ({ settings, updateSettings }) => {
   const [initialSession] = useState(() => readTimerSession());
   const initialRemainingMs = initialSession?.remainingMs ?? getModeMinutes('focus', settings) * 60 * 1000;
   const initialTotalSeconds = Math.ceil(initialRemainingMs / 1000);
@@ -296,6 +296,24 @@ const Timer = ({ settings }) => {
     clearTimerSession();
   };
 
+  const applyPreset = (focusDuration, shortBreakDuration, longBreakDuration) => {
+    updateSettings(prev => ({ ...prev, focusDuration, shortBreakDuration, longBreakDuration }));
+    setMode('focus');
+    setIsActive(false);
+    remainingMsRef.current = focusDuration * 60 * 1000;
+    setMinutes(focusDuration);
+    setSeconds(0);
+  };
+
+  const toggleFullscreen = async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen();
+    } catch {
+      // Fullscreen can be unavailable in embedded browsers.
+    }
+  };
+
   return (
     <div className="timer-container glass-panel">
       <div className="timer-heading">
@@ -321,6 +339,12 @@ const Timer = ({ settings }) => {
         >
           Long
         </button>
+      </div>
+      <div className="timer-tools" aria-label="Focus presets">
+        <button onClick={() => applyPreset(25, 5, 15)}>Classic</button>
+        <button onClick={() => applyPreset(50, 10, 20)}>Deep 50</button>
+        <button onClick={() => applyPreset(90, 15, 30)}>Flow 90</button>
+        <button onClick={toggleFullscreen}>Full screen</button>
       </div>
 
       <div className="time-display">
@@ -372,6 +396,9 @@ const Timer = ({ settings }) => {
           color: #fff;
           font-weight: 600;
         }
+        .timer-tools { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem; margin-top: -0.65rem; }
+        .timer-tools button { padding: 0.35rem 0.55rem; border-radius: 999px; background: transparent; color: var(--text-muted); font-size: 0.66rem; border: 1px solid rgba(255,255,255,0.08); }
+        .timer-tools button:hover { color: #fff; border-color: rgba(255,255,255,0.2); }
         .time-display {
           font-size: clamp(4.5rem, 9vw, 7rem);
           font-weight: 300;

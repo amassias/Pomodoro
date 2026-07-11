@@ -391,12 +391,12 @@ function App() {
 
       if (e.key === 'Escape' && showSettings) {
         setShowSettings(false);
-      } else if (e.code === 'Space') {
+      } else if (settings.shortcutsEnabled !== false && e.code === 'Space') {
         e.preventDefault();
         window.dispatchEvent(new CustomEvent('timer-toggle'));
-      } else if (e.key.toLowerCase() === 'r') {
+      } else if (settings.shortcutsEnabled !== false && e.key.toLowerCase() === 'r') {
         window.dispatchEvent(new CustomEvent('timer-reset'));
-      } else if (e.key.toLowerCase() === 'm') {
+      } else if (settings.shortcutsEnabled !== false && e.key.toLowerCase() === 'm') {
         // Toggle Mute: Toggle between 0 and defaults (70/50)
         setSettings(prev => {
           const newAlarmVol = prev.alarmVolume === 0 ? 70 : 0;
@@ -407,7 +407,7 @@ function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showSettings, setSettings]);
+  }, [showSettings, setSettings, settings.shortcutsEnabled]);
 
   // Exhaustive list of video streams with categories
   const visibleCities = React.useMemo(() => {
@@ -502,7 +502,7 @@ function App() {
         </div>
         <main className="main-content">
           <div className="main-grid">
-            <Timer settings={settings} />
+            <Timer settings={settings} updateSettings={setSettings} />
             <TaskList />
           </div>
         </main>

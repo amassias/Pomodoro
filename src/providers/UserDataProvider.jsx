@@ -39,6 +39,9 @@ const getDefaultSettings = ({ userId }) => {
     autoStartPomodoros: false,
     musicProvider: 'lofi',
     dailyGoal: 120, // 2 hours in minutes
+    weeklyGoal: 600,
+    activeTaskId: null,
+    shortcutsEnabled: true,
 
     // Spotify preferences + local-only secrets
     spotifyClientId: savedSpotifyClientId,
@@ -98,6 +101,8 @@ const normalizeTask = (task) => {
     id,
     text: typeof task.text === 'string' ? task.text : '',
     completed: typeof task.completed === 'boolean' ? task.completed : false,
+    estimatedPomodoros: Number.isInteger(Number(task.estimatedPomodoros)) && Number(task.estimatedPomodoros) > 0 ? Number(task.estimatedPomodoros) : 1,
+    completedPomodoros: Number.isInteger(Number(task.completedPomodoros)) && Number(task.completedPomodoros) >= 0 ? Number(task.completedPomodoros) : 0,
   };
 };
 
@@ -371,8 +376,8 @@ export const UserDataProvider = ({ children }) => {
   }, []);
 
   const value = useMemo(() => {
-    // The "active task" is the first incomplete task in the list
-    const activeTask = (Array.isArray(tasks) ? tasks : []).find((t) => !t.completed) || null;
+    const incompleteTasks = (Array.isArray(tasks) ? tasks : []).filter((task) => !task.completed);
+    const activeTask = incompleteTasks.find((task) => task.id === settings.activeTaskId) || incompleteTasks[0] || null;
 
     return {
       loading,

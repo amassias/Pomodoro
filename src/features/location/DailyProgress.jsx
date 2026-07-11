@@ -2,12 +2,19 @@ import React from 'react';
 import { useUserData } from '../../providers/UserDataProvider';
 
 const DailyProgress = () => {
-    const { settings, getTodayProgress } = useUserData();
+    const { settings, getTodayProgress, pomodoroHistory } = useUserData();
     const todayProgress = getTodayProgress();
     const dailyGoal = settings.dailyGoal || 120; // Default 2 hours
 
     const percentage = Math.min(100, (todayProgress / dailyGoal) * 100);
     const isCompleted = percentage >= 100;
+    const weekStart = new Date();
+    weekStart.setHours(0, 0, 0, 0);
+    weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
+    const weeklyProgress = Object.entries(pomodoroHistory || {}).reduce((sum, [date, sessions]) => {
+        if (new Date(`${date}T00:00:00`) < weekStart || !Array.isArray(sessions)) return sum;
+        return sum + sessions.reduce((total, session) => total + (session.duration || 0), 0);
+    }, 0);
 
     const strokeDasharray = 2 * Math.PI * 18; // Radius 18
     const strokeDashoffset = strokeDasharray * ((100 - percentage) / 100);
@@ -56,6 +63,9 @@ const DailyProgress = () => {
                 <span>Daily focus</span>
                 <strong>{formatHours(todayProgress)} <small>/ {formatHours(dailyGoal)}</small></strong>
             </div>
+            <div className="weekly-progress" title={`Weekly focus: ${formatHours(weeklyProgress)} of ${formatHours(settings.weeklyGoal || 600)}`}>
+                Week {Math.min(100, Math.round((weeklyProgress / (settings.weeklyGoal || 600)) * 100))}%
+            </div>
 
             <style>{`
                 .daily-progress {
@@ -91,8 +101,9 @@ const DailyProgress = () => {
                 .progress-copy span { color: var(--text-muted); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; }
                 .progress-copy strong { font-size: 0.76rem; font-weight: 600; }
                 .progress-copy small { color: var(--text-muted); font-weight: 400; }
+                .weekly-progress { padding-left: 0.65rem; border-left: 1px solid var(--glass-border); color: var(--text-secondary); font-size: 0.68rem; white-space: nowrap; }
 
-                @media (max-width: 560px) { .progress-copy { display: none; } .daily-progress { padding-right: 0; } }
+                @media (max-width: 680px) { .progress-copy, .weekly-progress { display: none; } .daily-progress { padding-right: 0; } }
             `}</style>
         </div>
     );
