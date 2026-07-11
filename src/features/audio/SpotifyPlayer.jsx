@@ -38,7 +38,7 @@ const SpotifyWebPlayer = ({ token, playing, uri, isPremium }) => {
                     height: '80px',
                 }}
             />
-            <style jsx>{`
+            <style>{`
                 .spotify-player-wrapper {
                                      position: fixed;
                                      bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem);

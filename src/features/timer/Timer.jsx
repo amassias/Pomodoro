@@ -330,7 +330,7 @@ const Timer = ({ settings }) => {
         </button>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .timer-container {
           padding: 3rem;
           display: flex;

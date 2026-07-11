@@ -275,7 +275,7 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
         </div>
       )}
 
-      <style jsx>{`
+      <style>{`
         .bottom-bar {
           position: fixed;
           bottom: 1rem;

@@ -573,7 +573,7 @@ const Report = () => {
         </div>
       )}
 
-      <style jsx>{`
+      <style>{`
         .report-btn {
           position: fixed;
           top: calc(env(safe-area-inset-top, 0px) + 0.75rem + 60px);

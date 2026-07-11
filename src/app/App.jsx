@@ -143,7 +143,7 @@ function App() {
 
       // In local dev mode, skip validation entirely and show all locations
       // Vercel serverless functions aren't available locally
-      if (import.meta?.env?.DEV) {
+      if (import.meta.env.DEV) {
         setLiveYoutubeVideoIds(new Set(videoIds));
         setLocationsError(null);
         setIsValidatingLocations(false);
@@ -575,7 +575,7 @@ function App() {
         </Suspense>
       )}
 
-      <style jsx>{`
+      <style>{`
         .app-container {
           position: relative;
           width: 100%;

@@ -216,7 +216,7 @@ const LofiPlayer = () => {
         </button>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .lofi-player {
           position: fixed;
           bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem);

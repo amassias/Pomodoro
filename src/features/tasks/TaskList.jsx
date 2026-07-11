@@ -39,52 +39,46 @@ const TaskList = () => {
     const addTask = (e) => {
         e.preventDefault();
         if (!newTask.trim()) return;
-        setTasks(prev => [...(Array.isArray(prev) ? prev : []), { id: crypto.randomUUID(), text: newTask, completed: false }]);
+        setTasks(prev => [...(Array.isArray(prev) ? prev : []), { id: crypto.randomUUID(), text: newTask.trim(), completed: false }]);
         setNewTask('');
     };
 
     const toggleTask = (id) => {
-        setTasks(prev => {
-            const task = prev.find(t => t.id === id);
-            if (task && !task.completed) {
-                // Animate the task before archiving
-                setAnimatingTaskId(id);
-                setTimeout(() => {
-                    archiveTask(id);
-                    setAnimatingTaskId(null);
-                }, 400);
-                return prev; // Return unchanged, archiveTask will update
-            } else {
-                return prev.map(t =>
-                    t.id === id ? { ...t, completed: !t.completed } : t
-                );
-            }
-        });
+        const task = tasks.find(t => t.id === id);
+        if (task && !task.completed) {
+            setAnimatingTaskId(id);
+            setTimeout(() => {
+                archiveTask(id);
+                setAnimatingTaskId(null);
+            }, 400);
+            return;
+        }
+
+        setTasks(prev => prev.map(t =>
+            t.id === id ? { ...t, completed: !t.completed } : t
+        ));
     };
 
     const archiveTask = (id) => {
-        setTasks(prev => {
-            const task = prev.find(t => t.id === id);
-            if (task) {
-                setArchivedTasks(prevArchived => [...prevArchived, { ...task, completed: true, archivedAt: new Date().toISOString() }]);
-                return prev.filter(t => t.id !== id);
-            }
-            return prev;
-        });
+        const task = tasks.find(t => t.id === id);
+        if (!task) return;
+
+        setTasks(prev => prev.filter(t => t.id !== id));
+        setArchivedTasks(prevArchived => [
+            ...prevArchived,
+            { ...task, completed: true, archivedAt: new Date().toISOString() }
+        ]);
     };
 
     const restoreTask = (id) => {
-        setArchivedTasks(prev => {
-            const task = prev.find(t => t.id === id);
-            if (task) {
-                const restoredTask = { ...task };
-                delete restoredTask.archivedAt;
-                setTasks(prevTasks => [...prevTasks, { ...restoredTask, completed: false }]);
-                closeArchive();
-                return prev.filter(t => t.id !== id);
-            }
-            return prev;
-        });
+        const task = archivedTasks.find(t => t.id === id);
+        if (!task) return;
+
+        const restoredTask = { ...task };
+        delete restoredTask.archivedAt;
+        setArchivedTasks(prev => prev.filter(t => t.id !== id));
+        setTasks(prevTasks => [...prevTasks, { ...restoredTask, completed: false }]);
+        closeArchive();
     };
 
     const deleteTask = (id) => {
@@ -278,7 +272,7 @@ const TaskList = () => {
             {loading && (
                 <div className="task-sync-status" aria-live="polite">Syncing…</div>
             )}
-            <style jsx>{`
+            <style>{`
                 .task-list-container {
                     padding: 1.5rem;
                     width: 100%;

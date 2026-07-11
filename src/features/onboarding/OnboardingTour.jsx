@@ -222,7 +222,7 @@ const OnboardingTour = ({ onComplete }) => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .tour-overlay {
           position: fixed;
           inset: 0;

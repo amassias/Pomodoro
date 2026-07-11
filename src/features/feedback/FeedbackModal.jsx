@@ -358,7 +358,7 @@ const FeedbackModal = ({ open, onClose, currentStreamId, currentStreamName }) =>
           </div>
         </form>
 
-        <style jsx>{`
+        <style>{`
           .feedback-modal-overlay {
             position: fixed;
             top: 0;

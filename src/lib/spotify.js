@@ -44,11 +44,11 @@ const buildCodeChallenge = async (verifier) => {
 
 export const getRedirectUri = () => {
     // You can override the full redirect URI via env (recommended for production).
-    const explicit = import.meta?.env?.VITE_SPOTIFY_REDIRECT_URI;
+    const explicit = import.meta.env.VITE_SPOTIFY_REDIRECT_URI;
     if (explicit) return explicit;
 
     // Or override only the path.
-    const path = import.meta?.env?.VITE_SPOTIFY_REDIRECT_PATH || DEFAULT_REDIRECT_PATH;
+    const path = import.meta.env.VITE_SPOTIFY_REDIRECT_PATH || DEFAULT_REDIRECT_PATH;
     const normalizedPath = path.startsWith("/") ? path : `/${path}`;
     return `${window.location.origin}${normalizedPath}`;
 };

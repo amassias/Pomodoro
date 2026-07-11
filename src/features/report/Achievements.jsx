@@ -55,7 +55,7 @@ const Achievements = ({ history }) => {
                 );
             })}
 
-            <style jsx>{`
+            <style>{`
         .achievements-container {
           margin-top: 2rem;
           width: 100%;

@@ -135,7 +135,7 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
     <div className="video-background">
       <div className="video-overlay"></div>
       <div ref={containerRef} className="youtube-player" />
-      <style jsx>{`
+      <style>{`
         .video-background {
           position: fixed;
           top: 0;

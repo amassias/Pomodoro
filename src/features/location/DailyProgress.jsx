@@ -53,7 +53,7 @@ const DailyProgress = () => {
                 </div>
             </div>
 
-            <style jsx>{`
+            <style>{`
                 .daily-progress {
                     display: flex;
                     align-items: center;

@@ -497,7 +497,7 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                         Keyboard shortcuts: <kbd>Space</kbd> start/pause • <kbd>R</kbd> reset • <kbd>M</kbd> mute
                     </p>
                 </div>
-                <style jsx>{`
+                <style>{`
                     .modal-overlay {
                         position: fixed;
                         top: 0;

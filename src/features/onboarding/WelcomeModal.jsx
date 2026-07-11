@@ -45,7 +45,7 @@ const WelcomeModal = ({ onStartTour, onSkip }) => {
         </p>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .welcome-overlay {
           position: fixed;
           inset: 0;
