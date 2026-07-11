@@ -371,6 +371,7 @@ const Report = () => {
           <line x1="12" y1="20" x2="12" y2="4" />
           <line x1="6" y1="20" x2="6" y2="14" />
         </svg>
+        <span>Insights</span>
       </button>
 
       <button
@@ -388,6 +389,7 @@ const Report = () => {
           <path d="M20 21a8 8 0 0 0-16 0" />
           <circle cx="12" cy="7" r="4" />
         </svg>
+        <span>{user ? 'Account' : 'Sign in'}</span>
       </button>
 
       {showAuth && (
@@ -576,20 +578,23 @@ const Report = () => {
       <style>{`
         .report-btn {
           position: fixed;
-          top: calc(env(safe-area-inset-top, 0px) + 0.75rem + 60px);
+          top: calc(env(safe-area-inset-top, 0px) + 6.75rem);
           right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
           background: rgba(255, 255, 255, 0.1);
           border: 1px solid rgba(255, 255, 255, 0.2);
           color: #fff;
-          width: 48px;
-          height: 48px;
-          border-radius: 50%;
+          min-width: 48px;
+          height: 42px;
+          border-radius: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
           transition: all 0.2s;
           z-index: 100;
+          gap: 0.45rem;
+          padding: 0 0.8rem;
+          font-size: 0.78rem;
         }
 
         .report-btn:hover {
@@ -599,20 +604,23 @@ const Report = () => {
 
         .auth-btn {
           position: fixed;
-          top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
+          top: calc(env(safe-area-inset-top, 0px) + 9.75rem);
           right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
           background: rgba(255, 255, 255, 0.1);
           border: 1px solid rgba(255, 255, 255, 0.2);
           color: #fff;
-          width: 48px;
-          height: 48px;
-          border-radius: 50%;
+          min-width: 48px;
+          height: 42px;
+          border-radius: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
           transition: all 0.2s;
           z-index: 100;
+          gap: 0.45rem;
+          padding: 0 0.8rem;
+          font-size: 0.78rem;
         }
 
         .auth-btn:hover {
@@ -626,7 +634,7 @@ const Report = () => {
 
         .auth-popover {
           position: fixed;
-          top: calc(env(safe-area-inset-top, 0px) + 0.75rem + 180px);
+          top: calc(env(safe-area-inset-top, 0px) + 12.75rem);
           right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
           width: min(320px, calc(100vw - 1.5rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
           padding: 1rem;
@@ -858,6 +866,8 @@ const Report = () => {
         }
 
         @media (max-width: 768px) {
+          .report-btn span, .auth-btn span { display: none; }
+          .report-btn, .auth-btn { width: 42px; min-width: 42px; padding: 0; }
           .report-modal {
             width: 100%;
             border-radius: 16px;

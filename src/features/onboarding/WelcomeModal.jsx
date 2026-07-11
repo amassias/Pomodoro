@@ -2,41 +2,36 @@ import React from 'react';
 
 const WelcomeModal = ({ onStartTour, onSkip }) => {
   return (
-    <div className="welcome-overlay">
-      <div className="welcome-modal glass-panel">
-        <div className="welcome-icon">🍅</div>
-        <h1>Welcome to Pomodoro Focus</h1>
+    <div className="welcome-overlay" role="presentation">
+      <div className="welcome-modal glass-panel" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
+        <div className="welcome-kicker"><span></span> Your focus space</div>
+        <h1 id="welcome-title">Welcome to World Focus</h1>
         <p className="welcome-description">
-          A beautiful timer to help you stay focused using the Pomodoro Technique — 
-          work in focused sprints, take short breaks, and accomplish more.
+          A calm place to do one meaningful thing at a time. Set the timer, choose your atmosphere, and begin.
         </p>
         
         <div className="welcome-features">
           <div className="feature">
-            <span className="feature-icon">⏱️</span>
-            <span>25-minute focus sessions</span>
+            <span className="feature-number">01</span>
+            <span><strong>Set your rhythm</strong><small>Focus sessions and intentional breaks</small></span>
           </div>
           <div className="feature">
-            <span className="feature-icon">☕</span>
-            <span>Refreshing short & long breaks</span>
+            <span className="feature-number">02</span>
+            <span><strong>Choose one task</strong><small>Keep your attention anchored</small></span>
           </div>
           <div className="feature">
-            <span className="feature-icon">🎵</span>
-            <span>Ambient music & live backgrounds</span>
-          </div>
-          <div className="feature">
-            <span className="feature-icon">✅</span>
-            <span>Task tracking & daily goals</span>
+            <span className="feature-number">03</span>
+            <span><strong>Shape the atmosphere</strong><small>Live places and ambient sound</small></span>
           </div>
         </div>
 
         <div className="welcome-actions">
-          <button className="tour-btn" onClick={onStartTour}>
-            <span>Take a Quick Tour</span>
+          <button className="tour-btn" onClick={onStartTour} autoFocus>
+            <span>Show me around</span>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
           </button>
           <button className="skip-btn" onClick={onSkip}>
-            Skip, I'll explore myself
+            Start without the tour
           </button>
         </div>
 
@@ -49,13 +44,14 @@ const WelcomeModal = ({ onStartTour, onSkip }) => {
         .welcome-overlay {
           position: fixed;
           inset: 0;
-          background: rgba(0, 0, 0, 0.7);
-          backdrop-filter: blur(8px);
+          background: rgba(0, 0, 0, 0.78);
+          backdrop-filter: blur(16px);
           display: flex;
           align-items: center;
           justify-content: center;
           z-index: 1000;
           padding: 1rem;
+          overflow-y: auto;
           animation: fadeIn 0.3s ease;
         }
 
@@ -65,10 +61,10 @@ const WelcomeModal = ({ onStartTour, onSkip }) => {
         }
 
         .welcome-modal {
-          max-width: 480px;
+          max-width: 500px;
           width: 100%;
           padding: 2.5rem;
-          text-align: center;
+          text-align: left;
           animation: slideUp 0.4s ease;
         }
 
@@ -83,25 +79,14 @@ const WelcomeModal = ({ onStartTour, onSkip }) => {
           }
         }
 
-        .welcome-icon {
-          font-size: 4rem;
-          margin-bottom: 1rem;
-          animation: bounce 1s ease infinite;
-        }
-
-        @keyframes bounce {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
-        }
+        .welcome-kicker { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; color: var(--accent-color); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.16em; }
+        .welcome-kicker span { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-color); box-shadow: 0 0 14px var(--accent-color); }
 
         h1 {
-          font-size: 1.75rem;
+          font-size: clamp(1.8rem, 6vw, 2.6rem);
           font-weight: 600;
           margin: 0 0 0.75rem 0;
-          background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.8) 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+          letter-spacing: -0.04em;
         }
 
         .welcome-description {
@@ -124,14 +109,16 @@ const WelcomeModal = ({ onStartTour, onSkip }) => {
           align-items: center;
           gap: 0.75rem;
           padding: 0.5rem 0.75rem;
-          background: rgba(255, 255, 255, 0.05);
-          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 12px;
           font-size: 0.9rem;
         }
 
-        .feature-icon {
-          font-size: 1.1rem;
-        }
+        .feature-number { color: var(--accent-color); font-variant-numeric: tabular-nums; font-size: 0.7rem; }
+        .feature > span:last-child { display: flex; flex-direction: column; gap: 0.15rem; }
+        .feature strong { font-size: 0.86rem; }
+        .feature small { color: var(--text-muted); font-size: 0.72rem; }
 
         .welcome-actions {
           display: flex;
@@ -144,8 +131,8 @@ const WelcomeModal = ({ onStartTour, onSkip }) => {
           align-items: center;
           justify-content: center;
           gap: 0.5rem;
-          background: #fff;
-          color: #000;
+          background: var(--accent-color);
+          color: #1a0807;
           padding: 0.9rem 1.5rem;
           border-radius: 99px;
           font-weight: 600;
@@ -175,6 +162,7 @@ const WelcomeModal = ({ onStartTour, onSkip }) => {
           font-size: 0.8rem;
           color: var(--text-secondary);
           opacity: 0.7;
+          text-align: center;
         }
 
         kbd {
@@ -195,9 +183,7 @@ const WelcomeModal = ({ onStartTour, onSkip }) => {
             font-size: 1.5rem;
           }
 
-          .welcome-icon {
-            font-size: 3rem;
-          }
+          .welcome-hint { display: none; }
         }
       `}</style>
     </div>

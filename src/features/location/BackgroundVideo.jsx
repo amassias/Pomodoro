@@ -145,6 +145,9 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
           z-index: -1;
           pointer-events: none; /* Prevent interaction with video */
           overflow: hidden;
+          background:
+            radial-gradient(circle at 25% 15%, rgba(255, 113, 107, 0.16), transparent 42%),
+            linear-gradient(145deg, #1a1e24, #07090c 70%);
         }
         @supports (height: 100dvh) {
           .video-background {
@@ -157,7 +160,9 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
           left: 0;
           width: 100%;
           height: 100%;
-          background: rgba(0, 0, 0, 0.2); /* Slight darken for text readability */
+          background:
+            linear-gradient(90deg, rgba(0,0,0,0.38), rgba(0,0,0,0.12) 45%, rgba(0,0,0,0.3)),
+            linear-gradient(0deg, rgba(0,0,0,0.48), transparent 45%, rgba(0,0,0,0.18));
           z-index: 1;
         }
         .youtube-player {

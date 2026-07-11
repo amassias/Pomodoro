@@ -1,25 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ALARM_SOUNDS, TICKING_SOUNDS } from '../../lib/sounds';
 import { requestNotificationPermission, showNotification } from '../../lib/notifications';
-
-const DEFAULT_DURATIONS = {
-  focus: 25,
-  shortBreak: 5,
-  longBreak: 15,
-};
-
-const coercePositiveInt = (value, fallback) => {
-  const n = Number(value);
-  if (Number.isInteger(n) && n > 0) return n;
-  return fallback;
-};
-
-const getModeMinutes = (mode, settings) => {
-  if (mode === 'focus') return coercePositiveInt(settings.focusDuration, DEFAULT_DURATIONS.focus);
-  if (mode === 'shortBreak') return coercePositiveInt(settings.shortBreakDuration, DEFAULT_DURATIONS.shortBreak);
-  if (mode === 'longBreak') return coercePositiveInt(settings.longBreakDuration, DEFAULT_DURATIONS.longBreak);
-  return DEFAULT_DURATIONS.focus;
-};
+import { getModeMinutes } from '../../lib/timer';
 
 const Timer = ({ settings }) => {
   const [minutes, setMinutes] = useState(() => getModeMinutes('focus', settings));
@@ -296,6 +278,10 @@ const Timer = ({ settings }) => {
 
   return (
     <div className="timer-container glass-panel">
+      <div className="timer-heading">
+        <span className={`status-dot ${isActive ? 'active' : ''}`}></span>
+        <span>{isActive ? 'Focus in progress' : 'Ready when you are'}</span>
+      </div>
       <div className="timer-modes">
         <button
           className={mode === 'focus' ? 'active' : ''}
@@ -320,30 +306,38 @@ const Timer = ({ settings }) => {
       <div className="time-display">
         {String(Math.max(0, Number(minutes) || 0)).padStart(2, '0')}:{String(Math.max(0, Number(seconds) || 0)).padStart(2, '0')}
       </div>
+      <p className="timer-caption">{mode === 'focus' ? 'Protect this time. One thing at a time.' : 'Step away and let your attention reset.'}</p>
 
       <div className="timer-controls">
         <button className="primary-btn" onClick={toggleTimer}>
-          {isActive ? 'PAUSE' : 'START'}
+          {isActive ? 'Pause session' : 'Start focus'}
         </button>
         <button className="reset-btn" onClick={resetTimer}>
-          RESET
+          Reset
         </button>
       </div>
 
       <style>{`
         .timer-container {
-          padding: 3rem;
+          padding: clamp(1.5rem, 4vw, 2.5rem);
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 2rem;
-          min-width: 320px;
+          gap: 1.4rem;
+          min-width: 0;
+          justify-content: center;
+          background: linear-gradient(145deg, rgba(17,20,24,0.84), rgba(8,10,12,0.72));
+        }
+        .timer-heading { display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.72rem; letter-spacing: 0.04em; }
+        .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); }
+        .status-dot.active { background: var(--success-color); box-shadow: 0 0 12px var(--success-color); }
+        .timer-caption { margin: -0.6rem 0 0; color: var(--text-muted); font-size: 0.78rem; text-align: center; }
         }
         .timer-modes {
           display: flex;
           gap: 1rem;
-          background: rgba(0,0,0,0.2);
-          padding: 0.5rem;
+          background: rgba(255,255,255,0.045);
+          padding: 0.35rem;
           border-radius: 99px;
         }
         .timer-modes button {
@@ -360,8 +354,9 @@ const Timer = ({ settings }) => {
           font-weight: 600;
         }
         .time-display {
-          font-size: 6rem;
-          font-weight: 200;
+          font-size: clamp(4.5rem, 9vw, 7rem);
+          font-weight: 300;
+          letter-spacing: -0.065em;
           line-height: 1;
           font-variant-numeric: tabular-nums;
         }
@@ -371,17 +366,17 @@ const Timer = ({ settings }) => {
           align-items: center;
         }
         .primary-btn {
-          background: #fff;
-          color: #000;
-          padding: 1rem 3rem;
+          background: var(--accent-color);
+          color: #1a0807;
+          padding: 0.95rem 2rem;
           border-radius: 99px;
           font-weight: 600;
-          letter-spacing: 2px;
+          letter-spacing: 0.01em;
           font-size: 1rem;
         }
         .primary-btn:hover {
           transform: scale(1.05);
-          box-shadow: 0 0 20px rgba(255,255,255,0.4);
+          box-shadow: 0 12px 30px rgba(255,113,107,0.24);
         }
         .reset-btn {
           background: transparent;
@@ -389,7 +384,7 @@ const Timer = ({ settings }) => {
           padding: 0 1rem;
           border: none;
           font-weight: 600;
-          letter-spacing: 2px;
+          letter-spacing: 0.02em;
           font-size: 0.9rem;
           cursor: pointer;
           transition: all 0.2s;

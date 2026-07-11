@@ -6,6 +6,7 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
     const modalContentRef = useRef(null);
     const previewAudioRef = useRef(null);
     const previewAudioContextRef = useRef(null);
+    const previousActiveElementRef = useRef(document.activeElement);
     const [connecting, setConnecting] = useState(false);
     const [playlists, setPlaylists] = useState([]);
     const [loadingPlaylists, setLoadingPlaylists] = useState(false);
@@ -94,7 +95,28 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
     };
 
     useEffect(() => {
+        const modal = modalContentRef.current;
+        const previouslyFocused = previousActiveElementRef.current;
+        const focusable = modal?.querySelectorAll('button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        focusable?.[0]?.focus();
+
+        const trapFocus = (event) => {
+            if (event.key !== 'Tab' || !focusable?.length) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        };
+
+        document.addEventListener('keydown', trapFocus);
         return () => {
+            document.removeEventListener('keydown', trapFocus);
+            previouslyFocused?.focus?.();
             stopPreviewAudio();
             try {
                 previewAudioContextRef.current?.close?.();
@@ -179,10 +201,10 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                 }
             }}
         >
-            <div ref={modalContentRef} className="modal-content glass-panel">
+            <div ref={modalContentRef} className="modal-content glass-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title">
                 <div className="modal-header">
-                    <h2>Settings</h2>
-                    <button className="close-btn" onClick={handleClose}>×</button>
+                    <h2 id="settings-title">Settings</h2>
+                    <button className="close-btn" onClick={handleClose} aria-label="Close settings">×</button>
                 </div>
 
                 <div className="setting-group">

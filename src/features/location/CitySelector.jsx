@@ -236,7 +236,7 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
           <div className="add-modal glass-panel" onClick={(e) => e.stopPropagation()}>
             <div className="add-modal-header">
               <h3>Add Custom Location</h3>
-              <button className="close-btn" onClick={() => setShowAddModal(false)}>×</button>
+              <button className="close-btn" onClick={() => setShowAddModal(false)} aria-label="Close custom location dialog">×</button>
             </div>
             
             <div className="add-modal-body">

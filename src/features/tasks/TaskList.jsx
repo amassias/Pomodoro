@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useUserData } from '../../providers/UserDataProvider.jsx';
+import { archiveTaskById, restoreTaskById } from '../../lib/tasks.js';
 
 const TaskList = () => {
     const { loading, tasks, setTasks, archivedTasks, setArchivedTasks } = useUserData();
@@ -8,6 +9,8 @@ const TaskList = () => {
     const [showArchive, setShowArchive] = useState(false);
     const [animatingTaskId, setAnimatingTaskId] = useState(null);
     const [selectedArchivedIds, setSelectedArchivedIds] = useState(() => new Set());
+    const [editingTaskId, setEditingTaskId] = useState(null);
+    const [editingText, setEditingText] = useState('');
 
     const closeArchive = useCallback(() => {
         setShowArchive(false);
@@ -60,28 +63,41 @@ const TaskList = () => {
     };
 
     const archiveTask = (id) => {
-        const task = tasks.find(t => t.id === id);
-        if (!task) return;
-
-        setTasks(prev => prev.filter(t => t.id !== id));
-        setArchivedTasks(prevArchived => [
-            ...prevArchived,
-            { ...task, completed: true, archivedAt: new Date().toISOString() }
-        ]);
+        const result = archiveTaskById(tasks, archivedTasks, id);
+        setTasks(result.tasks);
+        setArchivedTasks(result.archivedTasks);
     };
 
     const restoreTask = (id) => {
-        const task = archivedTasks.find(t => t.id === id);
-        if (!task) return;
-
-        const restoredTask = { ...task };
-        delete restoredTask.archivedAt;
-        setArchivedTasks(prev => prev.filter(t => t.id !== id));
-        setTasks(prevTasks => [...prevTasks, { ...restoredTask, completed: false }]);
+        const result = restoreTaskById(tasks, archivedTasks, id);
+        setArchivedTasks(result.archivedTasks);
+        setTasks(result.tasks);
         closeArchive();
     };
 
+    const startEditing = (task) => {
+        setEditingTaskId(task.id);
+        setEditingText(task.text);
+    };
+
+    const saveEditing = (event) => {
+        event.preventDefault();
+        const trimmed = editingText.trim();
+        if (trimmed) {
+            setTasks(prev => prev.map(task => task.id === editingTaskId ? { ...task, text: trimmed } : task));
+        }
+        setEditingTaskId(null);
+        setEditingText('');
+    };
+
+    const removeActiveTask = (id) => {
+        if (window.confirm('Remove this task?')) {
+            setTasks(prev => prev.filter(task => task.id !== id));
+        }
+    };
+
     const deleteTask = (id) => {
+        if (!window.confirm('Delete this archived task permanently?')) return;
         setArchivedTasks(prev => prev.filter(t => t.id !== id));
         if (selectedArchivedIds.has(id)) {
             setSelectedArchivedIds(prev => {
@@ -132,6 +148,7 @@ const TaskList = () => {
     const deleteSelectedArchived = () => {
         const ids = Array.from(selectedArchivedIds);
         if (ids.length === 0) return;
+        if (!window.confirm(`Delete ${ids.length} archived ${ids.length === 1 ? 'task' : 'tasks'} permanently?`)) return;
 
         setArchivedTasks(prev => prev.filter(t => !ids.includes(t.id)));
         setSelectedArchivedIds(new Set());
@@ -140,7 +157,10 @@ const TaskList = () => {
     return (
         <div className="task-list-container glass-panel">
             <div className="task-header">
-                <h3>Tasks</h3>
+                <div>
+                    <span className="section-eyebrow">Session plan</span>
+                    <h3>Tasks</h3>
+                </div>
                 {archivedTasks.length > 0 && (
                     <button
                         className="archive-btn"
@@ -149,7 +169,7 @@ const TaskList = () => {
                         aria-label="View archived tasks"
                         aria-pressed={showArchive}
                     >
-                        📦 {archivedTasks.length}
+                        Archive <span>{archivedTasks.length}</span>
                     </button>
                 )}
             </div>
@@ -164,15 +184,32 @@ const TaskList = () => {
                 <button type="submit" className="add-btn" aria-label="Add task">+</button>
             </form>
             <ul className="task-list">
+                {(!Array.isArray(tasks) || tasks.length === 0) && (
+                    <li className="task-empty">
+                        <strong>Clear mind, clear list.</strong>
+                        <span>Add one priority for this session.</span>
+                    </li>
+                )}
                 {(Array.isArray(tasks) ? tasks : []).map(task => (
                     <li
                         key={task.id}
                         className={`task-item ${task.completed ? 'completed' : ''} ${animatingTaskId === task.id ? 'animating' : ''}`}
                     >
-                        <div className="checkbox-wrapper" onClick={() => toggleTask(task.id)}>
-                            {task.completed && <div className="checkmark">✔</div>}
+                        <button className="checkbox-wrapper" onClick={() => toggleTask(task.id)} aria-label={`Complete ${task.text}`}>
+                            {task.completed && <span className="checkmark">✓</span>}
+                        </button>
+                        {editingTaskId === task.id ? (
+                            <form className="task-edit-form" onSubmit={saveEditing}>
+                                <input autoFocus value={editingText} onChange={(event) => setEditingText(event.target.value)} aria-label="Edit task" />
+                                <button type="submit">Save</button>
+                            </form>
+                        ) : (
+                            <span className="task-text">{task.text}</span>
+                        )}
+                        <div className="task-item-actions">
+                            <button onClick={() => startEditing(task)} aria-label={`Edit ${task.text}`}>Edit</button>
+                            <button className="danger" onClick={() => removeActiveTask(task.id)} aria-label={`Remove ${task.text}`}>Remove</button>
                         </div>
-                        <span className="task-text">{task.text}</span>
                     </li>
                 ))}
             </ul>
@@ -274,10 +311,11 @@ const TaskList = () => {
             )}
             <style>{`
                 .task-list-container {
-                    padding: 1.5rem;
+                    padding: 1.4rem;
                     width: 100%;
-                    max-width: 350px;
-                    max-height: 400px;
+                    max-width: none;
+                    min-height: 100%;
+                    max-height: 440px;
                     overflow-y: auto;
                     -webkit-overflow-scrolling: touch;
                     display: flex;
@@ -291,9 +329,11 @@ const TaskList = () => {
                     align-items: center;
                 }
 
+                .section-eyebrow { display: block; color: var(--accent-color); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 0.2rem; }
+
                 h3 {
-                    font-weight: 500;
-                    letter-spacing: 1px;
+                    font-weight: 650;
+                    letter-spacing: -0.01em;
                     margin: 0;
                 }
 
@@ -302,11 +342,26 @@ const TaskList = () => {
                     border: 1px solid rgba(255,255,255,0.2);
                     color: rgba(255,255,255,0.7);
                     padding: 0.3rem 0.6rem;
-                    border-radius: 6px;
+                    border-radius: 999px;
                     font-size: 0.8rem;
                     cursor: pointer;
                     transition: all 0.2s;
                 }
+
+                .archive-btn span { display: inline-grid; place-items: center; min-width: 1.25rem; height: 1.25rem; margin-left: 0.25rem; border-radius: 50%; background: rgba(255,255,255,0.1); }
+
+                .task-empty { display: flex; flex-direction: column; gap: 0.25rem; padding: 1.4rem 0.75rem; text-align: center; color: var(--text-secondary); }
+                .task-empty strong { color: var(--text-primary); font-size: 0.88rem; }
+                .task-empty span { font-size: 0.78rem; }
+
+                .task-item-actions { display: flex; gap: 0.35rem; margin-left: auto; opacity: 0; transition: opacity 0.2s ease; }
+                .task-item:hover .task-item-actions, .task-item:focus-within .task-item-actions { opacity: 1; }
+                .task-item-actions button { color: var(--text-secondary); background: transparent; font-size: 0.68rem; padding: 0.3rem; }
+                .task-item-actions button:hover { color: #fff; }
+                .task-item-actions .danger:hover { color: var(--accent-color); }
+                .task-edit-form { flex: 1; display: flex; gap: 0.4rem; }
+                .task-edit-form input { min-width: 0; flex: 1; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.4rem; }
+                .task-edit-form button { color: #fff; background: var(--accent-soft); border-radius: 8px; padding: 0.35rem 0.55rem; }
 
                 .archive-btn:hover {
                     background: rgba(255,255,255,0.15);

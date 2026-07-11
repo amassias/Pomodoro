@@ -484,8 +484,21 @@ function App() {
       ) : null}
 
       <div className="overlay">
-        <div className="top-widget-area">
-          <DailyProgress />
+        <header className="focus-header">
+          <div className="brand-block">
+            <span className="brand-mark" aria-hidden="true"></span>
+            <div>
+              <strong>World Focus</strong>
+              <span>Make this session count</span>
+            </div>
+          </div>
+          <div className="top-widget-area">
+            <DailyProgress />
+          </div>
+        </header>
+        <div className="ambient-label" aria-hidden="true">
+          <span className="live-dot"></span>
+          Live atmosphere
         </div>
         <main className="main-content">
           <div className="main-grid">
@@ -515,7 +528,8 @@ function App() {
         title="Settings"
         aria-label="Settings"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
+        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
+        <span>Settings</span>
       </button>
 
       <button
@@ -524,7 +538,8 @@ function App() {
         title="Send feedback or suggest a YouTube live view"
         aria-label="Send feedback or suggest a YouTube live view"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><line x1="9" y1="9" x2="15" y2="9"></line><line x1="9" y1="13" x2="15" y2="13"></line></svg>
+        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><line x1="9" y1="9" x2="15" y2="9"></line><line x1="9" y1="13" x2="15" y2="13"></line></svg>
+        <span>Feedback</span>
       </button>
 
       <Suspense fallback={null}>
@@ -595,9 +610,25 @@ function App() {
           flex-direction: column;
           /* justify-content: space-between; Removed to allow absolute header */
           align-items: center;
-          padding: clamp(0.75rem, 3vw, 2rem);
+          padding: clamp(0.75rem, 2.5vw, 2rem);
           z-index: 10;
         }
+        .focus-header {
+          width: min(100%, 1180px);
+          min-height: 56px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          z-index: 110;
+        }
+        .brand-block { display: flex; align-items: center; gap: 0.75rem; }
+        .brand-block > div { display: flex; flex-direction: column; gap: 0.1rem; }
+        .brand-block strong { font-size: 0.92rem; letter-spacing: 0.04em; }
+        .brand-block span:not(.brand-mark) { color: var(--text-muted); font-size: 0.72rem; }
+        .brand-mark { width: 10px; height: 10px; border-radius: 50%; background: var(--accent-color); box-shadow: 0 0 18px var(--accent-color); }
+        .ambient-label { position: fixed; left: 1.25rem; bottom: 1.3rem; display: flex; align-items: center; gap: 0.45rem; color: var(--text-secondary); font-size: 0.72rem; z-index: 90; text-transform: uppercase; letter-spacing: 0.12em; }
+        .live-dot { width: 6px; height: 6px; background: var(--success-color); border-radius: 50%; box-shadow: 0 0 10px var(--success-color); }
         @supports (min-height: 100dvh) {
           .overlay {
             min-height: 100dvh;
@@ -651,20 +682,23 @@ function App() {
         /* Settings Button */
         .settings-btn {
           position: fixed;
-          top: calc(env(safe-area-inset-top, 0px) + 0.75rem + 120px);
+          top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
           right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
           background: rgba(255, 255, 255, 0.1);
           border: 1px solid rgba(255, 255, 255, 0.2);
           color: #fff;
-          width: 48px;
-          height: 48px;
-          border-radius: 50%;
+          min-width: 48px;
+          height: 42px;
+          border-radius: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
           transition: all 0.2s;
           z-index: 100;
+          gap: 0.45rem;
+          padding: 0 0.8rem;
+          font-size: 0.78rem;
         }
         
         .settings-btn:hover {
@@ -680,10 +714,7 @@ function App() {
         
         /* Recommend Button */
         .top-widget-area {
-            position: fixed;
-            top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
-            left: calc(env(safe-area-inset-left, 0px) + 0.75rem);
-            z-index: 100;
+            position: static;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 24px;
             padding: 4px;
@@ -700,14 +731,14 @@ function App() {
 
         .recommend-btn {
           position: fixed;
-          top: calc(env(safe-area-inset-top, 0px) + 0.75rem + 180px);
+          top: calc(env(safe-area-inset-top, 0px) + 3.75rem);
           right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
           background: rgba(255, 255, 255, 0.1);
           border: 1px solid rgba(255, 255, 255, 0.2);
           color: #fff;
-          width: 48px;
-          height: 48px;
-          border-radius: 50%;
+          min-width: 48px;
+          height: 42px;
+          border-radius: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -715,6 +746,9 @@ function App() {
           transition: all 0.2s;
           z-index: 100;
           text-decoration: none;
+          gap: 0.45rem;
+          padding: 0 0.8rem;
+          font-size: 0.78rem;
         }
         
         .recommend-btn:hover {
@@ -734,7 +768,7 @@ function App() {
         }
         .main-content {
           margin-top: auto; /* Push to center/bottom */
-          margin-bottom: auto;
+          margin-bottom: clamp(4rem, 10vh, 7rem);
           display: flex;
           justify-content: center;
           align-items: center;
@@ -743,12 +777,12 @@ function App() {
           pointer-events: none; /* Let clicks pass through if needed, but buttons need pointer-events: auto */
         }
         .main-grid {
-            display: flex;
-            gap: 2rem;
-            align-items: flex-start;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: minmax(390px, 1.15fr) minmax(300px, 0.85fr);
+            gap: 1rem;
+            align-items: stretch;
             justify-content: center;
-            margin-bottom: 1.25rem;
+            width: min(100%, 840px);
             pointer-events: auto; /* Reactivate for controls */
         }
         .bottom-bar {
@@ -778,10 +812,14 @@ function App() {
 
         @media (max-width: 768px) {
           .main-grid {
-            flex-direction: column;
-            align-items: stretch;
+            grid-template-columns: 1fr;
             width: 100%;
           }
+          .main-content { align-items: flex-start; padding-top: 2rem; margin-bottom: 7rem; }
+          .brand-block > div span { display: none; }
+          .settings-btn span, .recommend-btn span { display: none; }
+          .settings-btn, .recommend-btn { width: 42px; min-width: 42px; padding: 0; }
+          .ambient-label { display: none; }
           .top-bar {
             width: 100%;
           }

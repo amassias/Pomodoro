@@ -1,12 +1,20 @@
 :root {
   --font-family: 'Outfit', sans-serif;
-  --glass-bg: rgba(20, 20, 20, 0.4);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-blur: 20px;
+  --glass-bg: rgba(12, 15, 18, 0.72);
+  --glass-bg-strong: rgba(9, 11, 14, 0.9);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-blur: 24px;
   --text-primary: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.7);
-  --accent-color: #ff6b6b;
-  /* Soft red for Pomodoro */
+  --text-secondary: rgba(255, 255, 255, 0.68);
+  --text-muted: rgba(255, 255, 255, 0.48);
+  --accent-color: #ff716b;
+  --accent-soft: rgba(255, 113, 107, 0.16);
+  --success-color: #72d6a0;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --shadow-panel: 0 24px 80px rgba(0, 0, 0, 0.38);
+  --focus-ring: 0 0 0 3px rgba(255, 113, 107, 0.34);
 }
 
 * {
@@ -22,7 +30,7 @@ body {
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  /* Video background is fixed, so we can allow page scroll */
+  background-image: radial-gradient(circle at 50% 20%, #25272b 0, #090a0c 55%, #000 100%);
 }
 
 html,
@@ -46,14 +54,13 @@ body {
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
-  border-radius: 24px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  transition: all 0.3s ease;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-panel);
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
 .glass-panel:hover {
-  background: rgba(30, 30, 30, 0.5);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 button {
@@ -62,6 +69,24 @@ button {
   border: none;
   outline: none;
   transition: all 0.2s ease;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+::selection {
+  background: rgba(255, 113, 107, 0.4);
 }
 
 /* Scrollbar aesthetic if needed */
@@ -76,4 +101,15 @@ button {
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
   border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

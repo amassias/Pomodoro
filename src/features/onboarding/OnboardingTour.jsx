@@ -3,34 +3,22 @@ import React, { useState, useEffect, useCallback } from 'react';
 const TOUR_STEPS = [
   {
     target: '.timer-container',
-    title: 'The Pomodoro Timer',
-    description: 'Your focus command center. Start a 25-minute focus session, or switch to short/long breaks. Press Space to start!',
+    title: 'Protect your focus',
+    description: 'Choose a focus or break mode, then start the session. Press Space whenever you want to pause or continue.',
     position: 'right',
   },
   {
     target: '.task-list-container',
-    title: 'Task List',
-    description: 'Add tasks to stay organized. Check them off as you complete them — they\'ll be archived automatically.',
+    title: 'Choose one priority',
+    description: 'Add the task that matters now. Complete it to move it into your archive and keep the session uncluttered.',
     position: 'left',
-  },
-  {
-    target: '.top-widget-area',
-    title: 'Daily Progress',
-    description: 'Track your focus time. The ring fills up as you work toward your daily goal (customizable in settings).',
-    position: 'bottom',
   },
   {
     target: '.bottom-bar',
-    title: 'Live Backgrounds',
-    description: 'Tap to expand and choose from beautiful live streams around the world — Tokyo streets, Northern Lights, cozy cafés, and more.',
+    title: 'Make the space yours',
+    description: 'Open the location bar to change the live atmosphere. Your progress, music, reports, and settings remain close at hand.',
     position: 'top',
     align: 'left',
-  },
-  {
-    target: '.settings-btn',
-    title: 'Settings',
-    description: 'Customize timer durations, sounds, daily goals, and connect Spotify for your own playlists.',
-    position: 'left',
   },
 ];
 

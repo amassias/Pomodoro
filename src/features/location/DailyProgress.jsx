@@ -21,7 +21,7 @@ const DailyProgress = () => {
     };
 
     return (
-        <div className="daily-progress" title={`Daily Goal: ${formatHours(todayProgress)} / ${formatHours(dailyGoal)}`}>
+        <div className="daily-progress" title={`Daily Goal: ${formatHours(todayProgress)} / ${formatHours(dailyGoal)}`} aria-label={`Daily goal: ${formatHours(todayProgress)} of ${formatHours(dailyGoal)}`}>
             <div className="progress-ring-wrapper">
                 <svg className="progress-ring" width="44" height="44">
                     <circle
@@ -52,12 +52,18 @@ const DailyProgress = () => {
                     {isCompleted ? '★' : `${Math.round(percentage)}%`}
                 </div>
             </div>
+            <div className="progress-copy">
+                <span>Daily focus</span>
+                <strong>{formatHours(todayProgress)} <small>/ {formatHours(dailyGoal)}</small></strong>
+            </div>
 
             <style>{`
                 .daily-progress {
                     display: flex;
                     align-items: center;
                     cursor: help;
+                    gap: 0.65rem;
+                    padding-right: 0.6rem;
                 }
 
                 .progress-ring-wrapper {
@@ -80,6 +86,13 @@ const DailyProgress = () => {
                     color: rgba(255, 255, 255, 0.9);
                     pointer-events: none;
                 }
+
+                .progress-copy { display: flex; flex-direction: column; gap: 0.1rem; }
+                .progress-copy span { color: var(--text-muted); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; }
+                .progress-copy strong { font-size: 0.76rem; font-weight: 600; }
+                .progress-copy small { color: var(--text-muted); font-weight: 400; }
+
+                @media (max-width: 560px) { .progress-copy { display: none; } .daily-progress { padding-right: 0; } }
             `}</style>
         </div>
     );
