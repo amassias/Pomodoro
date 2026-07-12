@@ -50,3 +50,16 @@ This backlog separates the cinematic UX refresh from future product work. Value 
 - [x] P2 — Realtime cross-device state refresh with visible sync status and server-timestamp last-write-wins policy.
 - [x] Quality — DOM interaction test coverage for the complete active-task lifecycle.
 - [x] Quality — Privacy-preserving third-party resource timing grouped by provider.
+- [x] Sessions — Add five minutes, skip a break, restore a running session and confirm before an active tab is closed.
+- [x] Sessions — End-of-session reflection records outcome, perceived difficulty, interruptions and optional notes.
+- [x] Planning — Drag-to-reorder tasks, subtasks, due dates, reusable routines and estimate-versus-completed tracking.
+- [x] Shared sessions — Temporary pseudonym/avatar, ready state, participant roster, host removal, room lock control, quiet chat, reactions and activity events.
+- [x] Mobile — Fixed bottom navigation, compact responsive controls, progress notifications and optional completion vibration.
+- [x] Reports — Per-task history, 28-day consistency heatmap, best focus window/day, completion rate and abandonment count.
+- [x] Quality — Dependency audit remediated, automated accessibility assertion added, and timer/task/report regression suite maintained.
+
+## Deliberately deferred platform work
+
+- [ ] Calendar read/sync — Requires the application's Google/Microsoft OAuth credentials and consent configuration. Existing calendar actions create events only.
+- [ ] Enforced shared-room lock and durable social history — Requires a persistent room/message schema and Supabase policies; the current lock is a realtime host control for connected clients.
+- [ ] Native lock-screen widget — Requires a native mobile shell. The installable web app keeps the timer state, document title, notifications and optional vibration instead.

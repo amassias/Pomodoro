@@ -2,8 +2,11 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { axe, toHaveNoViolations } from 'jest-axe';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import TaskList from './TaskList';
+
+expect.extend(toHaveNoViolations);
 
 const mockData = vi.hoisted(() => ({
   tasks: [],
@@ -52,5 +55,10 @@ describe('TaskList interactions', () => {
     await user.click(screen.getByRole('button', { name: 'Complete Ship roadmap' }));
     await waitFor(() => expect(mockData.archivedTasks).toHaveLength(1), { timeout: 1000 });
     expect(mockData.archivedTasks[0]).toMatchObject({ text: 'Ship roadmap', completed: true });
+  });
+
+  it('has no automated accessibility violations in its empty state', async () => {
+    const { container } = render(<TaskList />);
+    expect(await axe(container)).toHaveNoViolations();
   });
 });

@@ -18,3 +18,36 @@ export const getWeeklyComparison = (history, now = new Date()) => {
   const changePercent = previousMinutes > 0 ? Math.round(((currentMinutes - previousMinutes) / previousMinutes) * 100) : currentMinutes > 0 ? 100 : 0;
   return { currentMinutes, previousMinutes, changePercent };
 };
+
+const dayFormatter = new Intl.DateTimeFormat('en-US', { weekday: 'long' });
+
+export const getProductivityPatterns = (history) => {
+  const sessions = Object.values(history || {}).flatMap((day) => Array.isArray(day) ? day : []);
+  const hourlyMinutes = Array(24).fill(0);
+  const weekdayMinutes = new Map();
+  let completed = 0;
+  let abandoned = 0;
+
+  sessions.forEach((session) => {
+    const timestamp = new Date(session.timestamp);
+    if (!Number.isNaN(timestamp.valueOf())) {
+      hourlyMinutes[timestamp.getHours()] += Number(session.duration) || 0;
+      const weekday = dayFormatter.format(timestamp);
+      weekdayMinutes.set(weekday, (weekdayMinutes.get(weekday) || 0) + (Number(session.duration) || 0));
+    }
+    if (session.result === 'blocked' || session.result === 'abandoned') abandoned += 1;
+    else completed += 1;
+  });
+
+  const bestHour = hourlyMinutes.reduce((best, minutes, hour) => minutes > best.minutes ? { hour, minutes } : best, { hour: null, minutes: 0 });
+  const bestWeekday = [...weekdayMinutes.entries()].reduce((best, [day, minutes]) => minutes > best.minutes ? { day, minutes } : best, { day: null, minutes: 0 });
+  const classified = completed + abandoned;
+
+  return {
+    totalSessions: sessions.length,
+    completionRate: classified ? Math.round((completed / classified) * 100) : null,
+    abandoned,
+    bestHour: bestHour.minutes ? bestHour : null,
+    bestWeekday: bestWeekday.minutes ? bestWeekday : null,
+  };
+};

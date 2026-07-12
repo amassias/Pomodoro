@@ -515,6 +515,10 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                         <span>Keyboard shortcuts</span>
                         <input type="checkbox" name="shortcutsEnabled" checked={settings.shortcutsEnabled !== false} onChange={handleChange} />
                     </label>
+                    <label className="toggle-label">
+                        <span>Vibration on timer completion</span>
+                        <input type="checkbox" name="vibrationEnabled" checked={settings.vibrationEnabled !== false} onChange={handleChange} />
+                    </label>
                     <div className="shortcut-grid">
                         <label>Start / pause<select name="shortcutToggle" value={settings.shortcutToggle || 'Space'} onChange={handleChange}><option value="Space">Space</option><option value="Enter">Enter</option><option value="p">P</option></select></label>
                         <label>Reset<select name="shortcutReset" value={settings.shortcutReset || 'r'} onChange={handleChange}><option value="r">R</option><option value="x">X</option><option value="Backspace">Backspace</option></select></label>

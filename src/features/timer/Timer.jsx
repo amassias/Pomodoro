@@ -7,7 +7,7 @@ import { useSharedSession } from '../../providers/SharedSessionProvider';
 import CalendarActions from '../calendar/CalendarActions';
 
 const Timer = ({ settings, updateSettings }) => {
-  const { roomId, isHost, remoteTimerState, publishTimerState } = useSharedSession();
+  const { roomId, isHost, remoteTimerState, publishTimerState, sendRoomEvent } = useSharedSession();
   const sharedLocked = Boolean(roomId && !isHost);
   const [initialSession] = useState(() => readTimerSession());
   const initialRemainingMs = initialSession?.remainingMs ?? getModeMinutes('focus', settings) * 60 * 1000;
@@ -26,6 +26,7 @@ const Timer = ({ settings, updateSettings }) => {
   const endAtRef = useRef(initialSession?.endAt ?? null);
   const remainingMsRef = useRef(initialRemainingMs);
   const restoredSessionRef = useRef(Boolean(initialSession));
+  const lastSharedActivityRef = useRef(null);
 
   // Keep refs in sync with state/props
   useEffect(() => {
@@ -104,6 +105,30 @@ const Timer = ({ settings, updateSettings }) => {
     clearTimerSession();
   }, []);
 
+  const addFiveMinutes = () => {
+    const extra = 5 * 60 * 1000;
+    remainingMsRef.current += extra;
+    if (isActive && endAtRef.current) endAtRef.current += extra;
+    const totalSeconds = Math.ceil(remainingMsRef.current / 1000);
+    setMinutes(Math.floor(totalSeconds / 60));
+    setSeconds(totalSeconds % 60);
+  };
+
+  const skipBreak = () => {
+    if (mode === 'focus') return;
+    setTimerMode('focus');
+  };
+
+  useEffect(() => {
+    if (!isActive) return undefined;
+    const confirmExit = (event) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', confirmExit);
+    return () => window.removeEventListener('beforeunload', confirmExit);
+  }, [isActive]);
+
   useEffect(() => {
     window.addEventListener('timer-toggle', toggleTimer);
     window.addEventListener('timer-reset', resetTimer);
@@ -145,6 +170,16 @@ const Timer = ({ settings, updateSettings }) => {
     if (!roomId || !isHost) return;
     publishTimerState({ mode, isActive, endAt: endAtRef.current, remainingMs: remainingMsRef.current, sentAt: Date.now() });
   }, [roomId, isHost, mode, isActive, minutes, seconds, publishTimerState]);
+
+  useEffect(() => {
+    if (!roomId || !isHost) return;
+    const state = `${mode}:${isActive}`;
+    if (lastSharedActivityRef.current && lastSharedActivityRef.current !== state) {
+      const label = isActive ? `started ${mode === 'focus' ? 'a focus session' : 'a break'}` : `paused ${mode === 'focus' ? 'the focus session' : 'the break'}`;
+      sendRoomEvent({ type: 'activity', text: label });
+    }
+    lastSharedActivityRef.current = state;
+  }, [roomId, isHost, mode, isActive, sendRoomEvent]);
 
   useEffect(() => {
     if (!sharedLocked || !remoteTimerState) return;
@@ -192,6 +227,7 @@ const Timer = ({ settings, updateSettings }) => {
     };
 
     playAlarm(currentSettings.alarmRepeat ?? 3);
+    if (navigator.vibrate && currentSettings.vibrationEnabled !== false) navigator.vibrate([120, 80, 180]);
 
     // Browser notification (especially useful when tab is in background)
     if (modeRef.current === 'focus') {
@@ -341,7 +377,7 @@ const Timer = ({ settings, updateSettings }) => {
   };
 
   return (
-    <div className="timer-container glass-panel">
+    <div id="focus-timer" className="timer-container glass-panel">
       <div className="timer-heading">
         <span className={`status-dot ${isActive ? 'active' : ''}`}></span>
         <span>{isActive ? 'Focus in progress' : 'Ready when you are'}</span>
@@ -392,6 +428,10 @@ const Timer = ({ settings, updateSettings }) => {
         <button className="reset-btn" onClick={resetTimer} disabled={sharedLocked}>
           Reset
         </button>
+      </div>
+      <div className="session-tools">
+        <button onClick={addFiveMinutes} disabled={sharedLocked}>Add 5 min</button>
+        {mode !== 'focus' && <button onClick={skipBreak} disabled={sharedLocked}>Skip break</button>}
       </div>
 
       <style>{`
@@ -447,6 +487,9 @@ const Timer = ({ settings, updateSettings }) => {
           gap: 1.5rem;
           align-items: center;
         }
+        .session-tools { display: flex; gap: 0.55rem; margin-top: -0.8rem; }
+        .session-tools button { background: transparent; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.2); padding: 0.2rem; font-size: 0.7rem; }
+        .session-tools button:hover { color: #fff; }
         .primary-btn {
           background: var(--accent-color);
           color: #1a0807;

@@ -45,8 +45,10 @@ const getDefaultSettings = ({ userId }) => {
     shortcutToggle: 'Space',
     shortcutReset: 'r',
     shortcutMute: 'm',
+    vibrationEnabled: true,
     customPresets: [],
     atmosphereCollections: [],
+    routines: [],
 
     // Spotify preferences + local-only secrets
     spotifyClientId: savedSpotifyClientId,
@@ -108,6 +110,15 @@ const normalizeTask = (task) => {
     completed: typeof task.completed === 'boolean' ? task.completed : false,
     estimatedPomodoros: Number.isInteger(Number(task.estimatedPomodoros)) && Number(task.estimatedPomodoros) > 0 ? Number(task.estimatedPomodoros) : 1,
     completedPomodoros: Number.isInteger(Number(task.completedPomodoros)) && Number(task.completedPomodoros) >= 0 ? Number(task.completedPomodoros) : 0,
+    dueDate: typeof task.dueDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(task.dueDate) ? task.dueDate : null,
+    subtasks: Array.isArray(task.subtasks)
+      ? task.subtasks.filter((subtask) => subtask && typeof subtask.text === 'string').map((subtask) => ({
+        id: typeof subtask.id === 'string' ? subtask.id : crypto.randomUUID(),
+        text: subtask.text,
+        completed: subtask.completed === true,
+      }))
+      : [],
+    createdAt: typeof task.createdAt === 'string' ? task.createdAt : null,
   };
 };
 

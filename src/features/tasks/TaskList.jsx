@@ -7,12 +7,14 @@ import { useDialogFocus } from '../../shared/ui/useDialogFocus.js';
 const TaskList = () => {
     const { loading, tasks, setTasks, archivedTasks, setArchivedTasks, activeTask, settings, setSettings } = useUserData();
     const [newTask, setNewTask] = useState('');
+    const [newTaskDueDate, setNewTaskDueDate] = useState('');
     const [showArchive, setShowArchive] = useState(false);
     const [animatingTaskId, setAnimatingTaskId] = useState(null);
     const [selectedArchivedIds, setSelectedArchivedIds] = useState(() => new Set());
     const [editingTaskId, setEditingTaskId] = useState(null);
     const [editingText, setEditingText] = useState('');
     const archiveDialogRef = useRef(null);
+    const dragTaskIdRef = useRef(null);
 
     const closeArchive = useCallback(() => {
         setShowArchive(false);
@@ -37,9 +39,10 @@ const TaskList = () => {
         e.preventDefault();
         if (!newTask.trim()) return;
         const id = crypto.randomUUID();
-        setTasks(prev => [...(Array.isArray(prev) ? prev : []), { id, text: newTask.trim(), completed: false, estimatedPomodoros: 1, completedPomodoros: 0 }]);
+        setTasks(prev => [...(Array.isArray(prev) ? prev : []), { id, text: newTask.trim(), completed: false, estimatedPomodoros: 1, completedPomodoros: 0, dueDate: newTaskDueDate || null, subtasks: [], createdAt: new Date().toISOString() }]);
         if (!activeTask) setSettings(prev => ({ ...prev, activeTaskId: id }));
         setNewTask('');
+        setNewTaskDueDate('');
     };
 
     const toggleTask = (id) => {
@@ -90,6 +93,50 @@ const TaskList = () => {
         if (window.confirm('Remove this task?')) {
             setTasks(prev => prev.filter(task => task.id !== id));
         }
+    };
+
+    const addSubtask = (taskId) => {
+        const text = window.prompt('Subtask');
+        if (!text?.trim()) return;
+        setTasks(prev => prev.map(task => task.id === taskId ? {
+            ...task,
+            subtasks: [...(task.subtasks || []), { id: crypto.randomUUID(), text: text.trim(), completed: false }],
+        } : task));
+    };
+
+    const toggleSubtask = (taskId, subtaskId) => {
+        setTasks(prev => prev.map(task => task.id === taskId ? {
+            ...task,
+            subtasks: (task.subtasks || []).map(subtask => subtask.id === subtaskId ? { ...subtask, completed: !subtask.completed } : subtask),
+        } : task));
+    };
+
+    const reorderTask = (targetId) => {
+        const sourceId = dragTaskIdRef.current;
+        if (!sourceId || sourceId === targetId) return;
+        setTasks(prev => {
+            const sourceIndex = prev.findIndex(task => task.id === sourceId);
+            const targetIndex = prev.findIndex(task => task.id === targetId);
+            if (sourceIndex < 0 || targetIndex < 0) return prev;
+            const next = [...prev];
+            const [moved] = next.splice(sourceIndex, 1);
+            next.splice(targetIndex, 0, moved);
+            return next;
+        });
+        dragTaskIdRef.current = null;
+    };
+
+    const saveRoutine = () => {
+        const name = window.prompt('Routine name');
+        if (!name?.trim() || tasks.length === 0) return;
+        const routine = { id: crypto.randomUUID(), name: name.trim().slice(0, 24), tasks: tasks.map(task => ({ text: task.text, estimatedPomodoros: task.estimatedPomodoros || 1, dueDate: task.dueDate || null, subtasks: task.subtasks || [] })) };
+        setSettings(prev => ({ ...prev, routines: [...(Array.isArray(prev.routines) ? prev.routines : []), routine].slice(-8) }));
+    };
+
+    const applyRoutine = (routine) => {
+        if (!window.confirm(`Replace current tasks with “${routine.name}”?`)) return;
+        setTasks((routine.tasks || []).map(task => ({ ...task, id: crypto.randomUUID(), completed: false, completedPomodoros: 0, subtasks: (task.subtasks || []).map(subtask => ({ ...subtask, id: crypto.randomUUID(), completed: false }),), createdAt: new Date().toISOString() })));
+        setSettings(prev => ({ ...prev, activeTaskId: null }));
     };
 
     const deleteTask = (id) => {
@@ -151,7 +198,7 @@ const TaskList = () => {
     };
 
     return (
-        <div className="task-list-container glass-panel">
+        <div id="focus-tasks" className="task-list-container glass-panel">
             <div className="task-header">
                 <div>
                     <span className="section-eyebrow">Session plan</span>
@@ -177,8 +224,13 @@ const TaskList = () => {
                     placeholder="Add a task..."
                     className="task-input"
                 />
+                <input type="date" value={newTaskDueDate} onChange={(event) => setNewTaskDueDate(event.target.value)} className="task-date" aria-label="Task due date" />
                 <button type="submit" className="add-btn" aria-label="Add task">+</button>
             </form>
+            <div className="routine-bar">
+                <button onClick={saveRoutine} disabled={tasks.length === 0}>Save routine</button>
+                {(Array.isArray(settings.routines) ? settings.routines : []).map(routine => <button key={routine.id} onClick={() => applyRoutine(routine)}>{routine.name}</button>)}
+            </div>
             <ul className="task-list">
                 {(!Array.isArray(tasks) || tasks.length === 0) && (
                     <li className="task-empty">
@@ -189,6 +241,10 @@ const TaskList = () => {
                 {(Array.isArray(tasks) ? tasks : []).map(task => (
                     <li
                         key={task.id}
+                        draggable
+                        onDragStart={() => { dragTaskIdRef.current = task.id; }}
+                        onDragOver={(event) => event.preventDefault()}
+                        onDrop={() => reorderTask(task.id)}
                         className={`task-item ${task.completed ? 'completed' : ''} ${activeTask?.id === task.id ? 'active-task' : ''} ${animatingTaskId === task.id ? 'animating' : ''}`}
                     >
                         <button className="checkbox-wrapper" onClick={() => toggleTask(task.id)} aria-label={`Complete ${task.text}`}>
@@ -200,15 +256,17 @@ const TaskList = () => {
                                 <button type="submit">Save</button>
                             </form>
                         ) : (
-                            <span className="task-text">{task.text}</span>
+                            <div className="task-content"><span className="task-text">{task.text}</span>{task.dueDate && <small>Due {task.dueDate}</small>}</div>
                         )}
                         <div className="pomodoro-estimate" aria-label={`${task.completedPomodoros || 0} of ${task.estimatedPomodoros || 1} Pomodoros`}>{task.completedPomodoros || 0}/{task.estimatedPomodoros || 1}</div>
                         <div className="task-item-actions">
                             <button onClick={() => setSettings({ ...settings, activeTaskId: task.id })} aria-label={`Focus ${task.text}`} aria-pressed={activeTask?.id === task.id}>{activeTask?.id === task.id ? 'Active' : 'Focus'}</button>
                             <button onClick={() => setTasks(prev => prev.map(item => item.id === task.id ? { ...item, estimatedPomodoros: Math.min(12, (item.estimatedPomodoros || 1) + 1) } : item))} aria-label={`Increase estimate for ${task.text}`}>+🍅</button>
+                            <button onClick={() => addSubtask(task.id)} aria-label={`Add subtask to ${task.text}`}>Subtask</button>
                             <button onClick={() => startEditing(task)} aria-label={`Edit ${task.text}`}>Edit</button>
                             <button className="danger" onClick={() => removeActiveTask(task.id)} aria-label={`Remove ${task.text}`}>Remove</button>
                         </div>
+                        {(task.subtasks || []).length > 0 && <ul className="subtask-list">{task.subtasks.map(subtask => <li key={subtask.id}><label><input type="checkbox" checked={subtask.completed} onChange={() => toggleSubtask(task.id, subtask.id)} /> <span className={subtask.completed ? 'done' : ''}>{subtask.text}</span></label></li>)}</ul>}
                     </li>
                 ))}
             </ul>
@@ -373,6 +431,9 @@ const TaskList = () => {
                     display: flex;
                     gap: 0.5rem;
                 }
+                .task-date { width: 9rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; padding: 0.45rem; }
+                .routine-bar { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+                .routine-bar button { padding: 0.35rem 0.55rem; color: var(--text-secondary); background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 999px; font-size: 0.68rem; }
 
                 .task-input {
                     flex: 1;
@@ -433,6 +494,7 @@ const TaskList = () => {
                     border-radius: 8px;
                     transition: all 0.2s;
                     animation: slideIn 0.3s ease-out;
+                    flex-wrap: wrap;
                 }
 
                 @keyframes slideIn {
@@ -465,6 +527,11 @@ const TaskList = () => {
                     text-decoration: line-through;
                     color: var(--text-secondary);
                 }
+                .task-content { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 0.1rem; }
+                .task-content small { color: var(--text-muted); font-size: 0.64rem; }
+                .subtask-list { width: 100%; list-style: none; display: grid; gap: 0.25rem; margin: 0.2rem 0 0 1.8rem; padding: 0; color: var(--text-secondary); font-size: 0.72rem; }
+                .subtask-list label { display: flex; gap: 0.4rem; align-items: center; }
+                .subtask-list .done { text-decoration: line-through; color: var(--text-muted); }
 
                 .checkbox-wrapper {
                     width: 20px;

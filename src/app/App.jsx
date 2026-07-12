@@ -521,6 +521,12 @@ function App() {
           error={locationsError}
           validationFailed={validationFailed}
         />
+        <nav className="mobile-nav" aria-label="Mobile navigation">
+          <button onClick={() => document.querySelector('#focus-timer')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>Timer</button>
+          <button onClick={() => document.querySelector('#focus-tasks')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>Tasks</button>
+          <button onClick={() => window.dispatchEvent(new Event('open-report'))}>Insights</button>
+          <button onClick={() => setShowSettings(true)}>Settings</button>
+        </nav>
       </div>
 
       <AchievementWatcher />
@@ -735,11 +741,14 @@ function App() {
             gap: 0.4rem;
         }
         .shared-session-create, .shared-session button { color: #fff; background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); border-radius: 999px; padding: 0.45rem 0.7rem; font-size: 0.68rem; }
-        .shared-session { display: flex; align-items: center; gap: 0.45rem; padding: 0 0.2rem; color: var(--text-muted); font-size: 0.68rem; }
+        .shared-session { position: relative; display: flex; align-items: center; gap: 0.45rem; padding: 0 0.2rem; color: var(--text-muted); font-size: 0.68rem; }
         .shared-session strong { color: #fff; }
         .shared-status { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); }
         .shared-status.connected { background: var(--success-color); box-shadow: 0 0 8px var(--success-color); }
         .shared-status.error { background: var(--accent-color); }
+        .shared-session-panel { position: absolute; top: calc(100% + 0.5rem); right: 0; width: min(320px, calc(100vw - 2rem)); display: grid; gap: 0.5rem; padding: 0.75rem; border: 1px solid var(--glass-border); border-radius: 12px; background: var(--glass-bg-strong); box-shadow: var(--shadow-panel); }
+        .participant-list { display: grid; gap: 0.3rem; }.participant-list > div { display: flex; justify-content: space-between; gap: 0.5rem; }.participant-list button, .shared-reactions button, .shared-session-panel form button { padding: 0.25rem 0.4rem; color: var(--text-secondary); background: rgba(255,255,255,0.08); border-radius: 6px; font-size: 0.66rem; }
+        .shared-reactions { display: flex; gap: 0.35rem; }.shared-messages { max-height: 6rem; overflow-y: auto; }.shared-messages p { margin: 0.2rem 0; font-size: 0.7rem; }.shared-messages span { color: var(--text-muted); }.shared-session-panel form { display: flex; gap: 0.4rem; }.shared-session-panel input { min-width: 0; flex: 1; color: #fff; background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); border-radius: 6px; padding: 0.4rem; }
 
         .top-widget-area:hover {
             background: rgba(255, 255, 255, 0.15);
@@ -810,6 +819,7 @@ function App() {
           font-weight: 300;
           letter-spacing: 1px;
         }
+        .mobile-nav { display: none; }
         @media (min-width: 768px) {
            .top-bar {
              flex-direction: row;
@@ -839,6 +849,9 @@ function App() {
           .settings-btn span, .recommend-btn span { display: none; }
           .settings-btn, .recommend-btn { width: 42px; min-width: 42px; padding: 0; }
           .ambient-label { display: none; }
+          .mobile-nav { position: fixed; left: calc(env(safe-area-inset-left, 0px) + 0.75rem); right: calc(env(safe-area-inset-right, 0px) + 0.75rem); bottom: calc(env(safe-area-inset-bottom, 0px) + 0.65rem); z-index: 120; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.25rem; padding: 0.35rem; border: 1px solid var(--glass-border); border-radius: 14px; background: rgba(8,10,12,0.88); backdrop-filter: blur(16px); }
+          .mobile-nav button { padding: 0.55rem 0.25rem; border-radius: 10px; color: var(--text-secondary); background: transparent; font-size: 0.68rem; }
+          .mobile-nav button:active { background: rgba(255,255,255,0.1); color: #fff; }
           .top-bar {
             width: 100%;
           }

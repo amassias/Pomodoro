@@ -5,7 +5,7 @@ import Achievements from './Achievements';
 import { generateCSV, downloadFile } from '../../lib/export';
 import { getLocalDateKey, parseLocalDateKey } from '../../lib/date';
 import { useDialogFocus } from '../../shared/ui/useDialogFocus';
-import { getWeeklyComparison } from '../../lib/insights';
+import { getProductivityPatterns, getWeeklyComparison } from '../../lib/insights';
 
 const Report = () => {
   const [showReport, setShowReport] = useState(false);
@@ -17,11 +17,19 @@ const Report = () => {
   const authBtnRef = useRef(null);
   const authPopoverRef = useRef(null);
   const reportModalRef = useRef(null);
+  const reflectionRef = useRef(null);
   const closeAuth = useCallback(() => setShowAuth(false), []);
   const closeReport = useCallback(() => setShowReport(false), []);
+  const [reflection, setReflection] = useState(null);
+  const [reflectionResult, setReflectionResult] = useState('completed');
+  const [reflectionDifficulty, setReflectionDifficulty] = useState('3');
+  const [reflectionInterruptions, setReflectionInterruptions] = useState('0');
+  const [reflectionNotes, setReflectionNotes] = useState('');
+  const closeReflection = useCallback(() => setReflection(null), []);
 
   useDialogFocus({ open: showAuth, onClose: closeAuth, dialogRef: authPopoverRef });
   useDialogFocus({ open: showReport, onClose: closeReport, dialogRef: reportModalRef });
+  useDialogFocus({ open: Boolean(reflection), onClose: closeReflection, dialogRef: reflectionRef });
 
   const { loading: authLoading, user, signInWithPassword, signUp, signInWithOAuth, signOut } = useAuth();
   const { pomodoroHistory, setPomodoroHistory, tasks, setTasks, activeTask, archivedTasks, setArchivedTasks, settings, setSettings } = useUserData();
@@ -36,8 +44,30 @@ const Report = () => {
   const [timeRange, setTimeRange] = useState('week'); // week, month, year
   const [selectedDay, setSelectedDay] = useState(null);
   const weeklyComparison = useMemo(() => getWeeklyComparison(pomodoroHistory), [pomodoroHistory]);
+  const productivityPatterns = useMemo(() => getProductivityPatterns(pomodoroHistory), [pomodoroHistory]);
+  const taskInsights = useMemo(() => {
+    const summary = new Map();
+    Object.values(pomodoroHistory || {}).forEach((sessions) => (sessions || []).forEach((session) => {
+      if (!session.taskId && !session.taskName) return;
+      const key = session.taskId || session.taskName;
+      const current = summary.get(key) || { name: session.taskName || 'Untitled task', minutes: 0, sessions: 0, difficultyTotal: 0, difficultyCount: 0, interruptions: 0 };
+      current.minutes += Number(session.duration) || 0;
+      current.sessions += 1;
+      current.interruptions += Number(session.interruptions) || 0;
+      if (session.difficulty) { current.difficultyTotal += Number(session.difficulty); current.difficultyCount += 1; }
+      summary.set(key, current);
+    }));
+    return [...summary.values()].sort((left, right) => right.minutes - left.minutes).slice(0, 6);
+  }, [pomodoroHistory]);
+  const heatmapDays = useMemo(() => Array.from({ length: 28 }, (_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (27 - index));
+    const key = getLocalDateKey(date);
+    const minutes = (pomodoroHistory[key] || []).reduce((sum, session) => sum + (Number(session.duration) || 0), 0);
+    return { key, minutes, level: minutes >= 120 ? 4 : minutes >= 75 ? 3 : minutes >= 25 ? 2 : minutes > 0 ? 1 : 0 };
+  }), [pomodoroHistory]);
 
-  const savePomodoroData = useCallback((durationMinutes, { taskId, taskName } = {}) => {
+  const savePomodoroData = useCallback((durationMinutes, { taskId, taskName, result, difficulty, interruptions, notes } = {}) => {
     const today = getLocalDateKey();
 
     setPomodoroHistory((prevHistory) => {
@@ -55,6 +85,10 @@ const Report = () => {
 
       if (taskId) entry.taskId = taskId;
       if (taskName) entry.taskName = taskName;
+      if (result) entry.result = result;
+      if (difficulty) entry.difficulty = difficulty;
+      if (interruptions != null) entry.interruptions = interruptions;
+      if (notes) entry.notes = notes;
 
       history[today].push(entry);
 
@@ -65,14 +99,20 @@ const Report = () => {
   const handlePomodoroComplete = useCallback((event) => {
     const duration = event?.detail?.duration;
     if (!duration) return;
-    savePomodoroData(duration, {
+    setReflection({ duration,
       taskId: activeTask?.id || null,
       taskName: activeTask?.text || null,
     });
-    if (activeTask?.id) {
-      setTasks(prev => prev.map(task => task.id === activeTask.id ? { ...task, completedPomodoros: (task.completedPomodoros || 0) + 1 } : task));
-    }
-  }, [savePomodoroData, activeTask, setTasks]);
+  }, [activeTask]);
+
+  const saveReflection = (event) => {
+    event.preventDefault();
+    if (!reflection) return;
+    savePomodoroData(reflection.duration, { taskId: reflection.taskId, taskName: reflection.taskName, result: reflectionResult, difficulty: Number(reflectionDifficulty), interruptions: Number(reflectionInterruptions), notes: reflectionNotes.trim() || null });
+    if (reflection.taskId) setTasks(prev => prev.map(task => task.id === reflection.taskId ? { ...task, completedPomodoros: (task.completedPomodoros || 0) + 1 } : task));
+    setReflection(null);
+    setReflectionNotes('');
+  };
 
   const loadStats = useCallback(() => {
     const history = pomodoroHistory && typeof pomodoroHistory === 'object' ? pomodoroHistory : {};
@@ -136,6 +176,12 @@ const Report = () => {
       setSelectedDay(null);
     }
   }, [showReport, loadStats]);
+
+  useEffect(() => {
+    const openReport = () => setShowReport(true);
+    window.addEventListener('open-report', openReport);
+    return () => window.removeEventListener('open-report', openReport);
+  }, []);
 
   useEffect(() => {
     const handleEsc = (e) => {
@@ -524,6 +570,15 @@ const Report = () => {
                 {weeklyComparison.changePercent >= 0 ? '↑' : '↓'} {Math.abs(weeklyComparison.changePercent)}% versus last week
               </p>
             </div>
+            <section className="focus-heatmap"><div><h3>Focus consistency</h3><span>Last 28 days</span></div><div className="heatmap-grid">{heatmapDays.map(day => <span key={day.key} className={`heatmap-day level-${day.level}`} title={`${day.key}: ${day.minutes} minutes`} aria-label={`${day.key}: ${day.minutes} minutes`}></span>)}</div></section>
+            {productivityPatterns.totalSessions > 0 && <section className="productivity-patterns" aria-label="Productivity patterns">
+              <h3>Patterns to use</h3>
+              <div className="pattern-grid">
+                {productivityPatterns.bestHour && <p>Your strongest focus window is <strong>{String(productivityPatterns.bestHour.hour).padStart(2, '0')}:00–{String((productivityPatterns.bestHour.hour + 1) % 24).padStart(2, '0')}:00</strong>.</p>}
+                {productivityPatterns.bestWeekday && <p><strong>{productivityPatterns.bestWeekday.day}</strong> is your most productive day.</p>}
+                {productivityPatterns.completionRate !== null && <p><strong>{productivityPatterns.completionRate}%</strong> of reflected sessions were completed; {productivityPatterns.abandoned} were abandoned.</p>}
+              </div>
+            </section>}
 
             <div className="report-timerange">
               <button
@@ -569,6 +624,8 @@ const Report = () => {
             </div>
 
             <Achievements history={pomodoroHistory} />
+
+            {taskInsights.length > 0 && <section className="task-insights"><h3>Task history</h3>{taskInsights.map(task => <div key={task.name}><strong>{task.name}</strong><span>{task.sessions} sessions · {(task.minutes / 60).toFixed(1)}h · {task.interruptions} interruptions{task.difficultyCount ? ` · difficulty ${(task.difficultyTotal / task.difficultyCount).toFixed(1)}/5` : ''}</span></div>)}</section>}
 
             {renderTasks()}
 
@@ -617,7 +674,31 @@ const Report = () => {
         </div>
       )}
 
+      {reflection && (
+        <div className="reflection-overlay" onClick={closeReflection}>
+          <form ref={reflectionRef} className="reflection-modal glass-panel" onSubmit={saveReflection} onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="reflection-title">
+            <h2 id="reflection-title">Close your focus session</h2>
+            <p>{reflection.taskName ? `How did “${reflection.taskName}” go?` : 'A few seconds of reflection makes your reports useful.'}</p>
+            <label>Result<select value={reflectionResult} onChange={(event) => setReflectionResult(event.target.value)}><option value="completed">Completed</option><option value="partial">Partly completed</option><option value="blocked">Blocked</option></select></label>
+            <label>Difficulty<select value={reflectionDifficulty} onChange={(event) => setReflectionDifficulty(event.target.value)}><option value="1">1 — Easy</option><option value="2">2</option><option value="3">3 — Balanced</option><option value="4">4</option><option value="5">5 — Hard</option></select></label>
+            <label>Interruptions<input type="number" min="0" max="99" value={reflectionInterruptions} onChange={(event) => setReflectionInterruptions(event.target.value)} /></label>
+            <label>Notes<textarea value={reflectionNotes} onChange={(event) => setReflectionNotes(event.target.value)} placeholder="What helped? What got in the way?" /></label>
+            <div><button type="button" onClick={closeReflection}>Skip</button><button type="submit">Save reflection</button></div>
+          </form>
+        </div>
+      )}
+
       <style>{`
+        .reflection-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 1rem; background: rgba(0,0,0,0.72); backdrop-filter: blur(10px); }
+        .reflection-modal { width: min(100%, 440px); display: grid; gap: 0.8rem; padding: 1.5rem; }
+        .reflection-modal h2, .reflection-modal p { margin: 0; }
+        .reflection-modal p { color: var(--text-secondary); font-size: 0.86rem; }
+        .reflection-modal label { display: grid; gap: 0.3rem; color: var(--text-secondary); font-size: 0.78rem; }
+        .reflection-modal input, .reflection-modal select, .reflection-modal textarea { width: 100%; color: #fff; background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.55rem; font: inherit; }
+        .reflection-modal textarea { min-height: 5rem; resize: vertical; }
+        .reflection-modal > div { display: flex; justify-content: flex-end; gap: 0.6rem; }
+        .reflection-modal button { padding: 0.55rem 0.8rem; border-radius: 8px; color: #fff; background: rgba(255,255,255,0.1); }
+        .reflection-modal button[type="submit"] { background: var(--accent-color); color: #1a0807; }
         .report-btn {
           position: fixed;
           top: calc(env(safe-area-inset-top, 0px) + 6.75rem);
@@ -980,6 +1061,19 @@ const Report = () => {
         .weekly-insight p { margin: 0; font-size: 0.78rem; }
         .weekly-insight .positive { color: var(--success-color); }
         .weekly-insight .negative { color: var(--accent-color); }
+        .focus-heatmap { display: grid; gap: 0.7rem; padding: 1rem; border: 1px solid var(--glass-border); border-radius: 14px; }
+        .focus-heatmap > div:first-child { display: flex; justify-content: space-between; align-items: baseline; }
+        .focus-heatmap h3 { margin: 0; font-size: 0.9rem; }
+        .focus-heatmap span { color: var(--text-muted); font-size: 0.7rem; }
+        .heatmap-grid { display: grid; grid-template-columns: repeat(14, 1fr); gap: 0.35rem; }
+        .heatmap-day { aspect-ratio: 1; min-width: 0; border-radius: 3px; background: rgba(255,255,255,0.06); }
+        .heatmap-day.level-1 { background: rgba(255,113,107,0.25); }.heatmap-day.level-2 { background: rgba(255,113,107,0.45); }.heatmap-day.level-3 { background: rgba(255,113,107,0.7); }.heatmap-day.level-4 { background: var(--accent-color); }
+        .productivity-patterns { padding: 1rem; border: 1px solid var(--glass-border); border-radius: 14px; }
+        .productivity-patterns h3 { margin: 0 0 0.65rem; font-size: 0.9rem; }.pattern-grid { display: grid; gap: 0.45rem; }.pattern-grid p { margin: 0; color: var(--text-muted); font-size: 0.78rem; line-height: 1.45; }.pattern-grid strong { color: var(--text-primary); }
+        .task-insights { display: grid; gap: 0.55rem; }
+        .task-insights h3 { margin: 0.5rem 0; }
+        .task-insights > div { display: flex; justify-content: space-between; gap: 1rem; padding: 0.7rem; border-radius: 10px; background: rgba(255,255,255,0.04); }
+        .task-insights span { color: var(--text-muted); font-size: 0.72rem; text-align: right; }
 
         .stat-card {
           background: rgba(255, 255, 255, 0.05);
