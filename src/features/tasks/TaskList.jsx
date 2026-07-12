@@ -428,7 +428,8 @@ const TaskList = () => {
                 }
 
                 .task-form {
-                    display: flex;
+                    display: grid;
+                    grid-template-columns: minmax(0, 1fr) minmax(8.5rem, 0.55fr) auto;
                     gap: 0.5rem;
                 }
                 .task-date { width: 9rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; padding: 0.45rem; }
@@ -437,6 +438,7 @@ const TaskList = () => {
 
                 .task-input {
                     flex: 1;
+                    min-width: 0;
                     background: rgba(255,255,255,0.1);
                     border: 1px solid rgba(255,255,255,0.2);
                     padding: 0.5rem 1rem;
@@ -486,7 +488,8 @@ const TaskList = () => {
                 }
 
                 .task-item {
-                    display: flex;
+                    display: grid;
+                    grid-template-columns: 28px minmax(0, 1fr) auto;
                     align-items: center;
                     gap: 0.8rem;
                     padding: 0.5rem;
@@ -494,8 +497,9 @@ const TaskList = () => {
                     border-radius: 8px;
                     transition: all 0.2s;
                     animation: slideIn 0.3s ease-out;
-                    flex-wrap: wrap;
                 }
+                .task-item-actions { grid-column: 1 / -1; margin-left: 0; justify-content: flex-end; }
+                .subtask-list { grid-column: 2 / -1; }
 
                 @keyframes slideIn {
                     from {
@@ -899,6 +903,14 @@ const TaskList = () => {
                         gap: 1rem;
                         padding: 1rem;
                     }
+                }
+
+                @media (max-width: 520px) {
+                    .task-form { grid-template-columns: minmax(0, 1fr) auto; }
+                    .task-date { grid-column: 1 / -1; width: 100%; }
+                    .task-item { grid-template-columns: 28px minmax(0, 1fr); }
+                    .pomodoro-estimate { grid-column: 2; }
+                    .task-item-actions { opacity: 1; justify-content: flex-start; flex-wrap: wrap; }
                 }
             `}</style>
         </div>

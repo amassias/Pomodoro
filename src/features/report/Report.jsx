@@ -727,7 +727,7 @@ const Report = () => {
 
         .auth-btn {
           position: fixed;
-          top: calc(env(safe-area-inset-top, 0px) + 9.75rem);
+          top: calc(env(safe-area-inset-top, 0px) + 12.75rem);
           right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
           background: rgba(255, 255, 255, 0.1);
           border: 1px solid rgba(255, 255, 255, 0.2);
@@ -757,7 +757,7 @@ const Report = () => {
 
         .auth-popover {
           position: fixed;
-          top: calc(env(safe-area-inset-top, 0px) + 12.75rem);
+          top: calc(env(safe-area-inset-top, 0px) + 15.75rem);
           right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
           width: min(320px, calc(100vw - 1.5rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
           padding: 1rem;

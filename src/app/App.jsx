@@ -746,7 +746,8 @@ function App() {
         .shared-status { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); }
         .shared-status.connected { background: var(--success-color); box-shadow: 0 0 8px var(--success-color); }
         .shared-status.error { background: var(--accent-color); }
-        .shared-session-panel { position: absolute; top: calc(100% + 0.5rem); right: 0; width: min(320px, calc(100vw - 2rem)); display: grid; gap: 0.5rem; padding: 0.75rem; border: 1px solid var(--glass-border); border-radius: 12px; background: var(--glass-bg-strong); box-shadow: var(--shadow-panel); }
+        .shared-session-panel { position: absolute; top: calc(100% + 0.5rem); right: 0; z-index: 160; width: min(320px, calc(100vw - 2rem)); display: grid; gap: 0.5rem; padding: 0.75rem; border: 1px solid var(--glass-border); border-radius: 12px; background: var(--glass-bg-strong); box-shadow: var(--shadow-panel); }
+        .shared-panel-heading { display: flex; align-items: center; justify-content: space-between; }.shared-panel-heading button { padding: 0.15rem 0.45rem; font-size: 1.1rem; line-height: 1; color: var(--text-secondary); background: transparent; }
         .participant-list { display: grid; gap: 0.3rem; }.participant-list > div { display: flex; justify-content: space-between; gap: 0.5rem; }.participant-list button, .shared-reactions button, .shared-session-panel form button { padding: 0.25rem 0.4rem; color: var(--text-secondary); background: rgba(255,255,255,0.08); border-radius: 6px; font-size: 0.66rem; }
         .shared-reactions { display: flex; gap: 0.35rem; }.shared-messages { max-height: 6rem; overflow-y: auto; }.shared-messages p { margin: 0.2rem 0; font-size: 0.7rem; }.shared-messages span { color: var(--text-muted); }.shared-session-panel form { display: flex; gap: 0.4rem; }.shared-session-panel input { min-width: 0; flex: 1; color: #fff; background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); border-radius: 6px; padding: 0.4rem; }
 
@@ -758,7 +759,7 @@ function App() {
 
         .recommend-btn {
           position: fixed;
-          top: calc(env(safe-area-inset-top, 0px) + 3.75rem);
+          top: calc(env(safe-area-inset-top, 0px) + 9.75rem);
           right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
           background: rgba(255, 255, 255, 0.1);
           border: 1px solid rgba(255, 255, 255, 0.2);
@@ -805,7 +806,7 @@ function App() {
         }
         .main-grid {
             display: grid;
-            grid-template-columns: minmax(390px, 1.15fr) minmax(300px, 0.85fr);
+            grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
             gap: 1rem;
             align-items: stretch;
             justify-content: center;
@@ -838,11 +839,13 @@ function App() {
            }
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 980px) {
           .main-grid {
             grid-template-columns: 1fr;
-            width: 100%;
+            width: min(100%, 620px);
           }
+        }
+        @media (max-width: 768px) {
           .main-content { align-items: flex-start; padding-top: 2rem; margin-bottom: 7rem; }
           .brand-block > div span { display: none; }
           .shared-session > span:not(.shared-status), .shared-session strong { display: none; }

@@ -5,6 +5,7 @@ const SharedSessionControl = () => {
   const { roomId, isHost, participantCount, connectionStatus, expiresAt, createRoom, leaveRoom, shareUrl, participants, messages, roomLocked, isReady, sendMessage, sendReaction, toggleReady, toggleRoomLock, kickParticipant } = useSharedSession();
   const [copied, setCopied] = useState(false);
   const [chatText, setChatText] = useState('');
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   const copyLink = async () => {
     try {
@@ -28,12 +29,14 @@ const SharedSessionControl = () => {
       <button onClick={leaveRoom}>Leave</button>
       <button onClick={toggleReady}>{isReady ? 'Ready ✓' : 'Mark ready'}</button>
       {isHost && <button onClick={toggleRoomLock}>{roomLocked ? 'Unlock room' : 'Lock room'}</button>}
-      <div className="shared-session-panel">
-        <div className="participant-list"><strong>People</strong>{participants.map(participant => <div key={`${participant.id}-${participant.phx_ref || participant.joinedAt}`}><span>{participant.avatar || '🙂'} {participant.name || 'Focus friend'} {participant.ready ? '✓' : ''}</span>{isHost && participant.role !== 'host' && <button onClick={() => kickParticipant(participant.id)}>Remove</button>}</div>)}</div>
+      <button className="shared-session-details" onClick={() => setIsPanelOpen(open => !open)} aria-expanded={isPanelOpen} aria-controls="shared-session-panel">{isPanelOpen ? 'Close chat' : 'People & chat'}</button>
+      {isPanelOpen && <div id="shared-session-panel" className="shared-session-panel" role="dialog" aria-label="People and chat">
+        <div className="shared-panel-heading"><strong>People</strong><button onClick={() => setIsPanelOpen(false)} aria-label="Close people and chat">×</button></div>
+        <div className="participant-list">{participants.map(participant => <div key={`${participant.id}-${participant.phx_ref || participant.joinedAt}`}><span>{participant.avatar || '🙂'} {participant.name || 'Focus friend'} {participant.ready ? '✓' : ''}</span>{isHost && participant.role !== 'host' && <button onClick={() => kickParticipant(participant.id)}>Remove</button>}</div>)}</div>
         <div className="shared-reactions"><button onClick={() => sendReaction('👏')}>👏</button><button onClick={() => sendReaction('💪')}>💪</button><button onClick={() => sendReaction('☕')}>☕</button></div>
         <div className="shared-messages">{messages.slice(-4).map(message => <p key={message.id}><span>{message.senderAvatar} {message.senderName}</span> {message.text}</p>)}</div>
         <form onSubmit={(event) => { event.preventDefault(); sendMessage(chatText); setChatText(''); }}><input value={chatText} onChange={(event) => setChatText(event.target.value)} placeholder="Quiet message" maxLength="280" aria-label="Shared session message" /><button type="submit">Send</button></form>
-      </div>
+      </div>}
     </div>
   );
 };
