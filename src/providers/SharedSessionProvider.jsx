@@ -30,6 +30,18 @@ const defaultProfile = () => {
   return profile;
 };
 
+const roomHistoryKey = (roomId) => `world-focus-room-history:${roomId}`;
+
+const readRoomHistory = (roomId) => {
+  if (!roomId) return [];
+  try {
+    const value = JSON.parse(localStorage.getItem(roomHistoryKey(roomId)) || '[]');
+    return Array.isArray(value) ? value.slice(-30) : [];
+  } catch {
+    return [];
+  }
+};
+
 export const SharedSessionProvider = ({ children }) => {
   const [roomId, setRoomId] = useState(readRoomFromUrl);
   const [roomKey, setRoomKey] = useState(readRoomKeyFromUrl);
@@ -38,7 +50,7 @@ export const SharedSessionProvider = ({ children }) => {
   const [connectionStatus, setConnectionStatus] = useState(roomId ? 'connecting' : 'idle');
   const [remoteTimerState, setRemoteTimerState] = useState(null);
   const [participants, setParticipants] = useState([]);
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(() => readRoomHistory(readRoomFromUrl()));
   const [roomLocked, setRoomLocked] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [profile] = useState(defaultProfile);
@@ -46,6 +58,16 @@ export const SharedSessionProvider = ({ children }) => {
   const channelRef = useRef(null);
   const latestTimerStateRef = useRef(null);
   const participantIdRef = useRef(sessionStorage.getItem('world-focus-participant-id') || crypto.randomUUID());
+
+  const appendMessage = useCallback((message) => {
+    if (!roomId) return;
+    setMessages((previous) => {
+      if (previous.some((item) => item.id === message.id)) return previous;
+      const next = [...previous, message].slice(-30);
+      try { localStorage.setItem(roomHistoryKey(roomId), JSON.stringify(next)); } catch { /* history remains available for this open session */ }
+      return next;
+    });
+  }, [roomId]);
 
   useEffect(() => {
     sessionStorage.setItem('world-focus-participant-id', participantIdRef.current);
@@ -87,7 +109,7 @@ export const SharedSessionProvider = ({ children }) => {
       .on('broadcast', { event: 'room-event' }, ({ payload }) => {
         if (!payload?.type) return;
         if (payload.type === 'message' || payload.type === 'reaction' || payload.type === 'activity') {
-          setMessages((previous) => [...previous, { id: crypto.randomUUID(), ...payload, at: Date.now() }].slice(-30));
+          appendMessage({ id: payload.id || crypto.randomUUID(), ...payload, at: payload.at || Date.now() });
         }
         if (payload.type === 'lock') setRoomLocked(Boolean(payload.locked));
         if (payload.type === 'kick' && payload.targetId === participantIdRef.current) window.dispatchEvent(new Event('leave-shared-room'));
@@ -106,7 +128,7 @@ export const SharedSessionProvider = ({ children }) => {
       channelRef.current = null;
       supabase.removeChannel(channel);
     };
-  }, [expiresAt, isHost, isReady, profile, roomId, roomKey]);
+  }, [appendMessage, expiresAt, isHost, isReady, profile, roomId, roomKey]);
 
   const publishTimerState = useCallback((timerState) => {
     latestTimerStateRef.current = timerState;
@@ -116,8 +138,10 @@ export const SharedSessionProvider = ({ children }) => {
 
   const sendRoomEvent = useCallback((payload) => {
     if (!channelRef.current) return;
-    channelRef.current.send({ type: 'broadcast', event: 'room-event', payload: { ...payload, senderId: participantIdRef.current, senderName: profile.name, senderAvatar: profile.avatar } });
-  }, [profile]);
+    const event = { ...payload, id: crypto.randomUUID(), at: Date.now(), senderId: participantIdRef.current, senderName: profile.name, senderAvatar: profile.avatar };
+    if (event.type === 'message' || event.type === 'reaction' || event.type === 'activity') appendMessage(event);
+    channelRef.current.send({ type: 'broadcast', event: 'room-event', payload: event });
+  }, [appendMessage, profile]);
 
   const sendMessage = useCallback((text) => {
     if (text?.trim()) sendRoomEvent({ type: 'message', text: text.trim().slice(0, 280) });
@@ -153,6 +177,7 @@ export const SharedSessionProvider = ({ children }) => {
     setRoomId(nextRoomId);
     setRoomKey(nextRoomKey);
     setExpiresAt(nextExpiry);
+    setMessages([]);
     setConnectionStatus('connecting');
   }, []);
 
