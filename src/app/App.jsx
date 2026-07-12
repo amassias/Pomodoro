@@ -759,7 +759,7 @@ function App() {
 
         .recommend-btn {
           position: fixed;
-          top: calc(env(safe-area-inset-top, 0px) + 9.75rem);
+          top: calc(env(safe-area-inset-top, 0px) + 6.75rem);
           right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
           background: rgba(255, 255, 255, 0.1);
           border: 1px solid rgba(255, 255, 255, 0.2);
