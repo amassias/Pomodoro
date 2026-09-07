@@ -1,14 +1,31 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import SpotifyPlayer from 'react-spotify-web-playback';
 
 const DEFAULT_URI = 'spotify:playlist:0vvXsWCC9xrXsKd4JyS05a';
 
 const SpotifyWebPlayer = ({ token, playing, uri, isPremium }) => {
-    const [play, setPlay] = useState(false);
+    const [play, setPlay] = useState(playing);
+    const isPlayingRef = useRef(playing);
+    const resumeAfterAlarmRef = useRef(false);
 
     useEffect(() => {
-        setPlay(playing);
-    }, [playing]);
+        const pauseForAlarm = () => {
+            resumeAfterAlarmRef.current = isPlayingRef.current;
+            if (resumeAfterAlarmRef.current) setPlay(false);
+        };
+        const resumeAfterAlarm = () => {
+            if (!resumeAfterAlarmRef.current) return;
+            resumeAfterAlarmRef.current = false;
+            setPlay(true);
+        };
+
+        window.addEventListener('timer-alarm-start', pauseForAlarm);
+        window.addEventListener('timer-alarm-end', resumeAfterAlarm);
+        return () => {
+            window.removeEventListener('timer-alarm-start', pauseForAlarm);
+            window.removeEventListener('timer-alarm-end', resumeAfterAlarm);
+        };
+    }, []);
 
     const selectedUri = uri || DEFAULT_URI;
 
@@ -23,7 +40,8 @@ const SpotifyWebPlayer = ({ token, playing, uri, isPremium }) => {
                 token={token}
                 showSaveIcon
                 callback={state => {
-                    if (!state.isPlaying) setPlay(false);
+                    isPlayingRef.current = state.isPlaying;
+                    setPlay(state.isPlaying);
                 }}
                 play={play}
                 uris={[selectedUri]}

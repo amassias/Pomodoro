@@ -67,7 +67,7 @@ const Report = () => {
     return { key, minutes, level: minutes >= 120 ? 4 : minutes >= 75 ? 3 : minutes >= 25 ? 2 : minutes > 0 ? 1 : 0 };
   }), [pomodoroHistory]);
 
-  const savePomodoroData = useCallback((durationMinutes, { taskId, taskName, result, difficulty, interruptions, notes } = {}) => {
+  const savePomodoroData = useCallback((durationMinutes, { sessionId, taskId, taskName, result, difficulty, interruptions, notes } = {}) => {
     const today = getLocalDateKey();
 
     setPomodoroHistory((prevHistory) => {
@@ -77,7 +77,10 @@ const Report = () => {
         history[today] = [];
       }
 
+      if (sessionId && history[today].some((entry) => entry.sessionId === sessionId)) return history;
+
       const entry = {
+        sessionId: sessionId || crypto.randomUUID(),
         duration: durationMinutes,
         timestamp: new Date().toISOString(),
         completed: true
@@ -99,17 +102,36 @@ const Report = () => {
   const handlePomodoroComplete = useCallback((event) => {
     const duration = event?.detail?.duration;
     if (!duration) return;
-    setReflection({ duration,
+    const sessionId = event?.detail?.sessionId || crypto.randomUUID();
+    const completedSession = {
+      sessionId,
+      duration,
       taskId: activeTask?.id || null,
       taskName: activeTask?.text || null,
-    });
-  }, [activeTask]);
+    };
+    savePomodoroData(duration, completedSession);
+    if (completedSession.taskId) {
+      setTasks(prev => prev.map(task => task.id === completedSession.taskId ? { ...task, completedPomodoros: (task.completedPomodoros || 0) + 1 } : task));
+    }
+    setReflection(completedSession);
+  }, [activeTask, savePomodoroData, setTasks]);
 
   const saveReflection = (event) => {
     event.preventDefault();
     if (!reflection) return;
-    savePomodoroData(reflection.duration, { taskId: reflection.taskId, taskName: reflection.taskName, result: reflectionResult, difficulty: Number(reflectionDifficulty), interruptions: Number(reflectionInterruptions), notes: reflectionNotes.trim() || null });
-    if (reflection.taskId) setTasks(prev => prev.map(task => task.id === reflection.taskId ? { ...task, completedPomodoros: (task.completedPomodoros || 0) + 1 } : task));
+    setPomodoroHistory((prevHistory) => {
+      const history = prevHistory && typeof prevHistory === 'object' ? { ...prevHistory } : {};
+      const today = getLocalDateKey();
+      const sessions = Array.isArray(history[today]) ? history[today] : [];
+      history[today] = sessions.map((session) => session.sessionId === reflection.sessionId ? {
+        ...session,
+        result: reflectionResult,
+        difficulty: Number(reflectionDifficulty),
+        interruptions: Number(reflectionInterruptions),
+        notes: reflectionNotes.trim() || undefined,
+      } : session);
+      return history;
+    });
     setReflection(null);
     setReflectionNotes('');
   };
@@ -1219,7 +1241,7 @@ const Report = () => {
           border-color: rgba(255, 255, 255, 0.3);
         }
 
-        .reset-btn {
+        .report-modal .reset-btn {
           flex: 1;
           background: rgba(255, 107, 107, 0.2);
           border: 1px solid rgba(255, 107, 107, 0.3);
@@ -1232,7 +1254,7 @@ const Report = () => {
           transition: all 0.2s;
         }
 
-        .reset-btn:hover {
+        .report-modal .reset-btn:hover {
           background: rgba(255, 107, 107, 0.3);
           border-color: rgba(255, 107, 107, 0.5);
         }

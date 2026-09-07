@@ -335,9 +335,9 @@ export const UserDataProvider = ({ children }) => {
   }, [userId, customLocations]);
 
   useEffect(() => {
-    if (userId) return;
+    if (userId || loading) return;
     if (city) localStorage.setItem(storageKeys.city, city);
-  }, [userId, city]);
+  }, [userId, city, loading]);
 
   // Debounced DB persistence for logged-in users.
   useEffect(() => {

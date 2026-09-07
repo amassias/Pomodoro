@@ -11,6 +11,7 @@ const LofiPlayer = () => {
   const isDraggingRef = useRef(false);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
   const animationFrameRef = useRef(null);
+  const resumeAfterAlarmRef = useRef(false);
 
   // Hardcoded Lofi Girl Radio
   const trackUrl = 'https://stream-156.zeno.fm/tabzverz0fctv?zt=eyJhbGciOiJIUzI1NiJ9.eyJzdHJlYW0iOiJ0YWJ6dmVyejBmY3R2IiwiaG9zdCI6InN0cmVhbS0xNTYuemVuby5mbSIsInJ0dGwiOjUsImp0aSI6ImtMbk1BSW5aU1hlMkowQ041VVV3OEEiLCJpYXQiOjE3NjY3ODU0MTUsImV4cCI6MTc2Njc4NTQ3NX0._s6l1U1wRdc51D-SwATyaGGUEKomqDfWFzgDp7t9CIQ';
@@ -73,6 +74,35 @@ const LofiPlayer = () => {
     audio.addEventListener('error', handleError);
     return () => audio.removeEventListener('error', handleError);
   }, []);
+
+  useEffect(() => {
+    const pauseForAlarm = () => {
+      const audio = audioRef.current;
+      resumeAfterAlarmRef.current = !audio.paused;
+      if (resumeAfterAlarmRef.current) {
+        audio.pause();
+        setIsPlaying(false);
+      }
+    };
+
+    const resumeAfterAlarm = () => {
+      if (!resumeAfterAlarmRef.current) return;
+      resumeAfterAlarmRef.current = false;
+      configureAudioSource().play()
+        .then(() => {
+          setAudioError(false);
+          setIsPlaying(true);
+        })
+        .catch(() => setAudioError(true));
+    };
+
+    window.addEventListener('timer-alarm-start', pauseForAlarm);
+    window.addEventListener('timer-alarm-end', resumeAfterAlarm);
+    return () => {
+      window.removeEventListener('timer-alarm-start', pauseForAlarm);
+      window.removeEventListener('timer-alarm-end', resumeAfterAlarm);
+    };
+  }, [configureAudioSource]);
 
   const handleMouseMove = useCallback((e) => {
     if (!isDraggingRef.current) return;

@@ -14,7 +14,11 @@ const loadYouTubeIframeApi = () => {
       script.src = 'https://www.youtube.com/iframe_api';
       script.async = true;
       script.dataset.youtubeIframeApi = 'true';
-      script.onerror = () => reject(new Error('Failed to load YouTube IFrame API'));
+      script.onerror = () => {
+        youtubeApiPromise = null;
+        script.remove();
+        reject(new Error('Failed to load YouTube IFrame API'));
+      };
       document.head.appendChild(script);
     }
 
@@ -42,6 +46,19 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
 
   useEffect(() => {
     let cancelled = false;
+    let stalledSince = Date.now();
+    let reported = false;
+    const watchdog = setInterval(() => {
+      if (document.hidden || !navigator.onLine) { stalledSince = Date.now(); return; }
+      const state = playerRef.current?.getPlayerState?.();
+      if (state === 1) { stalledSince = Date.now(); reported = false; return; }
+      if (state === 2) { stalledSince = Date.now(); return; }
+      if (!reported && playerRef.current && Date.now() - stalledSince > 30000) {
+        reported = true;
+        setStatus('failed');
+        onVideoErrorRef.current?.({ videoId, code: 'play_timeout' });
+      }
+    }, 1000);
 
     const init = async () => {
       try {
@@ -71,7 +88,7 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
             },
             events: {
               onReady: (event) => {
-                setStatus('ready');
+                if (cancelled) return;
                 try {
                   event.target.mute();
                   event.target.playVideo();
@@ -80,9 +97,13 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
                 }
               },
               onError: (event) => {
+                if (cancelled) return;
                 setStatus('failed');
                 const currentId = latestVideoIdRef.current || videoId;
                 onVideoErrorRef.current?.({ videoId: currentId, code: event.data });
+              },
+              onStateChange: (event) => {
+                if (!cancelled && event.data === 1) setStatus('ready');
               },
             },
           });
@@ -98,6 +119,7 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
     init();
     return () => {
       cancelled = true;
+      clearInterval(watchdog);
     };
     // init once
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -150,7 +172,7 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
   return (
     <div className="video-background">
       <div className="video-overlay"></div>
-      <div ref={containerRef} className="youtube-player" />
+      <div key={retryNonce} ref={containerRef} className="youtube-player" />
       {status === 'failed' && (
         <div className="media-fallback" role="status">
           <span>Live atmosphere unavailable</span>

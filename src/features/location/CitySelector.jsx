@@ -25,7 +25,7 @@ const extractYouTubeId = (input) => {
   return null;
 };
 
-const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error = null, validationFailed = false }) => {
+const CitySelector = ({ currentCity, currentCityLabel, cities, onSelect, isLoading = false, error = null, validationFailed = false }) => {
   const { favoriteCities, toggleFavorite, addCustomLocation, removeCustomLocation, settings, setSettings } = useUserData();
 
   const [showAddModal, setShowAddModal] = useState(false);
@@ -58,7 +58,7 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
     ? activeCategory
     : (categories[0] || '');
 
-  const currentCityName = cities?.[currentCity]?.name || 'Select Location';
+  const currentCityName = currentCityLabel || cities?.[currentCity]?.name || 'Select Location';
 
   const saveAtmosphere = () => {
     const name = window.prompt('Atmosphere name');
@@ -120,6 +120,7 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
 
     return (
       <div className="expanded-content">
+        <p className="status-msg">Unavailable streams are temporarily hidden. Availability is checked every 5 minutes.</p>
         <div className="atmosphere-collections">
           <button className="save-atmosphere" onClick={saveAtmosphere}>Save current atmosphere</button>
           {(Array.isArray(settings.atmosphereCollections) ? settings.atmosphereCollections : []).map(collection => (
@@ -233,9 +234,12 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
   return (
     <>
       <footer className={`bottom-bar glass-panel ${isExpanded ? 'expanded' : ''}`}>
-        <div
+        <button
+          type="button"
           className="footer-header"
-          onClick={() => setIsExpanded(!isExpanded)}
+          aria-expanded={isExpanded}
+          aria-controls="location-options"
+          onClick={() => setIsExpanded(prev => !prev)}
         >
           <p className="location-text">
             {isLoading
@@ -247,10 +251,10 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
                   : 'No available locations'}
           </p>
           <span className="chevron">{isExpanded ? '⌃' : '⌄'}</span>
-        </div>
+        </button>
 
         {isExpanded && (
-          <div className="expanded-panel">
+          <div className="expanded-panel" id="location-options">
             {renderExpandedContent()}
           </div>
         )}
@@ -302,6 +306,7 @@ const CitySelector = ({ currentCity, cities, onSelect, isLoading = false, error 
       )}
 
       <style>{`
+        .footer-header { width: 100%; color: var(--text-primary); background: transparent; font: inherit; }
         .atmosphere-collections { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-bottom: 0.75rem; }
         .atmosphere-collections > div { display: flex; border: 1px solid var(--glass-border); border-radius: 999px; overflow: hidden; }
         .atmosphere-collections button { padding: 0.38rem 0.58rem; background: rgba(255,255,255,0.05); color: var(--text-secondary); font-size: 0.68rem; }

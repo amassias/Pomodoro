@@ -23,7 +23,9 @@ import AchievementWatcher from '../features/report/AchievementWatcher';
 
 const CITIES = {
   // Urban Night
-  shibuya: { name: 'Tokyo (Shibuya)', id: 'tujkoXI8rWM', category: 'Urban Night' },
+  shibuya: { name: 'Tokyo (Shibuya)', id: 'dfVK7ld38Ys', category: 'Urban Night' },
+  tokyo_trains: { name: 'Tokyo (Shinjuku Trains)', id: 'GLQhbRGv5qU', category: 'Urban Night' },
+  tokyo_bay: { name: 'Tokyo (Rainbow Bridge)', id: 'hlbh4P0Mz8M', category: 'Urban Night' },
   shinjuku: { name: 'Tokyo (Shinjuku)', id: 'DjdUEyjx8GM', category: 'Urban Night' },
   osaka: { name: 'Osaka (Dotonbori)', id: 'CoSJb_nSgxo', category: 'Urban Night' },
   nyc_times: { name: 'NYC (Times Sq)', id: 'rnXIjl_Rzy4', category: 'Urban Night' },
@@ -34,6 +36,9 @@ const CITIES = {
   chongqing: { name: 'Chongqing', id: 'XY2M2WJb4sg', category: 'Urban Night' },
 
   // Urban Day
+  atlantic_city: { name: 'Atlantic City (Boardwalk)', id: 'xdR31xv7il0', category: 'Urban Day' },
+  key_west: { name: 'Key West (Duval Street)', id: 'lcVm-Izrpa0', category: 'Urban Day' },
+  seoul_palace: { name: 'Seoul (Gyeongbokgung Palace)', id: 'cCRm_ZwxH1w', category: 'Urban Day' },
   paris: { name: 'Paris (Eiffel)', id: 'OzYp4NRZlwQ', category: 'Urban Day' },
   london: { name: 'London (Abbey Rd)', id: '57w2gYXjRic', category: 'Urban Day' },
   venice: { name: 'Venice', id: 'ph1vpnYIxJk', category: 'Urban Day' },
@@ -43,6 +48,13 @@ const CITIES = {
   santorini: { name: 'Santorini', id: '9G88RhrM32Y', category: 'Urban Day' },
 
   // Nature
+  alaska_bears: { name: 'Alaska (Brooks Falls Bears)', id: 'J7ZrIDvqlic', category: 'Nature' },
+  samui_lamai: { name: 'Koh Samui (Lamai Beach)', id: '3N3ZwIB_X4Y', category: 'Nature' },
+  samui_crystal: { name: 'Koh Samui (Crystal Bay)', id: 'Fw9hgttWzIg', category: 'Nature' },
+  deerfield_beach: { name: 'Florida (Deerfield Beach)', id: 'rdeoEeJ00xA', category: 'Nature' },
+  deerfield_underwater: { name: 'Florida (Underwater Reef)', id: 'SHfAtWHr9Ks', category: 'Nature' },
+  deerfield_garden: { name: 'Florida (Arboretum)', id: 'ngMbVpBhpe4', category: 'Nature' },
+  fairbanks: { name: 'Alaska (Fairbanks Sky)', id: 'O52zDyxg5QI', category: 'Nature' },
   namibia: { name: 'Namibia (Desert)', id: 'ydYDqZQpim8', category: 'Nature' },
   kenya: { name: 'Kenya (Safari)', id: 'liveVslqWxc', category: 'Nature' },
   monterey: { name: 'Jellyfish', id: '2g811Eo7K8U', category: 'Nature' },
@@ -113,9 +125,25 @@ function App() {
   const [isValidatingLocations, setIsValidatingLocations] = useState(true);
   const [locationsError, setLocationsError] = useState(null);
   const [validationFailed, setValidationFailed] = useState(false);
+  const [locationCheck, setLocationCheck] = useState(0);
   const [liveYoutubeVideoIds, setLiveYoutubeVideoIds] = useState(() => new Set());
 
   const [badYoutubeVideoIds, setBadYoutubeVideoIds] = useState(() => readBadYoutubeVideoIds({ userId }));
+  useEffect(() => {
+    const refresh = () => {
+      if (document.hidden || !navigator.onLine) return;
+      setBadYoutubeVideoIds(readBadYoutubeVideoIds({ userId }));
+      setLocationCheck(value => value + 1);
+    };
+    const interval = setInterval(refresh, 5 * 60 * 1000);
+    window.addEventListener('online', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('online', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [userId]);
 
   useEffect(() => {
     setBadYoutubeVideoIds(readBadYoutubeVideoIds({ userId }));
@@ -161,6 +189,7 @@ function App() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ videoIds }),
+          signal: AbortSignal.timeout(15000),
         });
 
         if (!response.ok) {
@@ -206,7 +235,7 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [cities, userDataLoading]);
+  }, [cities, userDataLoading, locationCheck]);
 
   const persistSpotifyTokens = useCallback(({ token, refreshToken, expiresAt, expiresIn }) => {
     const resolvedExpiresAt = expiresAt || (expiresIn ? Date.now() + expiresIn * 1000 : null);
@@ -415,14 +444,11 @@ function App() {
 
   // Exhaustive list of video streams with categories
   const visibleCities = React.useMemo(() => {
-    if (isValidatingLocations) return {};
-
-    const entries = Object.entries(cities).filter(([key, c]) => {
+    const entries = Object.entries(cities).filter(([, c]) => {
       if (!c?.id) return false;
+      if (badYoutubeVideoIds.has(c.id)) return false;
+      if (isValidatingLocations) return liveYoutubeVideoIds.has(c.id);
       
-      // Always show custom locations (user-added) without validation
-      if (key.startsWith('custom_')) return true;
-
       // If validation failed, show all cities except known bad ones
       if (validationFailed) {
         return !badYoutubeVideoIds.has(c.id);
@@ -439,8 +465,8 @@ function App() {
   // If the currently selected city is missing/hidden, fall back to the first visible option.
   useEffect(() => {
     // Don't run fallback while still validating - wait for validation to complete
-    if (isValidatingLocations) return;
-    if (visibleCities[city]) return;
+    if (userDataLoading || isValidatingLocations) return;
+    if (cities[city]) return;
 
     // Prefer a fallback in the same category as the previously-selected city.
     const previousCategory = cities?.[city]?.category || null;
@@ -458,22 +484,22 @@ function App() {
     if (fallbackKey && fallbackKey !== city) {
       setCity(fallbackKey);
     }
-  }, [city, cities, isValidatingLocations, setCity, visibleCities]);
+  }, [city, cities, userDataLoading, isValidatingLocations, setCity, visibleCities]);
 
-  const currentCity = visibleCities[city] || null;
+  const currentCity = cities[city] || null;
 
   const handleVideoError = useCallback(
     ({ videoId, code }) => {
       if (!videoId) return;
 
       // If the YouTube API itself failed to load (adblock/network), don't permanently hide a specific city.
-      if (code === 'api_load_failed') {
+      if (code === 'api_load_failed' || !navigator.onLine) {
         console.warn('YouTube IFrame API failed to load; cannot evaluate stream health.', { videoId });
         return;
       }
 
       // Short TTL for timeouts (can be transient), longer TTL for explicit YouTube errors.
-      const ttlMs = code === 'play_timeout' ? 30 * 60 * 1000 : undefined;
+      const ttlMs = code === 'play_timeout' ? 5 * 60 * 1000 : 30 * 60 * 1000;
 
       markBadYoutubeVideoId(videoId, { userId, ttlMs });
       setBadYoutubeVideoIds(readBadYoutubeVideoIds({ userId }));
@@ -484,7 +510,7 @@ function App() {
   return (
     <div className="app-container">
       {currentCity?.id ? (
-        <BackgroundVideo videoId={currentCity.id} onVideoError={handleVideoError} />
+        <BackgroundVideo key={currentCity.id} videoId={currentCity.id} onVideoError={handleVideoError} />
       ) : null}
 
       <div className="overlay">
@@ -515,6 +541,7 @@ function App() {
 
         <CitySelector
           currentCity={city}
+          currentCityLabel={currentCity?.name}
           cities={visibleCities}
           onSelect={setCity}
           isLoading={isValidatingLocations}
@@ -526,6 +553,7 @@ function App() {
           <button onClick={() => document.querySelector('#focus-tasks')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>Tasks</button>
           <button onClick={() => window.dispatchEvent(new Event('open-report'))}>Insights</button>
           <button onClick={() => setShowSettings(true)}>Settings</button>
+          <button onClick={() => setShowFeedbackModal(true)}>Feedback</button>
         </nav>
       </div>
 
@@ -846,6 +874,16 @@ function App() {
           }
         }
         @media (max-width: 768px) {
+          .app-container .settings-btn, .app-container .report-btn, .app-container .recommend-btn { display: none; }
+          .app-container .auth-btn { top: 0.75rem; right: 0.75rem; }
+          .app-container .focus-header { padding-right: 3rem; flex-wrap: wrap; gap: 0.65rem; }
+          .app-container .top-widget-area { width: 100%; justify-content: space-between; background: rgba(9,11,14,0.9); border-radius: 12px; padding: 0.5rem; }
+          .app-container .progress-copy { display: flex; }
+          .app-container .main-content { padding-top: 1rem; margin-bottom: 1rem; }
+          .app-container .lofi-player, .app-container .spotify-player-wrapper { position: relative; left: auto; right: auto; bottom: auto; width: calc(100% - 2rem); margin: 1rem auto 6rem; transform: none !important; }
+          .app-container .bottom-bar:not(.expanded) { position: relative; left: auto; bottom: auto; transform: none; max-width: 100%; border-radius: 12px; }
+          .app-container .mobile-nav { grid-template-columns: repeat(5, 1fr); }
+          .app-container .mobile-nav button { min-height: 44px; font-size: 0.72rem; }
           .main-content { align-items: flex-start; padding-top: 2rem; margin-bottom: 7rem; }
           .brand-block > div span { display: none; }
           .shared-session > span:not(.shared-status), .shared-session strong { display: none; }

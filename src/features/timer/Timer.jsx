@@ -201,16 +201,28 @@ const Timer = ({ settings, updateSettings }) => {
   // Helper to handle timer completion
   const handleTimerComplete = useCallback(() => {
     const currentSettings = settingsRef.current;
+    let alarmFinished = false;
+
+    const finishAlarm = () => {
+      if (alarmFinished) return;
+      alarmFinished = true;
+      window.dispatchEvent(new Event('timer-alarm-end'));
+    };
     
     // Play alarm sound with repeat
     const playAlarm = (times = 1, { fallback } = {}) => {
-      if (times <= 0) return;
+      if (times <= 0) {
+        finishAlarm();
+        return;
+      }
       const resolvedUrl = ALARM_SOUNDS[currentSettings.sound] || ALARM_SOUNDS.bell;
       const audio = new Audio(resolvedUrl);
       audio.volume = (currentSettings.alarmVolume ?? 70) / 100;
       audio.onended = () => {
         if (times > 1) {
           setTimeout(() => playAlarm(times - 1), 200);
+        } else {
+          finishAlarm();
         }
       };
       audio.play().catch(e => {
@@ -219,13 +231,18 @@ const Timer = ({ settings, updateSettings }) => {
           const retry = new Audio(fallbackUrl);
           retry.volume = (currentSettings.alarmVolume ?? 70) / 100;
           retry.onended = audio.onended;
-          retry.play().catch(err => console.log('Audio play failed', err));
+          retry.play().catch(err => {
+            console.log('Audio play failed', err);
+            finishAlarm();
+          });
           return;
         }
         console.log('Audio play failed', e);
+        finishAlarm();
       });
     };
 
+    window.dispatchEvent(new Event('timer-alarm-start'));
     playAlarm(currentSettings.alarmRepeat ?? 3);
     if (navigator.vibrate && currentSettings.vibrationEnabled !== false) navigator.vibrate([120, 80, 180]);
 
@@ -245,7 +262,10 @@ const Timer = ({ settings, updateSettings }) => {
     // Emit pomodoro completion event
     if (modeRef.current === 'focus') {
       window.dispatchEvent(new CustomEvent('pomodoroCompleted', {
-        detail: { duration: currentSettings.focusDuration }
+        detail: {
+          duration: currentSettings.focusDuration,
+          sessionId: crypto.randomUUID(),
+        }
       }));
     }
 
@@ -377,10 +397,13 @@ const Timer = ({ settings, updateSettings }) => {
   };
 
   return (
-    <div id="focus-timer" className="timer-container glass-panel">
-      <div className="timer-heading">
+    <div id="focus-timer" className={`timer-container glass-panel ${mode !== 'focus' ? `break-mode ${mode === 'longBreak' ? 'long-break' : 'short-break'}` : 'focus-mode'}`}>
+      <div className="timer-heading" aria-live="polite">
         <span className={`status-dot ${isActive ? 'active' : ''}`}></span>
-        <span>{isActive ? 'Focus in progress' : 'Ready when you are'}</span>
+        {mode !== 'focus' && <strong className="phase-badge">Break</strong>}
+        <span>{mode === 'focus'
+          ? (isActive ? 'Focus in progress' : 'Ready when you are')
+          : `${mode === 'longBreak' ? 'Long' : 'Short'} break ${isActive ? 'in progress' : 'paused'}`}</span>
       </div>
       <div className="timer-modes">
         <button
@@ -395,16 +418,18 @@ const Timer = ({ settings, updateSettings }) => {
           onClick={() => setTimerMode('shortBreak')}
           disabled={sharedLocked}
         >
-          Short
+          Short break
         </button>
         <button
           className={mode === 'longBreak' ? 'active' : ''}
           onClick={() => setTimerMode('longBreak')}
           disabled={sharedLocked}
         >
-          Long
+          Long break
         </button>
       </div>
+      <details className="session-options">
+      <summary>Session options</summary>
       <div className="timer-tools" aria-label="Focus presets">
         <button onClick={() => applyPreset(25, 5, 15)} disabled={sharedLocked}>Classic</button>
         <button onClick={() => applyPreset(50, 10, 20)} disabled={sharedLocked}>Deep 50</button>
@@ -415,6 +440,7 @@ const Timer = ({ settings, updateSettings }) => {
         ))}
       </div>
       <CalendarActions />
+      </details>
 
       <div className="time-display">
         {String(Math.max(0, Number(minutes) || 0)).padStart(2, '0')}:{String(Math.max(0, Number(seconds) || 0)).padStart(2, '0')}
@@ -423,7 +449,7 @@ const Timer = ({ settings, updateSettings }) => {
 
       <div className="timer-controls">
         <button className="primary-btn" onClick={toggleTimer} disabled={sharedLocked}>
-          {sharedLocked ? 'Host controls timer' : isActive ? 'Pause session' : 'Start focus'}
+          {sharedLocked ? 'Host controls timer' : isActive ? 'Pause session' : mode === 'focus' ? 'Start focus' : 'Start break'}
         </button>
         <button className="reset-btn" onClick={resetTimer} disabled={sharedLocked}>
           Reset
@@ -444,14 +470,28 @@ const Timer = ({ settings, updateSettings }) => {
           min-width: 0;
           justify-content: center;
           background: linear-gradient(145deg, rgba(17,20,24,0.84), rgba(8,10,12,0.72));
+          transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+        }
+        .timer-container.break-mode {
+          background: linear-gradient(145deg, rgba(8, 54, 53, 0.94), rgba(5, 29, 35, 0.9));
+          border-color: rgba(84, 224, 196, 0.42);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 18px 50px rgba(0, 25, 28, 0.3);
+        }
+        .timer-container.long-break {
+          background: linear-gradient(145deg, rgba(40, 34, 83, 0.94), rgba(18, 24, 51, 0.9));
+          border-color: rgba(151, 137, 255, 0.42);
         }
         .timer-heading { display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.72rem; letter-spacing: 0.04em; }
+        .phase-badge { padding: 0.2rem 0.5rem; border-radius: 999px; background: rgba(84, 224, 196, 0.16); color: #8af3dd; font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; }
+        .long-break .phase-badge { background: rgba(151, 137, 255, 0.18); color: #c6bdff; }
         .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); }
         .status-dot.active { background: var(--success-color); box-shadow: 0 0 12px var(--success-color); }
+        .break-mode .status-dot.active { background: #54e0c4; box-shadow: 0 0 12px #54e0c4; }
+        .long-break .status-dot.active { background: #9789ff; box-shadow: 0 0 12px #9789ff; }
         .timer-caption { margin: -0.6rem 0 0; color: var(--text-muted); font-size: 0.78rem; text-align: center; }
         .timer-modes {
           display: flex;
-          gap: 1rem;
+          gap: 0.25rem;
           background: rgba(255,255,255,0.045);
           padding: 0.35rem;
           border-radius: 99px;
@@ -459,9 +499,9 @@ const Timer = ({ settings, updateSettings }) => {
         .timer-modes button {
           background: transparent;
           color: var(--text-secondary);
-          padding: 0.5rem 1rem;
+          padding: 0.65rem 0.8rem;
           border-radius: 99px;
-          font-size: 0.9rem;
+          font-size: 0.8rem;
           font-weight: 500;
         }
         .timer-modes button.active {
@@ -469,6 +509,8 @@ const Timer = ({ settings, updateSettings }) => {
           color: #fff;
           font-weight: 600;
         }
+        .break-mode .timer-modes button.active { background: rgba(84, 224, 196, 0.2); color: #b8fff0; }
+        .long-break .timer-modes button.active { background: rgba(151, 137, 255, 0.22); color: #ded9ff; }
         .timer-tools { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem; margin-top: -0.65rem; }
         .timer-tools button { padding: 0.35rem 0.55rem; border-radius: 999px; background: transparent; color: var(--text-muted); font-size: 0.66rem; border: 1px solid rgba(255,255,255,0.08); }
         .timer-tools button:hover { color: #fff; border-color: rgba(255,255,255,0.2); }
@@ -478,7 +520,7 @@ const Timer = ({ settings, updateSettings }) => {
         .time-display {
           font-size: clamp(4.5rem, 9vw, 7rem);
           font-weight: 300;
-          letter-spacing: -0.065em;
+          letter-spacing: -0.035em;
           line-height: 1;
           font-variant-numeric: tabular-nums;
         }
@@ -487,6 +529,12 @@ const Timer = ({ settings, updateSettings }) => {
           gap: 1.5rem;
           align-items: center;
         }
+        .session-options { width: 100%; text-align: center; }
+        .session-options summary { cursor: pointer; color: var(--text-secondary); font-size: 0.8rem; padding: 0.5rem; border-radius: 8px; }
+        .session-options summary:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 3px; }
+        .session-options[open] summary { margin-bottom: 1rem; }
+        .session-options .calendar-actions { margin-top: 0.75rem; }
+        .session-options .timer-tools button { min-height: 36px; font-size: 0.75rem; }
         .session-tools { display: flex; gap: 0.55rem; margin-top: -0.8rem; }
         .session-tools button { background: transparent; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.2); padding: 0.2rem; font-size: 0.7rem; }
         .session-tools button:hover { color: #fff; }
@@ -499,6 +547,8 @@ const Timer = ({ settings, updateSettings }) => {
           letter-spacing: 0.01em;
           font-size: 1rem;
         }
+        .break-mode .primary-btn { background: #54e0c4; color: #062d2c; }
+        .long-break .primary-btn { background: #a99eff; color: #181535; }
         .primary-btn:hover {
           transform: scale(1.05);
           box-shadow: 0 12px 30px rgba(255,113,107,0.24);
@@ -548,14 +598,18 @@ const Timer = ({ settings, updateSettings }) => {
 
         @media (max-width: 420px) {
           .timer-controls {
-            flex-direction: column;
-            align-items: stretch;
+            flex-direction: row;
+            align-items: center;
           }
           .primary-btn {
-            width: 100%;
+            width: auto;
+            letter-spacing: 0;
           }
           .reset-btn {
-            padding: 0.75rem 1rem;
+            padding: 0.75rem 0.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
           }
         }
       `}</style>
