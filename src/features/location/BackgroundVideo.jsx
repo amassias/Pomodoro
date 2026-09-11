@@ -172,7 +172,7 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
   return (
     <div className="video-background">
       <div className="video-overlay"></div>
-      <div key={retryNonce} ref={containerRef} className="youtube-player" />
+      <div key={retryNonce} ref={containerRef} className={`youtube-player${status === 'failed' ? ' is-hidden' : ''}`} />
       {status === 'failed' && (
         <div className="media-fallback" role="status">
           <span>Live atmosphere unavailable</span>
@@ -224,9 +224,12 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
             min-height: 100dvh;
           }
         }
-        .youtube-player :global(iframe) {
+        .youtube-player iframe {
           width: 100%;
           height: 100%;
+        }
+        .youtube-player.is-hidden {
+          visibility: hidden;
         }
         .media-fallback {
           position: absolute;

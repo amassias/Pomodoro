@@ -466,7 +466,10 @@ function App() {
   useEffect(() => {
     // Don't run fallback while still validating - wait for validation to complete
     if (userDataLoading || isValidatingLocations) return;
-    if (cities[city]) return;
+    // A city that is still visible (not quarantined) is kept as-is.
+    if (visibleCities[city]) return;
+    // Nothing to switch to: keep the current stream rather than blanking the background.
+    if (!Object.keys(visibleCities).length) return;
 
     // Prefer a fallback in the same category as the previously-selected city.
     const previousCategory = cities?.[city]?.category || null;
@@ -865,6 +868,13 @@ function App() {
            .top-bar h1 {
                text-align: left;
            }
+        }
+
+        /* The Settings / Insights / Feedback / Sign in rail is position: fixed on the
+           right edge. Keep the header widgets clear of it until the viewport is wide
+           enough for the centred 1180px header to sit inside the rail. */
+        @media (min-width: 769px) and (max-width: 1460px) {
+          .focus-header { padding-right: 130px; }
         }
 
         @media (max-width: 980px) {
