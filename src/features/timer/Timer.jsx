@@ -430,16 +430,29 @@ const Timer = ({ settings, updateSettings }) => {
       </div>
       <details className="session-options">
       <summary>Session options</summary>
-      <div className="timer-tools" aria-label="Focus presets">
-        <button onClick={() => applyPreset(25, 5, 15)} disabled={sharedLocked}>Classic</button>
-        <button onClick={() => applyPreset(50, 10, 20)} disabled={sharedLocked}>Deep 50</button>
-        <button onClick={() => applyPreset(90, 15, 30)} disabled={sharedLocked}>Flow 90</button>
-        <button onClick={toggleFullscreen}>Full screen</button>
-        {(Array.isArray(settings.customPresets) ? settings.customPresets : []).map(preset => (
-          <button key={preset.id} onClick={() => applyPreset(preset.focusDuration, preset.shortBreakDuration, preset.longBreakDuration)} disabled={sharedLocked}>{preset.name}</button>
-        ))}
+      <div className="session-option-grid">
+      <div className="option-row">
+        <span className="option-row-label" id="preset-row-label">Length</span>
+        <div className="timer-tools" role="group" aria-labelledby="preset-row-label">
+          <button onClick={() => applyPreset(25, 5, 15)} disabled={sharedLocked}>Classic</button>
+          <button onClick={() => applyPreset(50, 10, 20)} disabled={sharedLocked}>Deep 50</button>
+          <button onClick={() => applyPreset(90, 15, 30)} disabled={sharedLocked}>Flow 90</button>
+          {(Array.isArray(settings.customPresets) ? settings.customPresets : []).map(preset => (
+            <button key={preset.id} onClick={() => applyPreset(preset.focusDuration, preset.shortBreakDuration, preset.longBreakDuration)} disabled={sharedLocked}>{preset.name}</button>
+          ))}
+        </div>
       </div>
-      <CalendarActions />
+      <div className="option-row">
+        <span className="option-row-label" id="calendar-row-label">Block this time</span>
+        <CalendarActions labelledBy="calendar-row-label" />
+      </div>
+      <div className="option-row">
+        <span className="option-row-label">View</span>
+        <div className="timer-tools">
+          <button onClick={toggleFullscreen}>Full screen</button>
+        </div>
+      </div>
+      </div>
       </details>
 
       <div className="time-display">
@@ -511,10 +524,13 @@ const Timer = ({ settings, updateSettings }) => {
         }
         .break-mode .timer-modes button.active { background: rgba(84, 224, 196, 0.2); color: #b8fff0; }
         .long-break .timer-modes button.active { background: rgba(151, 137, 255, 0.22); color: #ded9ff; }
-        .timer-tools { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem; margin-top: -0.65rem; }
+        .session-option-grid { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 0.6rem 1.25rem; margin-top: 0.6rem; }
+        .option-row { display: grid; gap: 0.3rem; justify-items: center; }
+        .option-row-label { color: var(--text-muted); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.14em; }
+        .timer-tools { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem; }
         .timer-tools button { padding: 0.35rem 0.55rem; border-radius: 999px; background: transparent; color: var(--text-muted); font-size: 0.66rem; border: 1px solid rgba(255,255,255,0.08); }
         .timer-tools button:hover { color: #fff; border-color: rgba(255,255,255,0.2); }
-        .calendar-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem; margin-top: -0.9rem; }
+        .calendar-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem; }
         .calendar-actions a, .calendar-actions button { padding: 0.3rem 0.5rem; border-radius: 999px; background: rgba(255,255,255,0.04); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.08); text-decoration: none; font-size: 0.64rem; }
         .calendar-actions a:hover, .calendar-actions button:hover { color: #fff; border-color: rgba(255,255,255,0.2); }
         .time-display {
@@ -533,7 +549,6 @@ const Timer = ({ settings, updateSettings }) => {
         .session-options summary { cursor: pointer; color: var(--text-secondary); font-size: 0.8rem; padding: 0.5rem; border-radius: 8px; }
         .session-options summary:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 3px; }
         .session-options[open] summary { margin-bottom: 1rem; }
-        .session-options .calendar-actions { margin-top: 0.75rem; }
         .session-options .timer-tools button { min-height: 36px; font-size: 0.75rem; }
         .session-tools { display: flex; gap: 0.55rem; margin-top: -0.8rem; }
         .session-tools button { background: transparent; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.2); padding: 0.2rem; font-size: 0.7rem; }

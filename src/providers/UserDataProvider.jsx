@@ -309,30 +309,33 @@ export const UserDataProvider = ({ children }) => {
   }, [userId]);
 
   // Persist guest data to localStorage (no DB).
+  // Each of these must wait for the initial load, exactly like the city and DB
+  // effects below: on mount the state is still empty, so an unguarded write
+  // overwrites the stored data before loadGuest() has read it back.
   useEffect(() => {
-    if (userId) return;
+    if (userId || loading) return;
     writeJson(storageKeys.tasks, tasks);
-  }, [userId, tasks]);
+  }, [userId, loading, tasks]);
 
   useEffect(() => {
-    if (userId) return;
+    if (userId || loading) return;
     writeJson(storageKeys.archivedTasks, archivedTasks);
-  }, [userId, archivedTasks]);
+  }, [userId, loading, archivedTasks]);
 
   useEffect(() => {
-    if (userId) return;
+    if (userId || loading) return;
     writeJson(storageKeys.history, pomodoroHistory);
-  }, [userId, pomodoroHistory]);
+  }, [userId, loading, pomodoroHistory]);
 
   useEffect(() => {
-    if (userId) return;
+    if (userId || loading) return;
     writeJson(storageKeys.favoriteCities, favoriteCities);
-  }, [userId, favoriteCities]);
+  }, [userId, loading, favoriteCities]);
 
   useEffect(() => {
-    if (userId) return;
+    if (userId || loading) return;
     writeJson(storageKeys.customLocations, customLocations);
-  }, [userId, customLocations]);
+  }, [userId, loading, customLocations]);
 
   useEffect(() => {
     if (userId || loading) return;

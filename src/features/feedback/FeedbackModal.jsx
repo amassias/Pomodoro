@@ -117,7 +117,7 @@ const FeedbackModal = ({ open, onClose, currentStreamId, currentStreamName }) =>
     <div className="feedback-modal-overlay" onClick={handleClose}>
       <div ref={dialogRef} className="feedback-modal-content" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="feedback-title">
         <div className="feedback-modal-header">
-          <h2 id="feedback-title">Send Feedback</h2>
+          <h2 id="feedback-title">Send feedback</h2>
           <button
             className="feedback-modal-close"
             onClick={handleClose}
@@ -129,8 +129,9 @@ const FeedbackModal = ({ open, onClose, currentStreamId, currentStreamName }) =>
         </div>
 
         <form onSubmit={handleSubmit} className="feedback-form">
-          <div className="form-group">
-            <label>Type of feedback</label>
+          <div className="feedback-form-scroll">
+          <fieldset className="form-group">
+            <legend>Type of feedback</legend>
             <div className="radio-group">
               <label className="radio-label">
                 <input
@@ -178,7 +179,7 @@ const FeedbackModal = ({ open, onClose, currentStreamId, currentStreamName }) =>
                 Other
               </label>
             </div>
-          </div>
+          </fieldset>
 
           {feedbackType === 'stream_bug' && (
             <>
@@ -325,6 +326,8 @@ const FeedbackModal = ({ open, onClose, currentStreamId, currentStreamName }) =>
             </>
           )}
 
+          </div>
+
           {submitError && (
             <div className="feedback-error">
               Error: {submitError}
@@ -372,7 +375,9 @@ const FeedbackModal = ({ open, onClose, currentStreamId, currentStreamName }) =>
             max-width: 500px;
             width: 100%;
             max-height: 90vh;
-            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
             color: #fff;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
           }
@@ -415,24 +420,47 @@ const FeedbackModal = ({ open, onClose, currentStreamId, currentStreamName }) =>
             opacity: 0.5;
           }
 
+          .feedback-modal-content > .feedback-modal-header { flex: 0 0 auto; }
           .feedback-form {
             display: flex;
             flex-direction: column;
+            min-height: 0;
+            flex: 1 1 auto;
+          }
+          .feedback-form-scroll {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            display: flex;
+            flex-direction: column;
             gap: 1.5rem;
+            padding-bottom: 1.25rem;
           }
 
+          fieldset.form-group {
+            border: 0;
+            padding: 0;
+            margin: 0;
+            min-width: 0;
+          }
+          .form-group legend {
+            padding: 0;
+          }
           .form-group {
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
           }
 
-          .form-group label {
+          .form-group label,
+          .form-group legend {
             font-size: 0.9rem;
             font-weight: 500;
             letter-spacing: 0.5px;
             color: #fff;
           }
+          .form-group legend + .radio-group { margin-top: 0.5rem; }
 
           .radio-group {
             display: flex;
@@ -501,11 +529,13 @@ const FeedbackModal = ({ open, onClose, currentStreamId, currentStreamName }) =>
           }
 
           .feedback-form-actions {
+            flex: 0 0 auto;
             display: flex;
             gap: 1rem;
             justify-content: flex-end;
-            margin-top: 2rem;
+            margin-top: 0;
             padding-top: 1rem;
+            background: #1a1a1a;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
           }
 

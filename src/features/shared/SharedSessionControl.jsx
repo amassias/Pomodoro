@@ -26,12 +26,15 @@ const SharedSessionControl = () => {
       <span>{participantCount} {participantCount === 1 ? 'person' : 'people'}</span>
       {expiresAt && <span title="Invite links expire automatically after four hours">Temporary room</span>}
       <button onClick={copyLink}>{copied ? 'Copied' : 'Copy link'}</button>
-      <button onClick={leaveRoom}>Leave</button>
-      <button onClick={toggleReady}>{isReady ? 'Ready ✓' : 'Mark ready'}</button>
-      {isHost && <button onClick={toggleRoomLock}>{roomLocked ? 'Unlock room' : 'Lock room'}</button>}
-      <button className="shared-session-details" onClick={() => setIsPanelOpen(open => !open)} aria-expanded={isPanelOpen} aria-controls="shared-session-panel">{isPanelOpen ? 'Close chat' : 'People & chat'}</button>
+      <button className="shared-session-details" onClick={() => setIsPanelOpen(open => !open)} aria-expanded={isPanelOpen} aria-controls="shared-session-panel">{isPanelOpen ? 'Close room' : 'Room'}</button>
       {isPanelOpen && <div id="shared-session-panel" className="shared-session-panel" role="dialog" aria-label="People and chat">
-        <div className="shared-panel-heading"><strong>People</strong><button onClick={() => setIsPanelOpen(false)} aria-label="Close people and chat">×</button></div>
+        <div className="shared-panel-heading"><strong>Room</strong><button onClick={() => setIsPanelOpen(false)} aria-label="Close people and chat">×</button></div>
+        <div className="shared-room-actions">
+          <button onClick={toggleReady}>{isReady ? 'Ready ✓' : 'Mark ready'}</button>
+          {isHost && <button onClick={toggleRoomLock}>{roomLocked ? 'Unlock room' : 'Lock room'}</button>}
+          <button className="shared-leave" onClick={leaveRoom}>Leave</button>
+        </div>
+        <div className="shared-panel-heading"><strong>People</strong></div>
         <div className="participant-list">{participants.map(participant => <div key={`${participant.id}-${participant.phx_ref || participant.joinedAt}`}><span>{participant.avatar || '🙂'} {participant.name || 'Focus friend'} {participant.ready ? '✓' : ''}</span>{isHost && participant.role !== 'host' && <button onClick={() => kickParticipant(participant.id)}>Remove</button>}</div>)}</div>
         <div className="shared-reactions"><button onClick={() => sendReaction('👏')}>👏</button><button onClick={() => sendReaction('💪')}>💪</button><button onClick={() => sendReaction('☕')}>☕</button></div>
         <div className="shared-messages" aria-live="polite">{messages.length === 0 ? <p className="shared-empty-history">No messages yet. Your room history stays here while the invite is active.</p> : messages.map(message => <p key={message.id}><span>{message.senderAvatar} {message.senderName}</span> {message.text}</p>)}</div>

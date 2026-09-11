@@ -564,7 +564,7 @@ const Report = () => {
         <div className="report-modal-overlay" onClick={closeReport}>
           <div ref={reportModalRef} className="report-modal glass-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="report-title">
             <div className="report-header">
-              <h2 id="report-title">Report</h2>
+              <h2 id="report-title">Insights</h2>
               <button className="close-btn" onClick={closeReport} aria-label="Close">✕</button>
             </div>
 
@@ -572,24 +572,26 @@ const Report = () => {
               <div className="stat-card">
                 <div className="stat-icon">⏱️</div>
                 <div className="stat-value">{stats.totalHours}h</div>
-                <div className="stat-label">Total Hours</div>
+                <div className="stat-label">Total hours</div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon">✓</div>
                 <div className="stat-value">{stats.pomodorosCompleted}</div>
-                <div className="stat-label">Pomodoros</div>
+                <div className="stat-label">Focus sessions</div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon">🔥</div>
                 <div className="stat-value">{stats.currentStreak}</div>
-                <div className="stat-label">Day Streak</div>
+                <div className="stat-label">Day streak</div>
               </div>
             </div>
             <div className="weekly-insight" role="status">
               <div><span>This week</span><strong>{(weeklyComparison.currentMinutes / 60).toFixed(1)}h</strong></div>
               <div><span>Previous week</span><strong>{(weeklyComparison.previousMinutes / 60).toFixed(1)}h</strong></div>
-              <p className={weeklyComparison.changePercent >= 0 ? 'positive' : 'negative'}>
-                {weeklyComparison.changePercent >= 0 ? '↑' : '↓'} {Math.abs(weeklyComparison.changePercent)}% versus last week
+              <p className={weeklyComparison.changePercent === 0 ? 'neutral' : weeklyComparison.changePercent > 0 ? 'positive' : 'negative'}>
+                {weeklyComparison.changePercent === 0
+                  ? 'Same as last week'
+                  : `${weeklyComparison.changePercent > 0 ? '↑' : '↓'} ${Math.abs(weeklyComparison.changePercent)}% versus last week`}
               </p>
             </div>
             <section className="focus-heatmap"><div><h3>Focus consistency</h3><span>Last 28 days</span></div><div className="heatmap-grid">{heatmapDays.map(day => <span key={day.key} className={`heatmap-day level-${day.level}`} title={`${day.key}: ${day.minutes} minutes`} aria-label={`${day.key}: ${day.minutes} minutes`}></span>)}</div></section>
@@ -1083,6 +1085,7 @@ const Report = () => {
         .weekly-insight p { margin: 0; font-size: 0.78rem; }
         .weekly-insight .positive { color: var(--success-color); }
         .weekly-insight .negative { color: var(--accent-color); }
+        .weekly-insight .neutral { color: var(--text-muted); }
         .focus-heatmap { display: grid; gap: 0.7rem; padding: 1rem; border: 1px solid var(--glass-border); border-radius: 14px; }
         .focus-heatmap > div:first-child { display: flex; justify-content: space-between; align-items: baseline; }
         .focus-heatmap h3 { margin: 0; font-size: 0.9rem; }

@@ -187,29 +187,28 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                     <h2 id="settings-title">Settings</h2>
                     <button className="close-btn" onClick={handleClose} aria-label="Close settings">×</button>
                 </div>
+                <div className="modal-body">
 
                 <div className="setting-group">
-                    <h3>Auto Start</h3>
+                    <h3>Auto start</h3>
                     <div className="toggle-group">
                         <label className="toggle-label">
+                            <span>Start breaks automatically</span>
                             <input
                                 type="checkbox"
                                 name="autoStartBreaks"
                                 checked={settings.autoStartBreaks || false}
                                 onChange={handleChange}
                             />
-                            <span>Auto Start Breaks</span>
                         </label>
-                    </div>
-                    <div className="toggle-group">
                         <label className="toggle-label">
+                            <span>Start focus sessions automatically</span>
                             <input
                                 type="checkbox"
                                 name="autoStartPomodoros"
                                 checked={settings.autoStartPomodoros || false}
                                 onChange={handleChange}
                             />
-                            <span>Auto Start Pomodoros</span>
                         </label>
                     </div>
                 </div>
@@ -218,8 +217,9 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                     <h3>Timer (minutes)</h3>
                     <div className="inputs-row">
                         <div className="input-wrapper">
-                            <label>Focus</label>
+                            <label htmlFor="focusDuration">Focus</label>
                             <input
+                                id="focusDuration"
                                 type="number"
                                 name="focusDuration"
                                 value={durationDrafts.focusDuration}
@@ -235,8 +235,9 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                             />
                         </div>
                         <div className="input-wrapper">
-                            <label>Short Break</label>
+                            <label htmlFor="shortBreakDuration">Short break</label>
                             <input
+                                id="shortBreakDuration"
                                 type="number"
                                 name="shortBreakDuration"
                                 value={durationDrafts.shortBreakDuration}
@@ -252,8 +253,9 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                             />
                         </div>
                         <div className="input-wrapper">
-                            <label>Long Break</label>
+                            <label htmlFor="longBreakDuration">Long break</label>
                             <input
+                                id="longBreakDuration"
                                 type="number"
                                 name="longBreakDuration"
                                 value={durationDrafts.longBreakDuration}
@@ -271,7 +273,7 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                     </div>
                 </div>
                 <div className="setting-group">
-                    <h3>Custom Presets</h3>
+                    <h3>Custom presets</h3>
                     <button className="tutorial-btn" onClick={() => {
                         const name = window.prompt('Preset name');
                         if (!name?.trim()) return;
@@ -286,7 +288,7 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                 </div>
 
                 <div className="setting-group">
-                    <h3>Daily Goal</h3>
+                    <h3>Daily goal</h3>
                     <div className="slider-group">
                         <label>Target</label>
                         <input
@@ -303,7 +305,7 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                     </div>
                 </div>
                 <div className="setting-group">
-                    <h3>Weekly Goal</h3>
+                    <h3>Weekly goal</h3>
                     <div className="slider-group">
                         <span className="slider-label">Target</span>
                         <input type="range" name="weeklyGoal" min="120" max="2400" step="30" value={settings.weeklyGoal || 600} onChange={handleChange} className="slider" />
@@ -312,7 +314,7 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                 </div>
 
                 <div className="setting-group">
-                    <h3>Music Provider</h3>
+                    <h3>Music provider</h3>
                     <div className="toggle-group">
                         <label className="toggle-label provider-toggle">
                             <span className={settings.musicProvider === 'spotify' ? '' : 'active'}>Lofi</span>
@@ -432,7 +434,7 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                     <h3>Sound</h3>
 
                     <div className="sound-section">
-                        <label>Alarm Sound</label>
+                        <label>Alarm sound</label>
                         <select
                             name="sound"
                             value={settings.sound || 'bell'}
@@ -478,7 +480,7 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                     </div>
 
                     <div className="sound-section">
-                        <label>Ticking Sound</label>
+                        <label>Ticking sound</label>
                         <select
                             name="tickingSound"
                             value={settings.tickingSound || 'none'}
@@ -510,15 +512,17 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                     </div>
                 </div>
                 <div className="setting-group">
-                    <h3>Help</h3>
-                    <label className="toggle-label">
-                        <span>Keyboard shortcuts</span>
-                        <input type="checkbox" name="shortcutsEnabled" checked={settings.shortcutsEnabled !== false} onChange={handleChange} />
-                    </label>
-                    <label className="toggle-label">
-                        <span>Vibration on timer completion</span>
-                        <input type="checkbox" name="vibrationEnabled" checked={settings.vibrationEnabled !== false} onChange={handleChange} />
-                    </label>
+                    <h3>Shortcuts &amp; feedback</h3>
+                    <div className="toggle-group">
+                        <label className="toggle-label">
+                            <span>Keyboard shortcuts</span>
+                            <input type="checkbox" name="shortcutsEnabled" checked={settings.shortcutsEnabled !== false} onChange={handleChange} />
+                        </label>
+                        <label className="toggle-label">
+                            <span>Vibration on timer completion</span>
+                            <input type="checkbox" name="vibrationEnabled" checked={settings.vibrationEnabled !== false} onChange={handleChange} />
+                        </label>
+                    </div>
                     <div className="shortcut-grid">
                         <label>Start / pause<select name="shortcutToggle" value={settings.shortcutToggle || 'Space'} onChange={handleChange}><option value="Space">Space</option><option value="Enter">Enter</option><option value="p">P</option></select></label>
                         <label>Reset<select name="shortcutReset" value={settings.shortcutReset || 'r'} onChange={handleChange}><option value="r">R</option><option value="x">X</option><option value="Backspace">Backspace</option></select></label>
@@ -529,11 +533,12 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                         onClick={onRestartTour}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
-                        <span>Show Tutorial</span>
+                        <span>Replay the tour</span>
                     </button>
                     <p className="help-text" style={{ marginTop: '0.75rem' }}>
-                        Keyboard shortcuts: <kbd>Space</kbd> start/pause • <kbd>R</kbd> reset • <kbd>M</kbd> mute
+                        Shortcuts are ignored while you are typing in a field.
                     </p>
+                </div>
                 </div>
                 <style>{`
                     .modal-overlay {
@@ -557,19 +562,26 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                     .preset-list { display: grid; gap: 0.4rem; margin-top: 0.65rem; }
                     .preset-list > div { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; color: var(--text-secondary); font-size: 0.75rem; }
                     .preset-list button { background: transparent; color: var(--accent-color); padding: 0.25rem; }
-                    .shortcut-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.65rem; }
+                    .shortcut-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 1.25rem; }
                     .shortcut-grid label { display: grid; gap: 0.3rem; color: var(--text-muted); font-size: 0.68rem; }
                     .shortcut-grid select { background: rgba(255,255,255,0.08); color: #fff; border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.45rem; }
                     .modal-content {
                         width: 100%;
                         max-width: 450px;
                         max-height: calc(100vh - 2rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
-                        padding: 2rem;
                         background: rgba(20, 20, 20, 0.95);
                         border-radius: 16px;
+                        display: flex;
+                        flex-direction: column;
+                        overflow: hidden;
+                        box-sizing: border-box;
+                    }
+                    .modal-body {
+                        flex: 1 1 auto;
+                        min-height: 0;
                         overflow-y: auto;
                         -webkit-overflow-scrolling: touch;
-                        box-sizing: border-box;
+                        padding: 1.5rem 2rem 2rem;
                     }
                     @supports (max-height: 100dvh) {
                         .modal-content {
@@ -577,15 +589,13 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                         }
                     }
                     .modal-header {
+                        flex: 0 0 auto;
                         display: flex;
                         justify-content: space-between;
                         align-items: center;
-                        margin-bottom: 2rem;
-                        position: sticky;
-                        top: 0;
-                        background: rgba(20, 20, 20, 0.95);
-                        padding-bottom: 1rem;
-                        z-index: 101;
+                        gap: 1rem;
+                        padding: 1.5rem 2rem 1rem;
+                        border-bottom: 1px solid rgba(255,255,255,0.1);
                     }
                     .modal-header h2 {
                         margin: 0;
@@ -625,16 +635,20 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                     
                     /* Toggle Styles */
                     .toggle-group {
-                        margin-bottom: 1rem;
+                        display: grid;
+                        gap: 0.35rem;
                     }
                     .toggle-label {
                         display: flex;
                         align-items: center;
+                        justify-content: space-between;
                         gap: 1rem;
                         cursor: pointer;
-                        font-size: 1rem;
+                        font-size: 0.95rem;
+                        min-height: 44px;
                     }
                     .toggle-label input[type="checkbox"] {
+                        flex: 0 0 auto;
                         width: 50px;
                         height: 28px;
                         cursor: pointer;
@@ -737,8 +751,9 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                     @media (max-width: 600px) {
                         .modal-content {
                             max-width: none;
-                            padding: 1.25rem;
                         }
+                        .modal-header { padding: 1.25rem 1.25rem 0.85rem; }
+                        .modal-body { padding: 1.25rem; }
                         .playlist-select {
                             min-width: 0;
                             width: 100%;
@@ -930,6 +945,7 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                     }
 
                     .tutorial-btn {
+                        margin-top: 1.25rem;
                         display: flex;
                         align-items: center;
                         justify-content: center;

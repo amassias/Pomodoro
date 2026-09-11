@@ -33,7 +33,7 @@ const loadYouTubeIframeApi = () => {
 };
 
 const BackgroundVideo = ({ videoId, onVideoError }) => {
-  const containerRef = useRef(null);
+  const frameRef = useRef(null);
   const playerRef = useRef(null);
   const latestVideoIdRef = useRef(videoId);
   const onVideoErrorRef = useRef(onVideoError);
@@ -63,10 +63,14 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
     const init = async () => {
       try {
         const YT = await loadYouTubeIframeApi();
-        if (cancelled || !containerRef.current) return;
+        if (cancelled || !frameRef.current) return;
 
         if (!playerRef.current) {
-          playerRef.current = new YT.Player(containerRef.current, {
+          // YT.Player swaps this node out for its iframe, so hand it a throwaway
+          // child rather than a node React is tracking.
+          const host = document.createElement('div');
+          frameRef.current.appendChild(host);
+          playerRef.current = new YT.Player(host, {
             width: '100%',
             height: '100%',
             videoId,
@@ -165,6 +169,7 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
       // Ignore teardown failures and recreate the player.
     }
     playerRef.current = null;
+    frameRef.current?.replaceChildren();
     setStatus('loading');
     setRetryNonce((value) => value + 1);
   };
@@ -172,7 +177,10 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
   return (
     <div className="video-background">
       <div className="video-overlay"></div>
-      <div key={retryNonce} ref={containerRef} className={`youtube-player${status === 'failed' ? ' is-hidden' : ''}`} />
+      <div
+        ref={frameRef}
+        className={`youtube-frame${status === 'failed' ? ' is-hidden' : ''}`}
+      />
       {status === 'failed' && (
         <div className="media-fallback" role="status">
           <span>Live atmosphere unavailable</span>
@@ -206,10 +214,10 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
           height: 100%;
           background:
             linear-gradient(90deg, rgba(0,0,0,0.38), rgba(0,0,0,0.12) 45%, rgba(0,0,0,0.3)),
-            linear-gradient(0deg, rgba(0,0,0,0.48), transparent 45%, rgba(0,0,0,0.18));
+            linear-gradient(0deg, rgba(0,0,0,0.5), transparent 42%, rgba(0,0,0,0.52));
           z-index: 1;
         }
-        .youtube-player {
+        .youtube-frame {
           width: 100%;
           height: 56.25vw; /* 16:9 */
           min-height: 100vh;
@@ -217,18 +225,22 @@ const BackgroundVideo = ({ videoId, onVideoError }) => {
           position: absolute;
           top: 50%;
           left: 50%;
-          transform: translate(-50%, -50%);
+          /* The extra scale pushes YouTube's title bar and "Watch" button past
+             the viewport edges; they cannot be turned off from the embed API. */
+          transform: translate(-50%, -50%) scale(1.22);
         }
         @supports (min-height: 100dvh) {
-          .youtube-player {
+          .youtube-frame {
             min-height: 100dvh;
           }
         }
-        .youtube-player iframe {
+        .youtube-frame iframe {
           width: 100%;
           height: 100%;
+          border: 0;
+          display: block;
         }
-        .youtube-player.is-hidden {
+        .youtube-frame.is-hidden {
           visibility: hidden;
         }
         .media-fallback {

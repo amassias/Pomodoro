@@ -258,10 +258,10 @@ const TaskList = () => {
                         ) : (
                             <div className="task-content"><span className="task-text">{task.text}</span>{task.dueDate && <small>Due {task.dueDate}</small>}</div>
                         )}
-                        <div className="pomodoro-estimate" aria-label={`${task.completedPomodoros || 0} of ${task.estimatedPomodoros || 1} Pomodoros`}>{task.completedPomodoros || 0}/{task.estimatedPomodoros || 1}</div>
+                        <div className="pomodoro-estimate" title="Focus sessions done / estimated" aria-label={`${task.completedPomodoros || 0} of ${task.estimatedPomodoros || 1} focus sessions`}>{task.completedPomodoros || 0}/{task.estimatedPomodoros || 1}</div>
                         <div className="task-item-actions">
                             <button onClick={() => setSettings({ ...settings, activeTaskId: task.id })} aria-label={`Focus ${task.text}`} aria-pressed={activeTask?.id === task.id}>{activeTask?.id === task.id ? 'Active' : 'Focus'}</button>
-                            <button onClick={() => setTasks(prev => prev.map(item => item.id === task.id ? { ...item, estimatedPomodoros: Math.min(12, (item.estimatedPomodoros || 1) + 1) } : item))} aria-label={`Increase estimate for ${task.text}`}>+🍅</button>
+                            <button onClick={() => setTasks(prev => prev.map(item => item.id === task.id ? { ...item, estimatedPomodoros: Math.min(12, (item.estimatedPomodoros || 1) + 1) } : item))} aria-label={`Increase estimate for ${task.text}`} title="Add one session to the estimate">+1 session</button>
                             <button onClick={() => addSubtask(task.id)} aria-label={`Add subtask to ${task.text}`}>Subtask</button>
                             <button onClick={() => startEditing(task)} aria-label={`Edit ${task.text}`}>Edit</button>
                             <button className="danger" onClick={() => removeActiveTask(task.id)} aria-label={`Remove ${task.text}`}>Remove</button>
@@ -551,10 +551,21 @@ const TaskList = () => {
                     transition: all 0.2s;
                 }
 
-                /* Larger tap-target without changing the visual checkbox size */
+                /* Larger tap-target without changing the visual checkbox size.
+                   Padding plus a negative margin used to drag the control
+                   outside the row; a pseudo-element leaves the box where the
+                   grid put it. */
                 .checkbox-wrapper {
-                    padding: 12px;
-                    margin: -12px;
+                    position: relative;
+                }
+                .checkbox-wrapper::after {
+                    content: '';
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    width: 44px;
+                    height: 44px;
+                    transform: translate(-50%, -50%);
                 }
 
                 .checkbox-wrapper:hover {
@@ -906,8 +917,12 @@ const TaskList = () => {
                 }
 
                 @media (max-width: 520px) {
+                    /* Row 1: the task name. Row 2: due date beside the add
+                       button, so the button is never stranded on its own row. */
                     .task-form { grid-template-columns: minmax(0, 1fr) auto; }
-                    .task-date { grid-column: 1 / -1; width: 100%; }
+                    .task-input { grid-column: 1 / -1; }
+                    .task-date { grid-column: 1; width: 100%; }
+                    .add-btn { grid-column: 2; }
                     .task-item { grid-template-columns: 28px minmax(0, 1fr); }
                     .pomodoro-estimate { grid-column: 2; }
                     .task-item-actions { opacity: 1; justify-content: flex-start; flex-wrap: wrap; }
