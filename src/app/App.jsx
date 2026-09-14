@@ -668,10 +668,10 @@ function App() {
         .brand-block { display: flex; align-items: center; gap: 0.75rem; flex: 0 0 auto; }
         .brand-block > div { display: flex; flex-direction: column; gap: 0.1rem; }
         .brand-block strong { font-size: 0.92rem; letter-spacing: 0.04em; white-space: nowrap; }
-        .brand-block span:not(.brand-mark) { color: var(--text-muted); font-size: 0.72rem; white-space: nowrap; }
+        .brand-block span:not(.brand-mark) { color: var(--text-muted); font-size: 0.75rem; white-space: nowrap; }
         .brand-mark { flex: 0 0 auto; }
         .brand-mark { width: 10px; height: 10px; border-radius: 50%; background: var(--accent-color); box-shadow: 0 0 18px var(--accent-color); }
-        .sync-indicator { margin-right: auto; flex: 0 0 auto; white-space: nowrap; padding: 0.3rem 0.5rem; border-radius: 999px; color: var(--text-muted); background: rgba(255,255,255,0.04); font-size: 0.62rem; text-transform: capitalize; }
+        .sync-indicator { margin-right: auto; flex: 0 0 auto; white-space: nowrap; padding: 0.35rem 0.55rem; border-radius: 999px; color: var(--text-muted); background: rgba(255,255,255,0.04); font-size: 0.72rem; line-height: 1.2; text-transform: capitalize; }
         .sync-indicator.synced { color: var(--success-color); }
         .sync-indicator.error { color: var(--accent-color); }
         .ambient-label { position: fixed; left: 1.25rem; bottom: 1.3rem; display: flex; align-items: center; gap: 0.45rem; color: var(--text-secondary); font-size: 0.72rem; z-index: 90; text-transform: uppercase; letter-spacing: 0.12em; }
@@ -776,23 +776,23 @@ function App() {
             flex-wrap: wrap;
             justify-content: flex-end;
         }
-        .shared-session-create, .shared-session button { color: #fff; background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); border-radius: 999px; padding: 0.45rem 0.7rem; font-size: 0.68rem; }
-        .shared-session { position: relative; display: flex; align-items: center; gap: 0.45rem; padding: 0 0.2rem; color: var(--text-muted); font-size: 0.68rem; }
+        .shared-session-create, .shared-session button { color: #fff; background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); border-radius: 999px; padding: 0.45rem 0.7rem; min-height: 36px; font-size: 0.75rem; line-height: 1.2; }
+        .shared-session { position: relative; display: flex; align-items: center; gap: 0.45rem; padding: 0 0.2rem; color: var(--text-muted); font-size: 0.75rem; }
         .shared-session strong { color: #fff; }
         .shared-status { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); }
         .shared-status.connected { background: var(--success-color); box-shadow: 0 0 8px var(--success-color); }
         .shared-status.error { background: var(--accent-color); }
         .shared-session-panel { position: absolute; top: calc(100% + 0.5rem); right: 0; z-index: 160; width: min(320px, calc(100vw - 2rem)); display: grid; gap: 0.5rem; padding: 0.75rem; border: 1px solid var(--glass-border); border-radius: 12px; background: var(--glass-bg-strong); box-shadow: var(--shadow-panel); }
         .shared-room-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; }
-        .shared-room-actions button { flex: 1 1 auto; padding: 0.4rem 0.5rem; color: var(--text-secondary); background: rgba(255,255,255,0.08); border-radius: 8px; font-size: 0.68rem; }
+        .shared-room-actions button { flex: 1 1 auto; padding: 0.4rem 0.5rem; min-height: 32px; color: var(--text-secondary); background: rgba(255,255,255,0.08); border-radius: 8px; font-size: 0.72rem; line-height: 1.2; }
         .shared-room-actions button:hover { color: #fff; }
         .shared-room-actions .shared-leave { color: var(--accent-color); }
         .shared-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-        .shared-panel-heading strong { color: var(--text-muted); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.14em; }
+        .shared-panel-heading strong { color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.14em; }
         .shared-panel-heading button { flex: 0 0 auto; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; padding: 0; font-size: 1rem; line-height: 1; color: var(--text-secondary); background: transparent; border-radius: 6px; }
         .shared-panel-heading button:hover { color: #fff; background: rgba(255,255,255,0.08); }
-        .participant-list { display: grid; gap: 0.3rem; }.participant-list > div { display: flex; justify-content: space-between; gap: 0.5rem; }.participant-list button, .shared-reactions button, .shared-session-panel form button { padding: 0.25rem 0.4rem; color: var(--text-secondary); background: rgba(255,255,255,0.08); border-radius: 6px; font-size: 0.66rem; }
-        .shared-reactions { display: flex; gap: 0.35rem; }.shared-messages { max-height: 10rem; overflow-y: auto; padding-right: 0.2rem; }.shared-messages p { margin: 0.35rem 0; font-size: 0.7rem; line-height: 1.35; }.shared-messages span { color: var(--text-muted); }.shared-empty-history { color: var(--text-muted); font-style: italic; }.shared-session-panel form { display: flex; gap: 0.4rem; }.shared-session-panel input { min-width: 0; flex: 1; color: #fff; background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); border-radius: 6px; padding: 0.4rem; }
+        .participant-list { display: grid; gap: 0.3rem; }.participant-list > div { display: flex; justify-content: space-between; gap: 0.5rem; }.participant-list button, .shared-reactions button, .shared-session-panel form button { padding: 0.3rem 0.45rem; min-height: 32px; color: var(--text-secondary); background: rgba(255,255,255,0.08); border-radius: 6px; font-size: 0.72rem; line-height: 1.2; }
+        .shared-reactions { display: flex; gap: 0.35rem; }.shared-messages { max-height: 10rem; overflow-y: auto; padding-right: 0.2rem; }.shared-messages p { margin: 0.35rem 0; font-size: 0.72rem; line-height: 1.4; }.shared-messages span { color: var(--text-muted); }.shared-empty-history { color: var(--text-muted); font-style: italic; }.shared-session-panel form { display: flex; gap: 0.4rem; }.shared-session-panel input { min-width: 0; flex: 1; color: #fff; background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); border-radius: 6px; padding: 0.4rem; }
 
         .top-widget-area:hover {
             background: rgba(255, 255, 255, 0.15);
@@ -913,7 +913,7 @@ function App() {
           .settings-btn, .recommend-btn { width: 42px; min-width: 42px; padding: 0; }
           .ambient-label { display: none; }
           .mobile-nav { position: fixed; left: calc(env(safe-area-inset-left, 0px) + 0.75rem); right: calc(env(safe-area-inset-right, 0px) + 0.75rem); bottom: calc(env(safe-area-inset-bottom, 0px) + 0.65rem); z-index: 120; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.25rem; padding: 0.35rem; border: 1px solid var(--glass-border); border-radius: 14px; background: rgba(8,10,12,0.88); backdrop-filter: blur(16px); }
-          .mobile-nav button { padding: 0.55rem 0.25rem; border-radius: 10px; color: var(--text-secondary); background: transparent; font-size: 0.68rem; }
+          .mobile-nav button { padding: 0.55rem 0.25rem; border-radius: 10px; color: var(--text-secondary); background: transparent; font-size: 0.72rem; }
           .mobile-nav button:active { background: rgba(255,255,255,0.1); color: #fff; }
           .top-bar {
             width: 100%;

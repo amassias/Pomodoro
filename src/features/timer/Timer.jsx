@@ -16,6 +16,7 @@ const Timer = ({ settings, updateSettings }) => {
   const [seconds, setSeconds] = useState(() => initialTotalSeconds % 60);
   const [isActive, setIsActive] = useState(() => initialSession?.isActive ?? false);
   const [mode, setMode] = useState(() => initialSession?.mode ?? 'focus');
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const pomodorosCompletedRef = useRef(0);
 
   const tickingAudioRef = useRef(null);
@@ -428,9 +429,18 @@ const Timer = ({ settings, updateSettings }) => {
           Long break
         </button>
       </div>
-      <details className="session-options">
-        <summary>Session options</summary>
-        <div className="session-options-reveal">
+      <div className={`session-options ${optionsOpen ? 'is-open' : ''}`}>
+        <button
+          type="button"
+          className="session-options-toggle"
+          aria-expanded={optionsOpen}
+          aria-controls="session-options-content"
+          onClick={() => setOptionsOpen(prev => !prev)}
+        >
+          <span className="session-options-caret" aria-hidden="true"></span>
+          <span>Session options</span>
+        </button>
+        <div id="session-options-content" className="session-options-reveal" aria-hidden={!optionsOpen} inert={!optionsOpen}>
           <div className="session-option-grid">
             <div className="option-row">
               <span className="option-row-label" id="preset-row-label">Length</span>
@@ -455,7 +465,7 @@ const Timer = ({ settings, updateSettings }) => {
             </div>
           </div>
         </div>
-      </details>
+      </div>
 
       <div className="time-display">
         {String(Math.max(0, Number(minutes) || 0)).padStart(2, '0')}:{String(Math.max(0, Number(seconds) || 0)).padStart(2, '0')}
@@ -496,7 +506,7 @@ const Timer = ({ settings, updateSettings }) => {
           background: linear-gradient(145deg, rgba(40, 34, 83, 0.94), rgba(18, 24, 51, 0.9));
           border-color: rgba(151, 137, 255, 0.42);
         }
-        .timer-heading { display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.72rem; letter-spacing: 0.04em; }
+        .timer-heading { display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.75rem; letter-spacing: 0.04em; }
         .phase-badge { padding: 0.2rem 0.5rem; border-radius: 999px; background: rgba(84, 224, 196, 0.16); color: #8af3dd; font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; }
         .long-break .phase-badge { background: rgba(151, 137, 255, 0.18); color: #c6bdff; }
         .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); }
@@ -531,21 +541,23 @@ const Timer = ({ settings, updateSettings }) => {
           grid-template-rows: 0fr;
           opacity: 0;
           transform: translateY(-6px);
+          pointer-events: none;
           transition: grid-template-rows 240ms cubic-bezier(0.16, 1, 0.3, 1), opacity 160ms ease-out, transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .session-options[open] .session-options-reveal {
+        .session-options.is-open .session-options-reveal {
           grid-template-rows: 1fr;
           opacity: 1;
           transform: translateY(0);
+          pointer-events: auto;
         }
         .session-option-grid { min-height: 0; overflow: hidden; display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 0.6rem 1.25rem; padding-top: 0.75rem; }
         .option-row { display: grid; gap: 0.3rem; justify-items: center; }
-        .option-row-label { color: var(--text-muted); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.14em; }
+        .option-row-label { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.14em; }
         .timer-tools { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem; }
-        .timer-tools button { padding: 0.35rem 0.55rem; border-radius: 999px; background: transparent; color: var(--text-muted); font-size: 0.66rem; border: 1px solid rgba(255,255,255,0.08); }
+        .timer-tools button { padding: 0.35rem 0.55rem; min-height: 36px; border-radius: 999px; background: transparent; color: var(--text-muted); font-size: 0.72rem; line-height: 1.2; border: 1px solid rgba(255,255,255,0.08); }
         .timer-tools button:hover { color: #fff; border-color: rgba(255,255,255,0.2); }
         .calendar-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem; }
-        .calendar-actions a, .calendar-actions button { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 0.35rem 0.55rem; border-radius: 999px; background: rgba(255,255,255,0.04); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.08); text-decoration: none; font-size: 0.64rem; }
+        .calendar-actions a, .calendar-actions button { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; padding: 0.35rem 0.55rem; border-radius: 999px; background: rgba(255,255,255,0.04); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.08); text-decoration: none; font-size: 0.72rem; line-height: 1.2; }
         .calendar-actions a:hover, .calendar-actions button:hover { color: #fff; border-color: rgba(255,255,255,0.2); }
         .time-display {
           font-size: clamp(4.5rem, 9vw, 7rem);
@@ -560,11 +572,14 @@ const Timer = ({ settings, updateSettings }) => {
           align-items: center;
         }
         .session-options { width: 100%; text-align: center; }
-        .session-options summary { cursor: pointer; color: var(--text-secondary); font-size: 0.8rem; padding: 0.5rem; border-radius: 8px; }
-        .session-options summary:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 3px; }
+        .session-options-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; cursor: pointer; color: var(--text-secondary); background: transparent; border: 0; min-height: 36px; font-size: 0.8rem; padding: 0.5rem; border-radius: 8px; }
+        .session-options-toggle:hover { color: #fff; }
+        .session-options-toggle:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 3px; }
+        .session-options-caret { width: 0; height: 0; border-top: 0.28rem solid transparent; border-bottom: 0.28rem solid transparent; border-left: 0.36rem solid currentColor; transform-origin: 35% 50%; transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1); }
+        .session-options.is-open .session-options-caret { transform: rotate(90deg); }
         .session-options .timer-tools button { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; font-size: 0.75rem; }
         .session-tools { display: flex; gap: 0.55rem; margin-top: -0.8rem; }
-        .session-tools button { background: transparent; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.2); padding: 0.2rem; font-size: 0.7rem; }
+        .session-tools button { background: transparent; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.2); padding: 0.2rem; font-size: 0.72rem; }
         .session-tools button:hover { color: #fff; }
         .primary-btn {
           background: var(--accent-color);
@@ -646,6 +661,7 @@ const Timer = ({ settings, updateSettings }) => {
             transform: none;
             transition-duration: 1ms;
           }
+          .session-options-caret { transition-duration: 1ms; }
         }
       `}</style>
     </div>

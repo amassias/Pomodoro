@@ -232,7 +232,6 @@ const LofiPlayer = () => {
       ref={playerRef}
       className={`lofi-player glass-panel ${isDragging ? 'is-dragging' : ''}`}
       style={{
-        transform: 'translate3d(0, 0, 0)',
         cursor: isDragging ? 'grabbing' : 'grab'
       }}
       onPointerDown={handlePointerDown}
@@ -303,6 +302,7 @@ const LofiPlayer = () => {
 
         .lofi-player.is-dragging {
           will-change: transform;
+          transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 180ms ease-out;
           box-shadow: 0 28px 72px rgba(0,0,0,0.42);
         }
 

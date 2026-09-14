@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useUserData } from '../../providers/UserDataProvider.jsx';
 import { useDialogFocus } from '../../shared/ui/useDialogFocus';
 
@@ -54,11 +54,47 @@ const CitySelector = ({ currentCity, currentCityLabel, cities, onSelect, isLoadi
   );
 
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isMenuRendered, setIsMenuRendered] = useState(false);
+  const expansionTimerRef = useRef(null);
   const effectiveActiveCategory = categories.includes(activeCategory)
     ? activeCategory
     : (categories[0] || '');
 
   const currentCityName = currentCityLabel || cities?.[currentCity]?.name || 'Select Location';
+
+  const closeExpandedMenu = useCallback(() => {
+    if (expansionTimerRef.current) {
+      window.clearTimeout(expansionTimerRef.current);
+    }
+    setIsExpanded(false);
+    expansionTimerRef.current = window.setTimeout(() => {
+      setIsMenuRendered(false);
+      expansionTimerRef.current = null;
+    }, 280);
+  }, []);
+
+  const toggleExpandedMenu = useCallback(() => {
+    if (expansionTimerRef.current) {
+      window.clearTimeout(expansionTimerRef.current);
+      expansionTimerRef.current = null;
+    }
+
+    if (isExpanded) {
+      closeExpandedMenu();
+      return;
+    }
+
+    setIsMenuRendered(true);
+    const reveal = () => setIsExpanded(true);
+    if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(reveal);
+    else window.setTimeout(reveal, 0);
+  }, [closeExpandedMenu, isExpanded]);
+
+  useEffect(() => () => {
+    if (expansionTimerRef.current) {
+      window.clearTimeout(expansionTimerRef.current);
+    }
+  }, []);
 
   const saveAtmosphere = () => {
     const name = window.prompt('Atmosphere name');
@@ -70,7 +106,7 @@ const CitySelector = ({ currentCity, currentCityLabel, cities, onSelect, isLoadi
   const applyAtmosphere = (collection) => {
     if (cities?.[collection.city]) onSelect(collection.city);
     setSettings({ ...settings, musicProvider: collection.musicProvider || 'lofi' });
-    setIsExpanded(false);
+    closeExpandedMenu();
   };
 
   const handleAddLocation = () => {
@@ -161,7 +197,7 @@ const CitySelector = ({ currentCity, currentCityLabel, cities, onSelect, isLoadi
                 onClick={(e) => {
                   e.stopPropagation();
                   onSelect(key);
-                  setIsExpanded(false);
+                  closeExpandedMenu();
                 }}
               >
                 <div className="city-btn-inner">
@@ -233,31 +269,33 @@ const CitySelector = ({ currentCity, currentCityLabel, cities, onSelect, isLoadi
 
   return (
     <>
-      <footer className={`bottom-bar glass-panel ${isExpanded ? 'expanded' : ''}`}>
-        <button
-          type="button"
-          className="footer-header"
-          aria-expanded={isExpanded}
-          aria-controls="location-options"
-          onClick={() => setIsExpanded(prev => !prev)}
-        >
-          <p className="location-text">
-            {isLoading
-              ? 'Loading locations…'
-              : currentCity && currentCityName
-                ? `Studying in ${currentCityName}`
-                : error
-                  ? 'Unable to load locations'
-                  : 'No available locations'}
-          </p>
-          <span className="chevron">{isExpanded ? '⌃' : '⌄'}</span>
-        </button>
+      <footer className={`bottom-bar glass-panel location-menu-compact ${isExpanded || isMenuRendered ? 'expanded' : ''}`}>
+            <button
+              type="button"
+              className="footer-header"
+              aria-expanded={isExpanded}
+              aria-controls={isMenuRendered ? 'location-options' : undefined}
+              onClick={toggleExpandedMenu}
+            >
+              <p className="location-text">
+                {isLoading
+                  ? 'Loading locations…'
+                  : currentCity && currentCityName
+                    ? `Studying in ${currentCityName}`
+                    : error
+                      ? 'Unable to load locations'
+                      : 'No available locations'}
+              </p>
+              <span className="chevron">{isExpanded ? '⌃' : '⌄'}</span>
+            </button>
 
-        {isExpanded && (
-          <div className="expanded-panel" id="location-options">
-            {renderExpandedContent()}
-          </div>
-        )}
+            {isMenuRendered && (
+              <div className={`expanded-panel ${isExpanded ? 'is-open' : ''}`} id="location-options" aria-hidden={!isExpanded} inert={!isExpanded}>
+                <div className="expanded-panel-inner">
+                  {renderExpandedContent()}
+                </div>
+              </div>
+            )}
       </footer>
 
       {/* Add Location Modal */}
@@ -328,6 +366,7 @@ const CitySelector = ({ currentCity, currentCityLabel, cities, onSelect, isLoadi
         }
 
         .bottom-bar.expanded {
+          bottom: calc(1rem + 5.5rem);
           max-height: 70vh;
           overflow-y: auto;
           width: 90%;
@@ -336,16 +375,44 @@ const CitySelector = ({ currentCity, currentCityLabel, cities, onSelect, isLoadi
           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
+        .bottom-bar.location-menu-compact {
+          min-width: 180px;
+          max-width: min(840px, 86vw);
+        }
+
+        .bottom-bar.location-menu-compact.expanded {
+          width: min(840px, 86vw);
+          max-width: min(840px, 86vw);
+          max-height: 62vh;
+          border-radius: 18px;
+        }
+
+        .bottom-bar.location-menu-compact.expanded .footer-header { padding: 0.6rem 1rem; }
+        .bottom-bar.location-menu-compact.expanded .footer-header { border-radius: 18px 18px 0 0; }
+        .bottom-bar.location-menu-compact .expanded-panel-inner { padding: 0.65rem 1rem 1rem; }
+        .bottom-bar.location-menu-compact .status-msg { padding: 0.7rem; }
+        .bottom-bar.location-menu-compact .category-tabs { gap: 0.3rem; margin-bottom: 0.8rem; }
+        .bottom-bar.location-menu-compact .city-grid { gap: 0.45rem; }
+        .bottom-bar.location-menu-compact .city-btn {
+          min-width: 118px;
+          padding: 0.5rem 0.75rem;
+          font-size: 0.86rem;
+        }
+
         .footer-header {
           display: flex;
           align-items: center;
           justify-content: center;
+          gap: 0.4rem;
           padding: 0.5rem 1.2rem;
           cursor: pointer;
           user-select: none;
-          transition: all 0.2s;
+          transition: color 180ms ease-out, background-color 220ms ease-out, transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
           border-radius: inherit;
         }
+
+        .footer-header[aria-expanded="true"] { background: rgba(255, 113, 107, 0.08); }
+        .footer-header:active { transform: scale(0.985); }
 
         .bottom-bar.expanded .footer-header {
           padding: 0.8rem 2rem;
@@ -372,31 +439,47 @@ const CitySelector = ({ currentCity, currentCityLabel, cities, onSelect, isLoadi
         .chevron {
           font-size: 1rem;
           opacity: 0.6;
-          transition: all 0.3s ease;
-          margin-left: 0.4rem;
+          transform-origin: 50% 55%;
+          transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), color 180ms ease-out, opacity 180ms ease-out, font-size 300ms ease;
         }
+
+        .footer-header[aria-expanded="true"] .chevron { transform: rotate(180deg); color: var(--accent-color); }
 
         .bottom-bar.expanded .chevron {
           font-size: 1.2rem;
           opacity: 0.5;
-          margin-left: 0.5rem;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .footer-header,
+          .footer-header .chevron {
+            transition-duration: 1ms;
+          }
         }
 
         .expanded-panel {
-          padding: 1rem 2rem 2rem;
-          border-top: 1px solid rgba(255, 255, 255, 0.1);
-          animation: slideUp 0.3s ease-out;
+          display: grid;
+          grid-template-rows: 0fr;
+          opacity: 0;
+          overflow: hidden;
+          pointer-events: none;
+          padding: 0;
+          border-top: 0 solid transparent;
+          transition: grid-template-rows 280ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms ease-out, border-color 180ms ease-out;
         }
 
-        @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+        .expanded-panel.is-open {
+          grid-template-rows: 1fr;
+          opacity: 1;
+          pointer-events: auto;
+          border-top-width: 1px;
+          border-top-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .expanded-panel-inner {
+          min-height: 0;
+          overflow: hidden;
+          padding: 1rem 2rem 2rem;
         }
 
         .expanded-content {
@@ -465,7 +548,7 @@ const CitySelector = ({ currentCity, currentCityLabel, cities, onSelect, isLoadi
 
         .city-btn.active {
           border-color: var(--accent-color);
-          background: rgba(255, 107, 107, 0.15);
+          background: var(--accent-soft);
           color: white;
         }
 
@@ -526,22 +609,32 @@ const CitySelector = ({ currentCity, currentCityLabel, cities, onSelect, isLoadi
 
           .bottom-bar.expanded {
             width: 100%;
+            bottom: 0;
             height: 80vh; /* More height on mobile */
             max-height: 80vh;
             border-radius: 24px 24px 0 0;
           }
 
-          .expanded-panel {
-             /* Add safe area padding for devices with home indicator */
-             padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+          .bottom-bar.location-menu-compact,
+          .bottom-bar.location-menu-compact.expanded {
+            width: 100%;
+            max-width: 100%;
           }
+
+          .bottom-bar.location-menu-compact.expanded {
+            height: 80vh;
+            max-height: 80vh;
+            border-radius: 24px 24px 0 0;
+          }
+
+          .bottom-bar.location-menu-compact.expanded .footer-header {
+            border-radius: 24px 24px 0 0;
+          }
+
+          .expanded-panel-inner { padding: 1rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px)); }
 
           .footer-header {
             padding: 1rem 1.5rem;
-          }
-
-          .expanded-panel {
-            padding: 1rem 1rem 1.5rem;
           }
 
           .city-btn {

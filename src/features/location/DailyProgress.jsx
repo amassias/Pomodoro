@@ -91,17 +91,17 @@ const DailyProgress = () => {
 
                 .progress-text {
                     position: absolute;
-                    font-size: 0.7rem;
+                    font-size: 0.72rem;
                     font-weight: 600;
                     color: rgba(255, 255, 255, 0.9);
                     pointer-events: none;
                 }
 
                 .progress-copy { display: flex; flex-direction: column; gap: 0.1rem; }
-                .progress-copy span { color: var(--text-muted); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; }
-                .progress-copy strong { font-size: 0.76rem; font-weight: 600; }
+                .progress-copy span { color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; }
+                .progress-copy strong { font-size: 0.8rem; font-weight: 600; }
                 .progress-copy small { color: var(--text-muted); font-weight: 400; }
-                .weekly-progress { padding-left: 0.65rem; border-left: 1px solid var(--glass-border); color: var(--text-secondary); font-size: 0.68rem; white-space: nowrap; }
+                .weekly-progress { padding-left: 0.65rem; border-left: 1px solid var(--glass-border); color: var(--text-secondary); font-size: 0.72rem; white-space: nowrap; }
 
                 @media (max-width: 680px) { .progress-copy, .weekly-progress { display: none; } .daily-progress { padding-right: 0; } }
             `}</style>

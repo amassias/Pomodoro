@@ -388,7 +388,7 @@ const TaskList = () => {
                     align-items: center;
                 }
 
-                .section-eyebrow { display: block; color: var(--accent-color); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 0.2rem; }
+                .section-eyebrow { display: block; color: var(--accent-color); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 0.2rem; }
 
                 h3 {
                     font-weight: 650;
@@ -416,14 +416,14 @@ const TaskList = () => {
                 .task-item-actions { display: flex; gap: 0.35rem; margin-left: auto; opacity: 0; transition: opacity 0.2s ease; }
                 .task-item:hover .task-item-actions, .task-item:focus-within .task-item-actions { opacity: 1; pointer-events: auto; transform: translateY(-50%) scale(1); }
                 .task-item:hover .pomodoro-estimate, .task-item:focus-within .pomodoro-estimate { opacity: 0; }
-                .task-item-actions button { color: var(--text-secondary); background: transparent; font-size: 0.68rem; padding: 0.32rem 0.42rem; border-radius: 999px; }
+                .task-item-actions button { color: var(--text-secondary); background: transparent; font-size: 0.72rem; line-height: 1.2; min-height: 32px; padding: 0.35rem 0.5rem; border-radius: 999px; }
                 .task-item-actions button:hover { color: #fff; }
                 .task-item-actions .danger:hover { color: var(--accent-color); }
                 .task-item.active-task { border-color: rgba(255,113,107,0.42); background: rgba(255,113,107,0.08); }
-                .pomodoro-estimate { color: var(--text-muted); background: rgba(255,255,255,0.055); border: 1px solid rgba(255,255,255,0.08); border-radius: 999px; padding: 0.25rem 0.45rem; font-size: 0.68rem; font-variant-numeric: tabular-nums; white-space: nowrap; transition: opacity 150ms ease-out; }
+                .pomodoro-estimate { color: var(--text-muted); background: rgba(255,255,255,0.055); border: 1px solid rgba(255,255,255,0.08); border-radius: 999px; padding: 0.25rem 0.45rem; font-size: 0.72rem; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; transition: opacity 150ms ease-out; }
                 .task-edit-form { flex: 1; display: flex; gap: 0.4rem; }
                 .task-edit-form input { min-width: 0; flex: 1; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.4rem; }
-                .task-edit-form button { color: #fff; background: var(--accent-soft); border-radius: 8px; padding: 0.35rem 0.55rem; }
+                .task-edit-form button { color: #fff; background: var(--accent-soft); border-radius: 8px; min-height: 36px; padding: 0.35rem 0.55rem; font-size: 0.75rem; }
 
                 .archive-btn:hover {
                     background: rgba(255,255,255,0.15);
@@ -436,9 +436,9 @@ const TaskList = () => {
                     align-items: stretch;
                     gap: 0.5rem;
                 }
-                .task-date { width: 9rem; min-height: 40px; box-sizing: border-box; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; padding: 0.45rem; }
+                .task-date { width: 100%; min-height: 40px; box-sizing: border-box; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; padding: 0.45rem; font-size: 0.9rem; color-scheme: dark; }
                 .routine-bar { display: flex; flex-wrap: wrap; gap: 0.35rem; }
-                .routine-bar button { padding: 0.35rem 0.55rem; color: var(--text-secondary); background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 999px; font-size: 0.68rem; }
+                .routine-bar button { padding: 0.35rem 0.55rem; min-height: 32px; color: var(--text-secondary); background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 999px; font-size: 0.72rem; line-height: 1.2; }
 
                 .task-input {
                     flex: 1;
@@ -465,8 +465,8 @@ const TaskList = () => {
                 }
 
                 .add-btn {
-                    background: #fff;
-                    color: #000;
+                    background: var(--accent-color);
+                    color: #1a0807;
                     width: 40px;
                     min-height: 40px;
                     height: 100%;
@@ -477,7 +477,7 @@ const TaskList = () => {
                     align-items: center;
                     justify-content: center;
                     cursor: pointer;
-                    border: none;
+                    border: 1px solid rgba(255,255,255,0.16);
                     padding: 0;
                     line-height: 1;
                     transition: transform 150ms ease-out, box-shadow 150ms ease-out, background-color 150ms ease-out;
@@ -492,8 +492,9 @@ const TaskList = () => {
                 }
 
                 .add-btn:hover {
+                    background: #ff837d;
                     transform: translateY(-1px);
-                    box-shadow: 0 8px 20px rgba(0,0,0,0.24);
+                    box-shadow: 0 8px 20px rgba(255,113,107,0.22);
                 }
 
                 .task-list {
@@ -568,7 +569,7 @@ const TaskList = () => {
                     color: var(--text-secondary);
                 }
                 .task-content { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 0.1rem; }
-                .task-content small { color: var(--text-muted); font-size: 0.64rem; }
+                .task-content small { color: var(--text-muted); font-size: 0.68rem; }
                 .subtask-list { width: 100%; list-style: none; display: grid; gap: 0.25rem; margin: 0.2rem 0 0 1.8rem; padding: 0; color: var(--text-secondary); font-size: 0.72rem; }
                 .subtask-list label { display: flex; gap: 0.4rem; align-items: center; }
                 .subtask-list .done { text-decoration: line-through; color: var(--text-muted); }
