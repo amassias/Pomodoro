@@ -4,12 +4,14 @@ import lofiGirlImg from '../../assets/lofi-girl.jpg';
 const LofiPlayer = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(50);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [audioError, setAudioError] = useState(false);
   const playerRef = useRef(null);
   const isDraggingRef = useRef(false);
+  const positionRef = useRef({ x: 0, y: 0 });
+  const pendingPositionRef = useRef({ x: 0, y: 0 });
   const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const activePointerIdRef = useRef(null);
   const animationFrameRef = useRef(null);
   const resumeAfterAlarmRef = useRef(false);
 
@@ -31,14 +33,17 @@ const LofiPlayer = () => {
     return audio;
   }, [trackUrl]);
 
-  const handleMouseDown = (e) => {
-    if (e.target.closest('.player-controls') || e.target.closest('.volume-mini')) return;
+  const handlePointerDown = (event) => {
+    if (event.button !== 0 || event.target.closest('.player-controls') || event.target.closest('.volume-mini')) return;
+    event.preventDefault();
     isDraggingRef.current = true;
+    activePointerIdRef.current = event.pointerId;
     setIsDragging(true);
     dragOffsetRef.current = {
-      x: e.clientX - position.x,
-      y: e.clientY - position.y
+      x: event.clientX - positionRef.current.x,
+      y: event.clientY - positionRef.current.y
     };
+    event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   useEffect(() => {
@@ -104,40 +109,48 @@ const LofiPlayer = () => {
     };
   }, [configureAudioSource]);
 
-  const handleMouseMove = useCallback((e) => {
-    if (!isDraggingRef.current) return;
-
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
+  const paintPendingPosition = useCallback(() => {
+    const nextPosition = pendingPositionRef.current;
+    positionRef.current = nextPosition;
+    if (playerRef.current) {
+      playerRef.current.style.transform = `translate3d(${nextPosition.x}px, ${nextPosition.y}px, 0)`;
     }
-
-    animationFrameRef.current = requestAnimationFrame(() => {
-      setPosition({
-        x: e.clientX - dragOffsetRef.current.x,
-        y: e.clientY - dragOffsetRef.current.y
-      });
-    });
+    animationFrameRef.current = null;
   }, []);
 
-  const handleMouseUp = useCallback(() => {
+  const handlePointerMove = useCallback((event) => {
+    if (!isDraggingRef.current || event.pointerId !== activePointerIdRef.current) return;
+    pendingPositionRef.current = {
+      x: event.clientX - dragOffsetRef.current.x,
+      y: event.clientY - dragOffsetRef.current.y
+    };
+    if (!animationFrameRef.current) {
+      animationFrameRef.current = requestAnimationFrame(paintPendingPosition);
+    }
+  }, [paintPendingPosition]);
+
+  const handlePointerUp = useCallback((event) => {
+    if (event.pointerId !== activePointerIdRef.current) return;
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+      paintPendingPosition();
+    }
     isDraggingRef.current = false;
+    activePointerIdRef.current = null;
     setIsDragging(false);
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
     }
-  }, []);
+  }, [paintPendingPosition]);
 
   useEffect(() => {
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [handleMouseMove, handleMouseUp]);
+  }, []);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -217,18 +230,22 @@ const LofiPlayer = () => {
   return (
     <div
       ref={playerRef}
-      className="lofi-player glass-panel"
+      className={`lofi-player glass-panel ${isDragging ? 'is-dragging' : ''}`}
       style={{
-        transform: `translate(${position.x}px, ${position.y}px)`,
+        transform: 'translate3d(0, 0, 0)',
         cursor: isDragging ? 'grabbing' : 'grab'
       }}
-      onMouseDown={handleMouseDown}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
     >
       <div className="art-container">
         <img
           src={lofiImage}
           alt="Lofi Girl"
           className="album-art"
+          draggable="false"
         />
         <div className="drag-overlay"></div>
       </div>
@@ -278,10 +295,15 @@ const LofiPlayer = () => {
           gap: 0;
           z-index: 50;
           user-select: none;
-          will-change: transform;
+          touch-action: none;
           overflow: hidden;
           border-radius: 12px;
           /* Removed specific background to inherit glass-panel styles */
+        }
+
+        .lofi-player.is-dragging {
+          will-change: transform;
+          box-shadow: 0 28px 72px rgba(0,0,0,0.42);
         }
 
         @media (max-width: 600px) {
@@ -357,6 +379,7 @@ const LofiPlayer = () => {
           align-items: center;
           gap: 1rem;
           padding-right: 1.5rem;
+          touch-action: auto;
         }
 
         .play-btn {

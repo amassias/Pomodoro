@@ -1,0 +1,243 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-14T17:36:45Z",
+  "title": "Design System: World Focus",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#000000",
+        "tonalRamp": ["#000000", "#050505", "#0b0b0b", "#141414", "#242424", "#3a3a3a", "#686868", "#f5f5f5"]
+      },
+      "surface-night": {
+        "role": "neutral",
+        "displayName": "Surface Night",
+        "canonical": "#090a0c",
+        "tonalRamp": ["#000000", "#030405", "#090a0c", "#111317", "#1a1e24", "#25272b", "#51545a", "#e7e8e9"]
+      },
+      "surface-glass": {
+        "role": "neutral",
+        "displayName": "Glass Surface",
+        "canonical": "rgba(12, 15, 18, 0.72)",
+        "tonalRamp": ["rgba(12,15,18,0.96)", "rgba(12,15,18,0.9)", "rgba(12,15,18,0.84)", "rgba(12,15,18,0.72)", "rgba(12,15,18,0.58)", "rgba(12,15,18,0.42)", "rgba(12,15,18,0.24)", "rgba(12,15,18,0.08)"]
+      },
+      "surface-glass-strong": {
+        "role": "neutral",
+        "displayName": "Strong Glass Surface",
+        "canonical": "rgba(9, 11, 14, 0.9)",
+        "tonalRamp": ["rgba(9,11,14,0.98)", "rgba(9,11,14,0.94)", "rgba(9,11,14,0.9)", "rgba(9,11,14,0.8)", "rgba(9,11,14,0.66)", "rgba(9,11,14,0.5)", "rgba(9,11,14,0.3)", "rgba(9,11,14,0.12)"]
+      },
+      "border-glass": {
+        "role": "neutral",
+        "displayName": "Glass Border",
+        "canonical": "rgba(255, 255, 255, 0.12)",
+        "tonalRamp": ["rgba(255,255,255,0.04)", "rgba(255,255,255,0.08)", "rgba(255,255,255,0.12)", "rgba(255,255,255,0.16)", "rgba(255,255,255,0.2)", "rgba(255,255,255,0.28)", "rgba(255,255,255,0.42)", "rgba(255,255,255,0.7)"]
+      },
+      "text-primary": {
+        "role": "neutral",
+        "displayName": "Text Primary",
+        "canonical": "#ffffff",
+        "tonalRamp": ["#303030", "#555555", "#777777", "#999999", "#b5b5b5", "#d0d0d0", "#e7e7e7", "#ffffff"]
+      },
+      "text-secondary": {
+        "role": "neutral",
+        "displayName": "Text Secondary",
+        "canonical": "rgba(255, 255, 255, 0.68)",
+        "tonalRamp": ["rgba(255,255,255,0.24)", "rgba(255,255,255,0.34)", "rgba(255,255,255,0.44)", "rgba(255,255,255,0.54)", "rgba(255,255,255,0.68)", "rgba(255,255,255,0.76)", "rgba(255,255,255,0.86)", "rgba(255,255,255,0.98)"]
+      },
+      "text-muted": {
+        "role": "neutral",
+        "displayName": "Text Muted",
+        "canonical": "rgba(255, 255, 255, 0.66)",
+        "tonalRamp": ["rgba(255,255,255,0.22)", "rgba(255,255,255,0.32)", "rgba(255,255,255,0.42)", "rgba(255,255,255,0.52)", "rgba(255,255,255,0.66)", "rgba(255,255,255,0.74)", "rgba(255,255,255,0.84)", "rgba(255,255,255,0.96)"]
+      },
+      "accent-coral": {
+        "role": "primary",
+        "displayName": "Coral Signal",
+        "canonical": "#ff716b",
+        "tonalRamp": ["oklch(18% 0.07 25)", "oklch(28% 0.12 25)", "oklch(40% 0.17 25)", "oklch(52% 0.21 25)", "oklch(64% 0.22 25)", "oklch(74% 0.18 25)", "oklch(84% 0.12 25)", "oklch(95% 0.05 25)"]
+      },
+      "accent-soft": {
+        "role": "primary",
+        "displayName": "Coral Wash",
+        "canonical": "rgba(255, 113, 107, 0.16)",
+        "tonalRamp": ["rgba(255,113,107,0.04)", "rgba(255,113,107,0.08)", "rgba(255,113,107,0.12)", "rgba(255,113,107,0.16)", "rgba(255,113,107,0.24)", "rgba(255,113,107,0.34)", "rgba(255,113,107,0.5)", "rgba(255,113,107,0.72)"]
+      },
+      "success-mint": {
+        "role": "secondary",
+        "displayName": "Success Mint",
+        "canonical": "#72d6a0",
+        "tonalRamp": ["oklch(22% 0.06 155)", "oklch(32% 0.1 155)", "oklch(44% 0.13 155)", "oklch(56% 0.15 155)", "oklch(68% 0.15 155)", "oklch(78% 0.12 155)", "oklch(88% 0.08 155)", "oklch(96% 0.03 155)"]
+      },
+      "short-break-teal": {
+        "role": "secondary",
+        "displayName": "Short-break Teal",
+        "canonical": "#54e0c4",
+        "tonalRamp": ["oklch(20% 0.07 175)", "oklch(31% 0.12 175)", "oklch(43% 0.16 175)", "oklch(55% 0.18 175)", "oklch(67% 0.18 175)", "oklch(77% 0.14 175)", "oklch(87% 0.09 175)", "oklch(96% 0.04 175)"]
+      },
+      "long-break-violet": {
+        "role": "secondary",
+        "displayName": "Long-break Violet",
+        "canonical": "#9789ff",
+        "tonalRamp": ["oklch(20% 0.08 290)", "oklch(31% 0.14 290)", "oklch(43% 0.19 290)", "oklch(55% 0.22 290)", "oklch(67% 0.22 290)", "oklch(77% 0.18 290)", "oklch(87% 0.12 290)", "oklch(96% 0.05 290)"]
+      },
+      "spotify-green": {
+        "role": "secondary",
+        "displayName": "Spotify Green",
+        "canonical": "#1cb954",
+        "tonalRamp": ["#062713", "#0b4d26", "#0f7739", "#139d4a", "#1cb954", "#45ce76", "#8ce5aa", "#dcf8e5"]
+      },
+      "achievement-gold": {
+        "role": "tertiary",
+        "displayName": "Achievement Gold",
+        "canonical": "#ffd700",
+        "tonalRamp": ["#332b00", "#665600", "#998000", "#ccb400", "#ffd700", "#ffdf33", "#ffe980", "#fff8cc"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Countdown Display", "purpose": "The primary timer readout and other dominant numeric values." },
+      "label": { "displayName": "Compact Label", "purpose": "Uppercase section eyebrows, phase badges and metadata." },
+      "button": { "displayName": "Action Text", "purpose": "Semibold labels for primary and utility controls." }
+    },
+    "shadows": [
+      { "name": "panel-shadow", "value": "0 24px 80px rgba(0, 0, 0, 0.38)", "purpose": "Broad depth for shared glass panels and large dialogs." },
+      { "name": "action-lift", "value": "0 12px 30px rgba(255, 113, 107, 0.24)", "purpose": "Coral hover lift for the primary session action." },
+      { "name": "floating-control", "value": "0 4px 12px rgba(0, 0, 0, 0.15)", "purpose": "Compact floating atmosphere control." },
+      { "name": "toast-shadow", "value": "0 8px 32px rgba(0, 0, 0, 0.4)", "purpose": "Transient feedback above the interface." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "0.2s ease", "purpose": "Default button, border and surface state transitions." },
+      { "name": "ease-smooth", "value": "0.4s cubic-bezier(0.25, 0.8, 0.25, 1)", "purpose": "Floating rail and panel movement." },
+      { "name": "ease-pop", "value": "0.35s cubic-bezier(0.21, 1.02, 0.73, 1)", "purpose": "Toast entry with a soft, responsive arrival." },
+      { "name": "phase-transition", "value": "0.35s ease", "purpose": "Timer surface transitions between focus and break phases." }
+    ],
+    "breakpoints": [
+      { "name": "phone-xs", "value": "380px" },
+      { "name": "phone", "value": "420px" },
+      { "name": "small", "value": "480px" },
+      { "name": "compact", "value": "520px" },
+      { "name": "audio-mobile", "value": "600px" },
+      { "name": "progress-compact", "value": "680px" },
+      { "name": "mobile", "value": "768px" },
+      { "name": "workspace-stack", "value": "980px" },
+      { "name": "rail-safe", "value": "1460px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Glass Panel",
+      "kind": "card",
+      "refersTo": "glass-panel",
+      "description": "The shared translucent surface used for the timer, task list and floating panels.",
+      "html": "<section class=\"ds-panel\"><strong>World Focus</strong><small>Make this session count</small></section>",
+      "css": ".ds-panel { display: grid; gap: 0.2rem; padding: 1rem; color: var(--text-primary); background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur)); box-shadow: var(--shadow-panel); transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease; } .ds-panel:hover { border-color: rgba(255,255,255,0.18); } .ds-panel small { color: var(--text-muted); font-size: 0.72rem; }"
+    },
+    {
+      "name": "Primary Action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The start, pause or submit action that carries the focus color signal.",
+      "html": "<button class=\"ds-btn-primary\">Start focus</button>",
+      "css": ".ds-btn-primary { padding: 0.95rem 2rem; color: #1a0807; background: var(--accent-color); border: 0; border-radius: 999px; font: 600 1rem/1.2 var(--font-family); letter-spacing: 0.01em; transition: all 0.2s ease; } .ds-btn-primary:hover { transform: scale(1.05); box-shadow: 0 12px 30px rgba(255,113,107,0.24); } .ds-btn-primary:focus-visible { outline: none; box-shadow: var(--focus-ring); } .ds-btn-primary:active { transform: scale(0.98); }"
+    },
+    {
+      "name": "Quiet Action",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "A low-emphasis reset or utility action beside a primary control.",
+      "html": "<button class=\"ds-btn-quiet\">Reset</button>",
+      "css": ".ds-btn-quiet { padding: 0.75rem 1rem; color: var(--text-muted); background: transparent; border: 0; border-radius: 999px; font: 600 0.9rem/1.2 var(--font-family); transition: all 0.2s ease; } .ds-btn-quiet:hover { color: #fff; transform: translateY(-1px); } .ds-btn-quiet:focus-visible { outline: none; box-shadow: var(--focus-ring); } .ds-btn-quiet:active { transform: translateY(0); }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "text-field",
+      "description": "Dark, white-alpha input used for task and settings entry.",
+      "html": "<label class=\"ds-field\"><span>Task</span><input placeholder=\"Add a task…\" /></label>",
+      "css": ".ds-field { display: grid; gap: 0.4rem; color: var(--text-secondary); font: 400 0.8rem/1.2 var(--font-family); } .ds-field input { width: 100%; padding: 0.7rem; color: #fff; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; font: inherit; font-size: 1rem; transition: background-color 0.2s ease, border-color 0.2s ease; } .ds-field input::placeholder { color: rgba(255,255,255,0.4); } .ds-field input:focus-visible { outline: none; border-color: var(--accent-color); background: rgba(255,255,255,0.15); box-shadow: var(--focus-ring); }"
+    },
+    {
+      "name": "Phase Chip",
+      "kind": "chip",
+      "refersTo": "phase-chip",
+      "description": "Uppercase phase marker for break states.",
+      "html": "<span class=\"ds-phase-chip\">BREAK</span>",
+      "css": ".ds-phase-chip { display: inline-flex; width: fit-content; padding: 0.2rem 0.5rem; color: #8af3dd; background: rgba(84,224,196,0.16); border-radius: 999px; font: 600 0.62rem/1.2 var(--font-family); letter-spacing: 0.12em; text-transform: uppercase; } .ds-phase-chip:hover { background: rgba(84,224,196,0.24); } .ds-phase-chip:focus-visible { outline: none; box-shadow: var(--focus-ring); } .ds-phase-chip.ds-phase-chip--long { color: #c6bdff; background: rgba(151,137,255,0.18); }"
+    },
+    {
+      "name": "Timer Mode Control",
+      "kind": "nav",
+      "refersTo": "mode-control",
+      "description": "Three-way pill navigation for Focus and break phases.",
+      "html": "<div class=\"ds-mode-group\"><button>Focus</button><button class=\"is-active\">Short break</button><button>Long break</button></div>",
+      "css": ".ds-mode-group { display: flex; gap: 0.25rem; padding: 0.35rem; background: rgba(255,255,255,0.045); border-radius: 999px; } .ds-mode-group button { padding: 0.65rem 0.8rem; color: var(--text-secondary); background: transparent; border: 0; border-radius: 999px; font: 500 0.8rem/1.2 var(--font-family); transition: all 0.2s ease; } .ds-mode-group button:hover { color: #fff; background: rgba(255,255,255,0.08); } .ds-mode-group button.is-active { color: #fff; background: rgba(255,255,255,0.1); font-weight: 600; } .ds-mode-group button:focus-visible { outline: none; box-shadow: var(--focus-ring); }"
+    },
+    {
+      "name": "Insight Stat Card",
+      "kind": "card",
+      "refersTo": "stat-card",
+      "description": "Large report metric with icon, value and uppercase label.",
+      "html": "<article class=\"ds-stat-card\"><span aria-hidden=\"true\">⏱️</span><strong>0.0h</strong><small>TOTAL HOURS</small></article>",
+      "css": ".ds-stat-card { display: grid; place-items: center; gap: 0.55rem; min-width: 0; padding: 1.5rem; color: var(--text-primary); background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; transition: transform 0.2s ease, background-color 0.2s ease; } .ds-stat-card:hover { transform: translateY(-2px); background: rgba(255,255,255,0.08); } .ds-stat-card span { font-size: 2rem; } .ds-stat-card strong { color: var(--accent-color); font: 600 2.35rem/1.1 var(--font-family); } .ds-stat-card small { color: var(--text-muted); font: 600 0.78rem/1.2 var(--font-family); letter-spacing: 0.08em; }"
+    },
+    {
+      "name": "Atmosphere Bar",
+      "kind": "nav",
+      "refersTo": "atmosphere-bar",
+      "description": "Centered collapsed control that expands into the live-location picker.",
+      "html": "<button class=\"ds-atmosphere-bar\"><span>Studying in Tokyo</span><span aria-hidden=\"true\">⌄</span></button>",
+      "css": ".ds-atmosphere-bar { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.5rem 1.2rem; color: var(--text-primary); background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 999px; font: 400 0.95rem/1.2 var(--font-family); box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: all 0.2s ease; } .ds-atmosphere-bar:hover { background: rgba(255,255,255,0.05); } .ds-atmosphere-bar:focus-visible { outline: none; box-shadow: var(--focus-ring); } .ds-atmosphere-bar:active { transform: scale(0.98); }"
+    },
+    {
+      "name": "Audio Dock",
+      "kind": "custom",
+      "refersTo": "audio-dock",
+      "description": "Floating compact Lofi or Spotify playback surface.",
+      "html": "<div class=\"ds-audio-dock\"><span class=\"ds-audio-art\" aria-hidden=\"true\"></span><span class=\"ds-audio-copy\"><strong>Lofi Girl</strong><small>Lofi Radio</small></span><button class=\"ds-audio-play\" aria-label=\"Play\">▶</button></div>",
+      "css": ".ds-audio-dock { display: flex; align-items: center; width: 300px; height: 80px; overflow: hidden; color: var(--text-primary); background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 10px; backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur)); box-shadow: var(--shadow-panel); } .ds-audio-art { width: 80px; height: 80px; flex: 0 0 auto; background: linear-gradient(135deg, #6b4f39, #201b27); } .ds-audio-copy { display: grid; gap: 0.15rem; min-width: 0; padding: 0 1rem; } .ds-audio-copy strong { overflow: hidden; color: #fff; font-size: 1rem; white-space: nowrap; text-overflow: ellipsis; } .ds-audio-copy small { color: var(--text-muted); font-size: 0.75rem; } .ds-audio-play { display: grid; place-items: center; width: 36px; height: 36px; margin-left: auto; margin-right: 1rem; color: #fff; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; transition: all 0.2s ease; } .ds-audio-play:hover { background: rgba(255,255,255,0.3); transform: scale(1.05); } .ds-audio-play:focus-visible { outline: none; box-shadow: var(--focus-ring); }"
+    },
+    {
+      "name": "Mobile Navigation",
+      "kind": "nav",
+      "refersTo": "mobile-nav",
+      "description": "Five-item bottom navigation used at mobile widths.",
+      "html": "<nav class=\"ds-mobile-nav\"><button class=\"is-active\">Timer</button><button>Tasks</button><button>Insights</button><button>Settings</button><button>Feedback</button></nav>",
+      "css": ".ds-mobile-nav { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.25rem; padding: 0.35rem; background: rgba(8,10,12,0.88); border: 1px solid var(--glass-border); border-radius: 14px; backdrop-filter: blur(16px); } .ds-mobile-nav button { min-height: 44px; padding: 0.55rem 0.25rem; color: var(--text-secondary); background: transparent; border: 0; border-radius: 10px; font: 400 0.68rem/1.2 var(--font-family); transition: all 0.2s ease; } .ds-mobile-nav button:hover, .ds-mobile-nav button.is-active { color: #fff; background: rgba(255,255,255,0.1); } .ds-mobile-nav button:focus-visible { outline: none; box-shadow: var(--focus-ring); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Ambient Focus Cockpit",
+    "overview": "Observed in the incumbent implementation, World Focus treats the work session as a quiet cockpit placed inside a live world. The video atmosphere owns the canvas; the interface floats above it in dark translucent surfaces, allowing the environment to remain present without competing with the countdown and the next action.\n\nThe system is compact, rounded and tactile. Large numerals establish the timer as the primary visual anchor, while low-contrast labels, pill controls and small status lights keep supporting information scannable. Focus, short break and long break are deliberately differentiated through the surface tint and action color so the current phase is never only a text distinction.",
+    "keyCharacteristics": [
+      "Full-viewport live atmosphere with layered dark overlays.",
+      "Dark glass surfaces with soft borders and strong blur.",
+      "One large countdown supported by compact uppercase metadata.",
+      "Coral focus actions with turquoise and violet break states.",
+      "Floating, responsive controls that become stacked and bottom-anchored on narrow screens."
+    ],
+    "rules": [
+      { "name": "The Atmosphere-First Rule", "body": "Keep the live scene visible behind the interface; translucent dark surfaces should support focus without turning the page into a solid dashboard.", "section": "colors" },
+      { "name": "The Phase-Color Rule", "body": "Coral belongs to focus and primary action states; short breaks use turquoise and long breaks use violet.", "section": "colors" },
+      { "name": "The Timer-First Rule", "body": "The countdown is the largest visual element; supporting text stays compact and low-contrast.", "section": "typography" },
+      { "name": "The Soft-Lift Rule", "body": "Surfaces are calm at rest; elevation is communicated through blur, tonal contrast and a small state response rather than hard borders or heavy ornament.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep the live background visible and legible beneath new surfaces.",
+      "Do use Outfit and the existing white-alpha hierarchy for new copy.",
+      "Do reserve coral for focus actions, selected work and attention states.",
+      "Do preserve the turquoise short-break and violet long-break distinction.",
+      "Do use rounded controls, thin glass borders and the existing blur/shadow vocabulary.",
+      "Do make new fixed elements respect safe-area insets and the mobile bottom navigation.",
+      "Do keep reduced-motion behavior and keyboard/focus visibility intact."
+    ],
+    "donts": [
+      "Don't replace the atmosphere-first canvas with a solid dashboard background.",
+      "Don't flatten all timer phases into the same coral treatment.",
+      "Don't introduce a second display font or a new unrelated color system.",
+      "Don't use heavy decorative patterns that obscure the video or the countdown.",
+      "Don't rely on hover-only access for actions that must work on touch and keyboard.",
+      "Don't turn a temporary stream or provider state into a permanent availability promise."
+    ]
+  }
+}
