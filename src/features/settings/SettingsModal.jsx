@@ -187,7 +187,7 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                     <h2 id="settings-title">Settings</h2>
                     <button className="close-btn" onClick={handleClose} aria-label="Close settings">×</button>
                 </div>
-                <div className="modal-body">
+                <div className="modal-body delight-numbered">
 
                 <div className="setting-group">
                     <h3>Auto start</h3>
@@ -583,6 +583,15 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                         -webkit-overflow-scrolling: touch;
                         padding: 1.5rem 2rem 2rem;
                     }
+                    .delight-numbered { counter-reset: setting-group-counter; }
+                    .delight-numbered > .setting-group { counter-increment: setting-group-counter; position: relative; }
+                    .delight-numbered > .setting-group h3::before { content: counter(setting-group-counter, decimal-leading-zero); margin-right: 0.6rem; font-variant-numeric: tabular-nums; color: var(--accent-color); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; }
+                    .delight-numbered .slider { transition: filter 150ms ease-out; }
+                    .delight-numbered .slider:hover, .delight-numbered .slider:focus-visible { filter: drop-shadow(0 0 6px var(--accent-soft)); }
+                    .delight-numbered .toggle-group input[type="checkbox"] { transition: transform 150ms ease-out; }
+                    .delight-numbered .toggle-group input[type="checkbox"]:hover { transform: scale(1.08); }
+                    .delight-numbered .sound-select, .delight-numbered select { transition: border-color 150ms ease-out, box-shadow 150ms ease-out; }
+                    .delight-numbered .sound-select:focus-visible, .delight-numbered select:focus-visible { box-shadow: var(--focus-ring); }
                     @supports (max-height: 100dvh) {
                         .modal-content {
                             max-height: calc(100dvh - 2rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));

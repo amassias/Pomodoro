@@ -89,7 +89,7 @@ const Achievements = ({ history }) => {
           padding: 0.3rem 0.8rem;
           border-radius: 20px;
         }
-        .next-achievement { display: grid; gap: 0.2rem; margin: -0.5rem 0 1.25rem; padding: 0.85rem 1rem; border-left: 3px solid var(--accent-color); border-radius: 0 12px 12px 0; background: var(--accent-soft); }
+        .next-achievement { display: grid; gap: 0.2rem; margin: -0.5rem 0 1.25rem; padding: 0.85rem 1rem; border: 1px solid rgba(255, 113, 107, 0.28); border-radius: 12px; background: var(--accent-soft); }
         .next-achievement span { color: var(--accent-color); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; }
         .next-achievement strong { font-size: 0.9rem; }
         .next-achievement small { color: var(--text-secondary); }
