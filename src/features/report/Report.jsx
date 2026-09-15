@@ -1334,7 +1334,7 @@ const Report = () => {
               padding: 0.8rem;
               background: rgba(0,0,0,0.2);
               border-radius: 8px;
-              border-left: 3px solid var(--accent-color);
+              border: 1px solid rgba(255, 255, 255, 0.12);
           }
 
           .check-icon {

@@ -13,8 +13,12 @@ const TaskList = () => {
     const [selectedArchivedIds, setSelectedArchivedIds] = useState(() => new Set());
     const [editingTaskId, setEditingTaskId] = useState(null);
     const [editingText, setEditingText] = useState('');
+    const [addingSubtaskId, setAddingSubtaskId] = useState(null);
+    const [subtaskDraft, setSubtaskDraft] = useState('');
+    const [confirmRemoveId, setConfirmRemoveId] = useState(null);
     const archiveDialogRef = useRef(null);
     const dragTaskIdRef = useRef(null);
+    const subtaskTriggerRef = useRef(null);
 
     const closeArchive = useCallback(() => {
         setShowArchive(false);
@@ -90,18 +94,28 @@ const TaskList = () => {
     };
 
     const removeActiveTask = (id) => {
-        if (window.confirm('Remove this task?')) {
-            setTasks(prev => prev.filter(task => task.id !== id));
-        }
+        setTasks(prev => prev.filter(task => task.id !== id));
+        setConfirmRemoveId(null);
     };
 
-    const addSubtask = (taskId) => {
-        const text = window.prompt('Subtask');
-        if (!text?.trim()) return;
+    const addSubtask = (taskId, text) => {
+        const value = (text === undefined ? window.prompt('Subtask') : text)?.trim();
+        if (!value) return;
         setTasks(prev => prev.map(task => task.id === taskId ? {
             ...task,
-            subtasks: [...(task.subtasks || []), { id: crypto.randomUUID(), text: text.trim(), completed: false }],
+            subtasks: [...(task.subtasks || []), { id: crypto.randomUUID(), text: value, completed: false }],
         } : task));
+    };
+
+    const submitSubtask = (taskId) => {
+        addSubtask(taskId, subtaskDraft);
+        setSubtaskDraft('');
+        setAddingSubtaskId(null);
+    };
+
+    const cancelSubtask = () => {
+        setSubtaskDraft('');
+        setAddingSubtaskId(null);
     };
 
     const toggleSubtask = (taskId, subtaskId) => {
@@ -261,13 +275,36 @@ const TaskList = () => {
                             <div className="task-content"><span className="task-text">{task.text}</span>{task.dueDate && <small>Due {task.dueDate}</small>}</div>
                         )}
                         <div className="pomodoro-estimate" title="Focus sessions done / estimated" aria-label={`${task.completedPomodoros || 0} of ${task.estimatedPomodoros || 1} focus sessions`}>{task.completedPomodoros || 0}/{task.estimatedPomodoros || 1}</div>
+
                         <div className="task-item-actions">
                             <button onClick={() => setSettings({ ...settings, activeTaskId: task.id })} aria-label={`Focus ${task.text}`} aria-pressed={activeTask?.id === task.id}>{activeTask?.id === task.id ? 'Active' : 'Focus'}</button>
                             <button onClick={() => setTasks(prev => prev.map(item => item.id === task.id ? { ...item, estimatedPomodoros: Math.min(12, (item.estimatedPomodoros || 1) + 1) } : item))} aria-label={`Increase estimate for ${task.text}`} title="Add one session to the estimate">+1 session</button>
-                            <button onClick={() => addSubtask(task.id)} aria-label={`Add subtask to ${task.text}`}>Subtask</button>
+                            <div className="subtask-trigger">
+                              <button onClick={() => { setAddingSubtaskId(task.id); setSubtaskDraft(''); }} aria-label={`Add subtask to ${task.text}`}>Subtask</button>
+                              {addingSubtaskId === task.id && (
+                                <form className="subtask-popover-form" onSubmit={(e) => { e.preventDefault(); submitSubtask(task.id); }}>
+                                  <input autoFocus value={subtaskDraft} onChange={(e) => setSubtaskDraft(e.target.value)} placeholder="What's the subtask?" aria-label={`New subtask for ${task.text}`} />
+                                  <div className="subtask-card-actions">
+                                    <button type="button" onClick={cancelSubtask}>Cancel</button>
+                                    <button type="submit">Add subtask</button>
+                                  </div>
+                                </form>
+                              )}
+                            </div>
                             <button onClick={() => startEditing(task)} aria-label={`Edit ${task.text}`}>Edit</button>
-                            <button className="danger" onClick={() => removeActiveTask(task.id)} aria-label={`Remove ${task.text}`}>Remove</button>
+                            <div className="remove-trigger">
+                              {confirmRemoveId === task.id ? (
+                                <div className="remove-confirm">
+                                  <span>Remove?</span>
+                                  <button type="button" onClick={() => setConfirmRemoveId(null)}>No</button>
+                                  <button type="button" className="danger" onClick={() => removeActiveTask(task.id)}>Yes</button>
+                                </div>
+                              ) : (
+                                <button className="danger" onClick={() => setConfirmRemoveId(task.id)} aria-label={`Remove ${task.text}`}>Remove</button>
+                              )}
+                            </div>
                         </div>
+
                         {(task.subtasks || []).length > 0 && <ul className="subtask-list">{task.subtasks.map(subtask => <li key={subtask.id}><label><input type="checkbox" checked={subtask.completed} onChange={() => toggleSubtask(task.id, subtask.id)} /> <span className={subtask.completed ? 'done' : ''}>{subtask.text}</span></label></li>)}</ul>}
                     </li>
                 ))}
@@ -573,6 +610,19 @@ const TaskList = () => {
                 .subtask-list { width: 100%; list-style: none; display: grid; gap: 0.25rem; margin: 0.2rem 0 0 1.8rem; padding: 0; color: var(--text-secondary); font-size: 0.72rem; }
                 .subtask-list label { display: flex; gap: 0.4rem; align-items: center; }
                 .subtask-list .done { text-decoration: line-through; color: var(--text-muted); }
+
+                .subtask-trigger { position: relative; display: inline-flex; }
+                .remove-trigger { position: relative; display: inline-flex; }
+                .remove-confirm { display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(255, 113, 107, 0.12); border: 1px solid rgba(255, 113, 107, 0.3); border-radius: 999px; padding: 0.2rem 0.3rem 0.2rem 0.7rem; }
+                .remove-confirm span { font-size: 0.72rem; color: var(--text-secondary); white-space: nowrap; }
+                .remove-confirm button { min-height: 26px; padding: 0.2rem 0.55rem; font-size: 0.7rem; border-radius: 999px; }
+                .remove-confirm button.danger { background: var(--accent-color); color: #000; font-weight: 600; }
+                .subtask-popover-form { position: absolute; top: calc(100% + 0.5rem); right: 0; z-index: 3; display: grid; gap: 0.4rem; background: var(--glass-bg-strong); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 0.55rem 0.6rem; min-width: 10.5rem; box-shadow: var(--shadow-panel); }
+                .subtask-popover-form input { background: rgba(255, 255, 255, 0.1); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.35rem 0.55rem; color: var(--text-primary); font-family: inherit; font-size: 0.78rem; outline: none; }
+                .subtask-popover-form input:focus-visible { box-shadow: var(--focus-ring); }
+                .subtask-card-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+                .subtask-card-actions button[type="submit"] { background: var(--accent-color); color: #000; border: none; border-radius: 999px; padding: 0.3rem 0.8rem; font-size: 0.72rem; font-weight: 600; cursor: pointer; }
+                .subtask-card-actions button[type="button"] { background: transparent; border: 1px solid var(--glass-border); color: var(--text-muted); border-radius: 999px; padding: 0.3rem 0.7rem; font-size: 0.72rem; cursor: pointer; }
 
                 .checkbox-wrapper {
                     width: 20px;
