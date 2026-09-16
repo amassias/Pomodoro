@@ -59,17 +59,23 @@ const getDefaultSettings = ({ userId }) => {
   };
 };
 
-const sanitizeSettingsForDb = (settings, { customLocations } = {}) => {
+const sanitizeSettingsForDb = (settings, { customLocations, favoriteCities } = {}) => {
   const {
     spotifyToken: _spotifyToken,
     spotifyRefreshToken: _spotifyRefreshToken,
     spotifyTokenExpiresAt: _spotifyTokenExpiresAt,
+    _customLocations: _storedCustomLocations,
+    _favoriteCities: _storedFavoriteCities,
     ...rest
   } = settings || {};
 
-  // Embed customLocations in settings JSONB to avoid schema migration
+  // Keep UI-only location data in settings JSONB so a fresh deployment does
+  // not depend on optional database columns being present.
   if (customLocations && typeof customLocations === 'object' && Object.keys(customLocations).length > 0) {
     rest._customLocations = customLocations;
+  }
+  if (Array.isArray(favoriteCities) && favoriteCities.length > 0) {
+    rest._favoriteCities = favoriteCities;
   }
 
   return rest;
@@ -181,7 +187,7 @@ export const UserDataProvider = ({ children }) => {
       // Try fetching first.
       const { data, error } = await supabase
         .from('user_state')
-        .select('user_id, city, tasks, archived_tasks, pomodoro_history, settings, favorite_cities, updated_at')
+        .select('user_id, city, tasks, archived_tasks, pomodoro_history, settings, updated_at')
         .eq('user_id', id)
         .maybeSingle();
 
@@ -194,7 +200,6 @@ export const UserDataProvider = ({ children }) => {
         tasks: [],
         archived_tasks: [],
         pomodoro_history: {},
-        favorite_cities: [],
         settings: {},
       };
 
@@ -224,7 +229,7 @@ export const UserDataProvider = ({ children }) => {
           isEffectivelyEmpty(row.tasks, 'array') &&
           isEffectivelyEmpty(row.archived_tasks, 'array') &&
           isEffectivelyEmpty(row.pomodoro_history, 'object') &&
-          isEffectivelyEmpty(row.favorite_cities, 'array') &&
+          isEffectivelyEmpty(row.settings?._favoriteCities, 'array') &&
           (!isEffectivelyEmpty(guestTasks, 'array') ||
             !isEffectivelyEmpty(guestArchived, 'array') ||
             !isEffectivelyEmpty(guestHistory, 'object') ||
@@ -236,7 +241,10 @@ export const UserDataProvider = ({ children }) => {
             tasks: guestTasks,
             archived_tasks: guestArchived,
             pomodoro_history: guestHistory && typeof guestHistory === 'object' ? guestHistory : {},
-            favorite_cities: Array.isArray(guestFavorites) ? guestFavorites : [],
+            settings: sanitizeSettingsForDb(row.settings, {
+              customLocations: row.settings?._customLocations,
+              favoriteCities: guestFavorites,
+            }),
           }
           : row;
 
@@ -248,13 +256,17 @@ export const UserDataProvider = ({ children }) => {
               ? mergedRow.pomodoro_history
               : {}
           );
-          setFavoriteCities(Array.isArray(mergedRow.favorite_cities) ? mergedRow.favorite_cities : []);
           setCity(mergedRow.city || DEFAULT_CITY);
 
           const defaults = getDefaultSettings({ userId });
           const persistedSettings = mergedRow.settings || {};
-          // Extract embedded custom locations from settings JSONB
-          const { _customLocations: dbCustomLocations, ...cleanPersistedSettings } = persistedSettings;
+          // Extract location preferences embedded in settings JSONB.
+          const {
+            _customLocations: dbCustomLocations,
+            _favoriteCities: dbFavoriteCities,
+            ...cleanPersistedSettings
+          } = persistedSettings;
+          setFavoriteCities(Array.isArray(dbFavoriteCities) ? dbFavoriteCities : []);
           setSettings(mergeSettings({ defaults, persisted: cleanPersistedSettings }));
           setCustomLocations(
             dbCustomLocations && typeof dbCustomLocations === 'object'
@@ -279,7 +291,6 @@ export const UserDataProvider = ({ children }) => {
                 tasks: normalizeTasks(mergedRow.tasks),
                 archived_tasks: normalizeArchivedTasks(mergedRow.archived_tasks),
                 pomodoro_history: mergedRow.pomodoro_history,
-                favorite_cities: Array.isArray(mergedRow.favorite_cities) ? mergedRow.favorite_cities : [],
                 settings: mergedRow.settings || {},
               },
               { onConflict: 'user_id' }
@@ -371,8 +382,7 @@ export const UserDataProvider = ({ children }) => {
               archived_tasks: normalizeArchivedTasks(archivedTasks),
               pomodoro_history:
                 pomodoroHistory && typeof pomodoroHistory === 'object' ? pomodoroHistory : {},
-              favorite_cities: favoriteCities,
-              settings: sanitizeSettingsForDb(settings, { customLocations }),
+              settings: sanitizeSettingsForDb(settings, { customLocations, favoriteCities }),
             },
             { onConflict: 'user_id' }
           );
@@ -400,10 +410,14 @@ export const UserDataProvider = ({ children }) => {
         setTasks(normalizeTasks(row.tasks));
         setArchivedTasks(normalizeArchivedTasks(row.archived_tasks));
         setPomodoroHistory(row.pomodoro_history && typeof row.pomodoro_history === 'object' ? row.pomodoro_history : {});
-        setFavoriteCities(Array.isArray(row.favorite_cities) ? row.favorite_cities : []);
         setCity(row.city || DEFAULT_CITY);
         const persistedSettings = row.settings || {};
-        const { _customLocations: remoteLocations, ...cleanSettings } = persistedSettings;
+        const {
+          _customLocations: remoteLocations,
+          _favoriteCities: remoteFavoriteCities,
+          ...cleanSettings
+        } = persistedSettings;
+        setFavoriteCities(Array.isArray(remoteFavoriteCities) ? remoteFavoriteCities : []);
         setCustomLocations(remoteLocations && typeof remoteLocations === 'object' ? remoteLocations : {});
         setSettings(mergeSettings({ defaults: getDefaultSettings({ userId }), persisted: cleanSettings }));
         setLastSyncedAt(row.updated_at);
