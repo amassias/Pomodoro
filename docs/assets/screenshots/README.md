@@ -1,13 +1,13 @@
 # World Focus screenshots
 
-These are real, versioned captures of the public production app, used by the repository README.
+These are real, user-provided captures of the public production app, optimized for the repository README.
 
 | File | Viewport | Purpose |
 | --- | --- | --- |
-| `tokyo-live-atmosphere.jpg` | 1280 × 720 | Live Tokyo Shinjuku atmosphere shown by the app |
-| `desktop-home.png` | 1440 × 900 | Main focus workspace on desktop |
-| `mobile-home.png` | 390 × 844 at 2× scale | Responsive mobile focus flow |
+| `home-live-workspace.webp` | Desktop | Hero: live Tokyo background, timer, task panel, and Lofi player |
+| `atmosphere-selector.webp` | Desktop | Select and save a live background |
+| `session-options.webp` | Desktop | Focus presets, calendar blocks, and full-screen mode |
+| `session-plan.webp` | Desktop | Timer, task planning, and temporary shared room |
+| `insights-achievements.webp` | Desktop | Progress milestones and achievements |
 
-The app screenshots are rendered from production. The Tokyo atmosphere image is a frame from the [Tokyo Shinjuku YouTube live stream](https://www.youtube.com/watch?v=GLQhbRGv5qU) embedded by World Focus, so the README can show the product's atmosphere layer even where README previews cannot play an iframe.
-
-The images are intentionally stored in `docs/assets/screenshots/` so GitHub renders them directly and the README remains self-contained.
+The images are intentionally stored in `docs/assets/screenshots/` as WebP files so GitHub renders them directly without adding unnecessary weight to the repository.

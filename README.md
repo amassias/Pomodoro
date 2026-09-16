@@ -12,23 +12,25 @@ Pick a live atmosphere and keep it behind your session. The desktop app stays im
 
 <p align="center">
   <a href="https://pomodoro-khaki-one.vercel.app">
-    <img src="docs/assets/screenshots/tokyo-live-atmosphere.jpg" alt="Tokyo Shinjuku live atmosphere used by World Focus" width="900" />
+    <img src="docs/assets/screenshots/home-live-workspace.webp" alt="World Focus workspace over a live Tokyo Shibuya video background" width="100%" />
   </a>
 </p>
 
-<p align="center"><strong>Tokyo Shinjuku live atmosphere</strong> · one of the selectable <a href="https://www.youtube.com/watch?v=GLQhbRGv5qU">YouTube live backgrounds</a></p>
+<p align="center"><strong>Live Tokyo, a clear task, and one timer.</strong> World Focus keeps the active atmosphere visible behind the workspace.</p>
 
 **[Open the live web app ↗](https://pomodoro-khaki-one.vercel.app)**
 
-## What you can do
+## Explore the workspace
 
-| Start a focus session | Keep the next task visible |
+| Live atmospheres | Session options |
 | --- | --- |
-| [<img src="docs/assets/screenshots/desktop-home.png" alt="World Focus desktop interface with the focus timer" width="560" />](https://pomodoro-khaki-one.vercel.app) | [<img src="docs/assets/screenshots/mobile-home.png" alt="World Focus mobile interface with the focus timer and task planner" width="220" />](https://pomodoro-khaki-one.vercel.app) |
+| Choose a city, a nature scene, or a focus vibe — and save a favorite atmosphere. | Switch between Classic, Deep 50, and Flow 90; create calendar blocks or enter full screen. |
+| [<img src="docs/assets/screenshots/atmosphere-selector.webp" alt="World Focus atmosphere selector over the live Tokyo video background" width="520" />](https://pomodoro-khaki-one.vercel.app) | [<img src="docs/assets/screenshots/session-options.webp" alt="World Focus session options for focus length, calendar blocks, and full screen" width="520" />](https://pomodoro-khaki-one.vercel.app) |
 
-| Live atmospheres | Focus timer | Session plan | Focus audio |
-| --- | --- | --- | --- |
-| Choose a live city, nature scene, or vibe. | Run focus, short-break, and long-break cycles. | Add tasks, dates, subtasks, and session estimates. | Use the floating Lofi player or connect Spotify. |
+| Session plan | Insights and achievements |
+| --- | --- |
+| Keep one priority in view, set a due date, estimate focus sessions, and share a temporary focus room. | Track milestones, streaks, daily progress, and earned achievements. |
+| [<img src="docs/assets/screenshots/session-plan.webp" alt="World Focus timer and session plan with a live Tokyo video background" width="520" />](https://pomodoro-khaki-one.vercel.app) | [<img src="docs/assets/screenshots/insights-achievements.webp" alt="World Focus achievements view" width="520" />](https://pomodoro-khaki-one.vercel.app) |
 
 The public app is available at **[pomodoro-khaki-one.vercel.app](https://pomodoro-khaki-one.vercel.app)**.
 
