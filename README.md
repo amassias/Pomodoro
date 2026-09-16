@@ -1,6 +1,26 @@
-# World Focus 🌍⚡
+# World Focus
 
-**World Focus** is a premium, immersive Pomodoro application designed to boost your productivity with stunning live backgrounds and high-quality audio features. Built with modern web technologies, it transforms your workspace into a focused environment—whether you're studying in a rainy Tokyo street or working from a quiet cabin in Norway.
+> An immersive Pomodoro workspace with live atmospheres, task planning, focus analytics, and optional music.
+
+[![Live on Vercel](https://img.shields.io/badge/Live%20demo-Vercel-black?logo=vercel)](https://pomodoro-khaki-one.vercel.app)
+[![React](https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Built%20with-Vite-646cff?logo=vite&logoColor=white)](https://vitejs.dev/)
+
+**[Open World Focus ↗](https://pomodoro-khaki-one.vercel.app)**
+
+<p align="center">
+  <a href="https://pomodoro-khaki-one.vercel.app">
+    <img src="docs/assets/screenshots/desktop-home.png" alt="World Focus desktop workspace: timer, task planner and floating Lofi player" width="900" />
+  </a>
+</p>
+
+## Product tour
+
+| Desktop workspace | Mobile-first focus flow |
+| --- | --- |
+| [<img src="docs/assets/screenshots/desktop-home.png" alt="World Focus desktop interface" width="560" />](https://pomodoro-khaki-one.vercel.app) | [<img src="docs/assets/screenshots/mobile-home.png" alt="World Focus mobile interface" width="220" />](https://pomodoro-khaki-one.vercel.app) |
+
+World Focus brings the timer and the next actionable task together in one calm workspace. The public app is available at **[pomodoro-khaki-one.vercel.app](https://pomodoro-khaki-one.vercel.app)**.
 
 ## ✨ Features
 
