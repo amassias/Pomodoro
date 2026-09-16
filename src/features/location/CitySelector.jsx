@@ -269,33 +269,16 @@ const CitySelector = ({ currentCity, currentCityLabel, cities, onSelect, isLoadi
 
   return (
     <>
-      <footer className={`bottom-bar glass-panel location-menu-compact ${isExpanded || isMenuRendered ? 'expanded' : ''}`}>
-            <button
-              type="button"
-              className="footer-header"
-              aria-expanded={isExpanded}
-              aria-controls={isMenuRendered ? 'location-options' : undefined}
-              onClick={toggleExpandedMenu}
-            >
-              <p className="location-text">
-                {isLoading
-                  ? 'Loading locations…'
-                  : currentCity && currentCityName
-                    ? `Studying in ${currentCityName}`
-                    : error
-                      ? 'Unable to load locations'
-                      : 'No available locations'}
-              </p>
-              <span className="chevron">{isExpanded ? '⌃' : '⌄'}</span>
-            </button>
-
-            {isMenuRendered && (
-              <div className={`expanded-panel ${isExpanded ? 'is-open' : ''}`} id="location-options" aria-hidden={!isExpanded} inert={!isExpanded}>
-                <div className="expanded-panel-inner">
-                  {renderExpandedContent()}
-                </div>
-              </div>
-            )}
+      <footer className={`bottom-bar glass-panel location-menu-compact location-menu-low location-menu-curtain ${isExpanded || isMenuRendered ? 'expanded' : ''}`}>
+        <button type="button" className="footer-header" aria-expanded={isExpanded} aria-controls={isMenuRendered ? 'location-options' : undefined} onClick={toggleExpandedMenu}>
+          <p className="location-text">{isLoading ? 'Loading locations…' : currentCity && currentCityName ? `Studying in ${currentCityName}` : error ? 'Unable to load locations' : 'No available locations'}</p>
+          <span className="chevron">{isExpanded ? '⌃' : '⌄'}</span>
+        </button>
+        {isMenuRendered && (
+          <div className={`expanded-panel ${isExpanded ? 'is-open' : ''}`} id="location-options" aria-hidden={!isExpanded} inert={!isExpanded}>
+            <div className="expanded-panel-inner">{renderExpandedContent()}</div>
+          </div>
+        )}
       </footer>
 
       {/* Add Location Modal */}
@@ -363,6 +346,29 @@ const CitySelector = ({ currentCity, currentCityLabel, cities, onSelect, isLoadi
           transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
           border-radius: 99px;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .bottom-bar.location-menu-low,
+        .bottom-bar.location-menu-low.expanded {
+          bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+        }
+
+        .bottom-bar.location-menu-low.expanded {
+          max-height: min(62vh, calc(100vh - 3.5rem));
+        }
+
+        .bottom-bar.location-menu-curtain {
+          transition: width 220ms cubic-bezier(0.16, 1, 0.3, 1), max-height 220ms cubic-bezier(0.16, 1, 0.3, 1), border-radius 180ms ease-out, box-shadow 180ms ease-out;
+        }
+
+        .bottom-bar.location-menu-curtain .expanded-panel {
+          clip-path: inset(100% 0 0 0 round 0 0 18px 18px);
+          transition: grid-template-rows 280ms cubic-bezier(0.16, 1, 0.3, 1), clip-path 220ms ease-out, opacity 180ms ease-out, border-color 180ms ease-out;
+        }
+
+        .bottom-bar.location-menu-curtain .expanded-panel.is-open {
+          clip-path: inset(0 0 0 0 round 0 0 18px 18px);
+          transition: grid-template-rows 280ms cubic-bezier(0.16, 1, 0.3, 1), clip-path 240ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms ease-out, border-color 180ms ease-out;
         }
 
         .bottom-bar.expanded {

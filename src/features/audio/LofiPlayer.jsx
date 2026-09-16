@@ -229,219 +229,219 @@ const LofiPlayer = () => {
 
   return (
     <div
-      ref={playerRef}
+              ref={playerRef}
       className={`lofi-player glass-panel ${isDragging ? 'is-dragging' : ''}`}
-      style={{
-        cursor: isDragging ? 'grabbing' : 'grab'
-      }}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-    >
-      <div className="art-container">
-        <img
-          src={lofiImage}
-          alt="Lofi Girl"
-          className="album-art"
-          draggable="false"
-        />
-        <div className="drag-overlay"></div>
-      </div>
+              style={{
+                cursor: isDragging ? 'grabbing' : 'grab'
+              }}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerUp}
+            >
+              <div className="art-container">
+                <img
+                  src={lofiImage}
+                  alt="Lofi Girl"
+                  className="album-art"
+                  draggable="false"
+                />
+                <div className="drag-overlay"></div>
+              </div>
 
-      <div className="track-info">
-        <div className="track-name">Lofi Girl</div>
-        <div className={`track-artist ${audioError ? 'error' : ''}`}>{audioError ? 'Stream unavailable — retry' : 'Lofi Radio'}</div>
-      </div>
+              <div className="track-info">
+                <div className="track-name">Lofi Girl</div>
+                <div className={`track-artist ${audioError ? 'error' : ''}`}>{audioError ? 'Stream unavailable — retry' : 'Lofi Radio'}</div>
+              </div>
 
       <div className="player-controls">
-        <div className="volume-mini">
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={volume}
-            onChange={(e) => setVolume(Number(e.target.value))}
-            className="volume-slider"
-            title={`Volume: ${volume}%`}
-          />
-        </div>
-
-        <button className="play-btn" onClick={togglePlay} title={isPlaying ? 'Pause' : 'Play'}>
-          {isPlaying ? (
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <rect x="6" y="5" width="4" height="14" />
-              <rect x="14" y="5" width="4" height="14" />
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M8 5v14l11-7z" transform="translate(-0.75 0)" />
-            </svg>
-          )}
-        </button>
+                <div className="volume-mini">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={volume}
+                    onChange={(e) => setVolume(Number(e.target.value))}
+                    className="volume-slider"
+                    title={`Volume: ${volume}%`}
+                  />
       </div>
+                <button className="play-btn" onClick={togglePlay} title={isPlaying ? 'Pause' : 'Play'}>
+                  {isPlaying ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      <rect x="6" y="5" width="4" height="14" />
+                      <rect x="14" y="5" width="4" height="14" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M8 5v14l11-7z" transform="translate(-0.75 0)" />
+                    </svg>
+                  )}
+                </button>
+              </div>
 
-      <style>{`
+              <style>{`
         .lofi-player {
-          position: fixed;
-          bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem);
-          left: calc(env(safe-area-inset-left, 0px) + 0.75rem);
-          width: min(300px, calc(100vw - 1.5rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
-          height: 80px;
-          padding: 0;
-          display: flex;
-          align-items: center;
-          gap: 0;
-          z-index: 50;
-          user-select: none;
-          touch-action: none;
-          overflow: hidden;
+                  position: fixed;
+                  bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem);
+                  left: calc(env(safe-area-inset-left, 0px) + 0.75rem);
+                  width: min(300px, calc(100vw - 1.5rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
+                  height: 80px;
+                  padding: 0;
+                  display: flex;
+                  align-items: center;
+                  gap: 0;
+                  z-index: 50;
+                  user-select: none;
+                  touch-action: none;
+                  overflow: hidden;
           border-radius: 12px;
-          /* Removed specific background to inherit glass-panel styles */
+                  /* Removed specific background to inherit glass-panel styles */
         }
 
-        .lofi-player.is-dragging {
-          will-change: transform;
-          transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 180ms ease-out;
-          box-shadow: 0 28px 72px rgba(0,0,0,0.42);
-        }
 
-        @media (max-width: 600px) {
-          .lofi-player {
-            left: calc(env(safe-area-inset-left, 0px) + 0.75rem);
-            right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
-            width: auto;
-          }
-        }
+                .lofi-player.is-dragging {
+                  will-change: transform;
+                  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 180ms ease-out;
+                  box-shadow: 0 28px 72px rgba(0,0,0,0.42);
+                }
 
-        .art-container {
-            width: 80px;
-            height: 80px;
-            position: relative;
-            flex-shrink: 0;
-        }
+                @media (max-width: 600px) {
+                  .lofi-player {
+                    left: calc(env(safe-area-inset-left, 0px) + 0.75rem);
+                    right: calc(env(safe-area-inset-right, 0px) + 0.75rem);
+                    width: auto;
+                  }
+                }
 
-        .album-art {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-        
-        .drag-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            cursor: grab;
-            background: transparent;
-        }
-        .drag-overlay:active {
-            cursor: grabbing;
-        }
+                .art-container {
+                    width: 80px;
+                    height: 80px;
+                    position: relative;
+                    flex-shrink: 0;
+                }
 
-        .track-info {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          padding: 0 1rem;
-          overflow: hidden;
-          cursor: grab;
-          height: 100%;
-        }
-        .track-artist.error { color: var(--accent-color); }
-        .track-info:active {
-            cursor: grabbing;
-        }
+                .album-art {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    display: block;
+                }
 
-        .track-name {
-          font-weight: 700;
-          font-size: 1rem;
-          color: #fff;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          margin-bottom: 2px;
-        }
+                .drag-overlay {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    cursor: grab;
+                    background: transparent;
+                }
+                .drag-overlay:active {
+                    cursor: grabbing;
+                }
 
-        .track-artist {
-          font-size: 0.75rem;
-          color: rgba(255, 255, 255, 0.7);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
+                .track-info {
+                  flex: 1;
+                  display: flex;
+                  flex-direction: column;
+                  justify-content: center;
+                  padding: 0 1rem;
+                  overflow: hidden;
+                  cursor: grab;
+                  height: 100%;
+                }
+                .track-artist.error { color: var(--accent-color); }
+                .track-info:active {
+                    cursor: grabbing;
+                }
 
-        .player-controls {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          padding-right: 1.5rem;
-          touch-action: auto;
-        }
+                .track-name {
+                  font-weight: 700;
+                  font-size: 1rem;
+                  color: #fff;
+                  white-space: nowrap;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  margin-bottom: 2px;
+                }
 
-        .play-btn {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          background: rgba(255, 255, 255, 0.2);
-          color: #fff;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: transform 0.1s, background 0.2s;
-          flex-shrink: 0;
-        }
-        .play-btn:hover {
-            transform: scale(1.05);
-            background: rgba(255, 255, 255, 0.3);
-        }
-        .play-btn:active {
-            transform: scale(0.95);
-        }
+                .track-artist {
+                  font-size: 0.75rem;
+                  color: rgba(255, 255, 255, 0.7);
+                  white-space: nowrap;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                }
 
-        .volume-mini {
-            width: 50px;
-            display: flex;
-            align-items: center;
-            opacity: 0.6;
-            transition: opacity 0.2s;
-        }
-        .volume-mini:hover {
-            opacity: 1;
-        }
+                .player-controls {
+                  display: flex;
+                  align-items: center;
+                  gap: 1rem;
+                  padding-right: 1.5rem;
+                  touch-action: auto;
+                }
 
-        .volume-slider {
-          width: 100%;
-          height: 3px;
-          border-radius: 2px;
-          background: rgba(255, 255, 255, 0.2);
-          outline: none;
-          -webkit-appearance: none;
-          appearance: none;
-          cursor: pointer;
-        }
-        .volume-slider::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          background: #fff;
-          opacity: 1; 
-          transition: transform 0.2s;
-        }
-        .volume-slider::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
-        }
+                .play-btn {
+                  width: 36px;
+                  height: 36px;
+                  border-radius: 50%;
+                  background: rgba(255, 255, 255, 0.2);
+                  color: #fff;
+                  border: 1px solid rgba(255, 255, 255, 0.1);
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  cursor: pointer;
+                  transition: transform 0.1s, background 0.2s;
+                  flex-shrink: 0;
+                }
+                .play-btn:hover {
+                    transform: scale(1.05);
+                    background: rgba(255, 255, 255, 0.3);
+                }
+                .play-btn:active {
+                    transform: scale(0.95);
+                }
 
-        svg {
-          pointer-events: none;
-        }
-      `}</style>
+                .volume-mini {
+                    width: 50px;
+                    display: flex;
+                    align-items: center;
+                    opacity: 0.6;
+                    transition: opacity 0.2s;
+                }
+                .volume-mini:hover {
+                    opacity: 1;
+                }
+
+                .volume-slider {
+                  width: 100%;
+                  height: 3px;
+                  border-radius: 2px;
+                  background: rgba(255, 255, 255, 0.2);
+                  outline: none;
+                  -webkit-appearance: none;
+                  appearance: none;
+                  cursor: pointer;
+                }
+                .volume-slider::-webkit-slider-thumb {
+                  -webkit-appearance: none;
+                  width: 10px;
+                  height: 10px;
+                  border-radius: 50%;
+                  background: #fff;
+                  opacity: 1;
+                  transition: transform 0.2s;
+                }
+                .volume-slider::-webkit-slider-thumb:hover {
+                    transform: scale(1.2);
+                }
+
+                svg {
+                  pointer-events: none;
+                }
+              `}</style>
     </div>
   );
 };

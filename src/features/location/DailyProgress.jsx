@@ -71,7 +71,7 @@ const DailyProgress = () => {
                 .daily-progress {
                     display: flex;
                     align-items: center;
-                    cursor: help;
+                    cursor: default;
                     gap: 0.65rem;
                     padding-right: 0.6rem;
                 }

@@ -261,7 +261,7 @@ const TaskList = () => {
                         onDragStart={() => { dragTaskIdRef.current = task.id; }}
                         onDragOver={(event) => event.preventDefault()}
                         onDrop={() => reorderTask(task.id)}
-                        className={`task-item ${task.completed ? 'completed' : ''} ${activeTask?.id === task.id ? 'active-task' : ''} ${animatingTaskId === task.id ? 'animating' : ''}`}
+                        className={`task-item ${task.completed ? 'completed' : ''} ${activeTask?.id === task.id ? 'active-task' : ''} ${animatingTaskId === task.id ? 'animating' : ''} ${editingTaskId === task.id ? 'is-editing' : ''}`}
                     >
                         <button className="checkbox-wrapper" onClick={() => toggleTask(task.id)} aria-label={`Complete ${task.text}`}>
                             {task.completed && <span className="checkmark">✓</span>}
@@ -459,6 +459,9 @@ const TaskList = () => {
                 .task-item.active-task { border-color: rgba(255,113,107,0.42); background: rgba(255,113,107,0.08); }
                 .pomodoro-estimate { color: var(--text-muted); background: rgba(255,255,255,0.055); border: 1px solid rgba(255,255,255,0.08); border-radius: 999px; padding: 0.25rem 0.45rem; font-size: 0.72rem; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; transition: opacity 150ms ease-out; }
                 .task-edit-form { flex: 1; display: flex; gap: 0.4rem; }
+                .task-item.is-editing { grid-template-columns: 28px minmax(0, 1fr); }
+                .task-item.is-editing .task-item-actions,
+                .task-item.is-editing .pomodoro-estimate { display: none; }
                 .task-edit-form input { min-width: 0; flex: 1; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.4rem; }
                 .task-edit-form button { color: #fff; background: var(--accent-soft); border-radius: 8px; min-height: 36px; padding: 0.35rem 0.55rem; font-size: 0.75rem; }
 
