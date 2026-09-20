@@ -1,8 +1,10 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useDialogFocus } from '../../shared/ui/useDialogFocus';
+import { useToast } from '../../shared/ui/useToast';
 
 const FeedbackModal = ({ open, onClose, currentStreamId, currentStreamName }) => {
+  const { toast } = useToast();
   const [feedbackType, setFeedbackType] = useState('stream_bug');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
@@ -102,7 +104,7 @@ const FeedbackModal = ({ open, onClose, currentStreamId, currentStreamName }) =>
       }
 
       setIsSubmitting(false);
-      alert('Thanks! Your feedback has been sent.');
+      toast({ message: 'Thanks! Your feedback has been sent.', icon: '✓', type: 'success' });
       handleClose();
     } catch (err) {
       console.error('Feedback submission error:', err);
