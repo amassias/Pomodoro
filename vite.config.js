@@ -10,7 +10,6 @@ export default defineConfig({
         manualChunks: {
           react: ['react', 'react-dom'],
           supabase: ['@supabase/supabase-js'],
-          spotify: ['react-spotify-web-playback'],
         },
       },
     },

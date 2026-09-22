@@ -20,4 +20,4 @@ Runtime resource timings are aggregated per provider (`youtube`, `supabase`, `sp
 
 ## Follow-up target
 
-The next performance iteration should replace the Lofi JPEG with a responsive WebP/AVIF source and defer nonessential authentication/music vendors until their controls are opened.
+The next performance iteration should defer nonessential authentication/music vendors until their controls are opened.
