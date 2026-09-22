@@ -340,8 +340,6 @@ const CitySelector = ({ currentCity, currentCityLabel, cities, onSelect, isLoadi
           width: auto;
           min-width: 200px;
           max-width: 90%;
-          padding: 0;
-          margin: 0;
           z-index: 100;
           transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
           border-radius: 99px;

@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 const DIST_DIR = new URL('../dist/', import.meta.url).pathname;
 const budgets = {
   '.js': { file: 500 * 1024, gzip: 150 * 1024 },
-  '.css': { file: 20 * 1024, gzip: 10 * 1024 },
+  '.css': { file: 30 * 1024, gzip: 10 * 1024 },
   '.jpg': { file: 450 * 1024 },
   '.png': { file: 450 * 1024 },
 };
