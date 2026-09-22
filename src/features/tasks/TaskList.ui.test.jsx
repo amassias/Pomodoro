@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import React from 'react';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -65,6 +65,24 @@ describe('TaskList interactions', () => {
 
     await user.type(screen.getByPlaceholderText('Add a task...'), 'Write notes{Enter}');
     expect(mockData.tasks.map((task) => task.text)).toEqual(['Write notes']);
+  });
+
+  it('restores selected tasks from the archive', async () => {
+    mockData.archivedTasks = [
+      { id: 'a1', text: 'Old report', completed: true, archivedAt: '2026-09-01' },
+      { id: 'a2', text: 'Old email', completed: true, archivedAt: '2026-09-01' },
+    ];
+    const user = userEvent.setup();
+    render(<TaskList />);
+
+    await user.click(screen.getByRole('button', { name: 'View archived tasks' }));
+    const dialog = screen.getByRole('dialog', { name: 'Archived Tasks' });
+    await user.click(within(dialog).getAllByRole('button', { name: 'Select task' })[0]);
+    expect(within(dialog).getByText('1 selected')).toBeTruthy();
+    await user.click(within(dialog).getByRole('button', { name: 'Restore selected' }));
+
+    expect(mockData.archivedTasks.map((task) => task.id)).toEqual(['a2']);
+    expect(mockData.tasks).toEqual([{ id: 'a1', text: 'Old report', completed: false }]);
   });
 
   it('has no automated accessibility violations in its empty state', async () => {
