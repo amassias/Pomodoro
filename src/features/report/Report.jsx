@@ -4,7 +4,7 @@ import { useUserData } from '../../providers/UserDataProvider.jsx';
 import Achievements from './Achievements';
 import { generateCSV, downloadFile } from '../../lib/export';
 import { getLocalDateKey, parseLocalDateKey } from '../../lib/date';
-import { useDialogFocus } from '../../shared/ui/useDialogFocus';
+import { useDialogFocus } from '../../hooks/useDialogFocus';
 import { getProductivityPatterns, getWeeklyComparison } from '../../lib/insights';
 
 const Report = () => {

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ALARM_SOUNDS, TICKING_SOUNDS } from '../../lib/sounds';
 import { fetchUserPlaylists, getLoginUrl, getRedirectUri } from '../../lib/spotify';
-import { useDialogFocus } from '../../shared/ui/useDialogFocus';
+import { useDialogFocus } from '../../hooks/useDialogFocus';
 
 const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => {
     const modalContentRef = useRef(null);
@@ -62,7 +62,7 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                 }
             };
         } catch (e) {
-            console.log('Fallback tone failed', e);
+            console.warn('Fallback tone failed', e);
         }
     };
 
@@ -85,7 +85,7 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                 playFallbackTone();
                 return;
             }
-            console.log('Preview failed', e);
+            console.warn('Preview failed', e);
         });
     };
 

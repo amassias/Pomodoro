@@ -2,7 +2,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useUserData } from '../../providers/UserDataProvider.jsx';
 import { archiveTaskById, restoreTaskById } from '../../lib/tasks.js';
-import { useDialogFocus } from '../../shared/ui/useDialogFocus.js';
+import { useDialogFocus } from '../../hooks/useDialogFocus.js';
 
 const TaskList = () => {
     const { loading, tasks, setTasks, archivedTasks, setArchivedTasks, activeTask, settings, setSettings } = useUserData();

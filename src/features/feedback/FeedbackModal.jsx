@@ -1,7 +1,7 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { useDialogFocus } from '../../shared/ui/useDialogFocus';
-import { useToast } from '../../shared/ui/useToast';
+import { useDialogFocus } from '../../hooks/useDialogFocus';
+import { useToast } from '../../hooks/useToast';
 
 const FeedbackModal = ({ open, onClose, currentStreamId, currentStreamName }) => {
   const { toast } = useToast();

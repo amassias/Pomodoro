@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { useDialogFocus } from '../../shared/ui/useDialogFocus';
+import { useDialogFocus } from '../../hooks/useDialogFocus';
 
 const WelcomeModal = ({ onStartTour, onSkip }) => {
   const dialogRef = useRef(null);

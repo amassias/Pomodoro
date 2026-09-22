@@ -233,12 +233,12 @@ const Timer = ({ settings, updateSettings }) => {
           retry.volume = (currentSettings.alarmVolume ?? 70) / 100;
           retry.onended = audio.onended;
           retry.play().catch(err => {
-            console.log('Audio play failed', err);
+            console.warn('Audio play failed', err);
             finishAlarm();
           });
           return;
         }
-        console.log('Audio play failed', e);
+        console.warn('Audio play failed', e);
         finishAlarm();
       });
     };
@@ -309,7 +309,7 @@ const Timer = ({ settings, updateSettings }) => {
 
   useEffect(() => {
     if (!isActive) {
-      document.title = 'Pomodoro Focus';
+      document.title = 'World Focus · Pomodoro timer';
       prevSecondRef.current = -1;
       return;
     }
@@ -344,7 +344,7 @@ const Timer = ({ settings, updateSettings }) => {
             }
             tickingAudioRef.current.currentTime = 0;
             tickingAudioRef.current.volume = ((currentSettings.tickingVolume ?? 50) / 100) * 0.3;
-            tickingAudioRef.current.play().catch(e => console.log('Tick sound failed', e));
+            tickingAudioRef.current.play().catch(e => console.warn('Tick sound failed', e));
           }
         }
       }

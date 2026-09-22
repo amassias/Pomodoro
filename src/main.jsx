@@ -1,10 +1,10 @@
 import React, { Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
-import ErrorBoundary from './shared/ui/ErrorBoundary.jsx';
+import ErrorBoundary from './components/ui/ErrorBoundary.jsx';
 import { AuthProvider } from './providers/AuthProvider.jsx';
 import { UserDataProvider } from './providers/UserDataProvider.jsx';
 import { SharedSessionProvider } from './providers/SharedSessionProvider.jsx';
-import { ToastProvider } from './shared/ui/Toast.jsx';
+import { ToastProvider } from './components/ui/Toast.jsx';
 import './index.css';
 
 const App = lazy(() => import('./app/App.jsx'));

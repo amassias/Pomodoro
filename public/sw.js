@@ -1,4 +1,4 @@
-const CACHE_NAME = 'world-focus-v1';
+const CACHE_NAME = 'world-focus-v2';
 const APP_SHELL = ['/', '/manifest.webmanifest', '/world-focus-icon.svg'];
 
 self.addEventListener('install', (event) => {
@@ -15,7 +15,7 @@ self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin) return;
+  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
 
   if (request.mode === 'navigate') {
     event.respondWith(fetch(request).then((response) => {
@@ -30,7 +30,7 @@ self.addEventListener('fetch', (event) => {
     const network = fetch(request).then((response) => {
       if (response.ok) caches.open(CACHE_NAME).then((cache) => cache.put(request, response.clone()));
       return response;
-    });
+    }).catch(() => cached || Response.error());
     return cached || network;
   }));
 });

@@ -84,6 +84,26 @@ The public app is available at **[pomodoro-khaki-one.vercel.app](https://pomodor
 - **Error Handling:** React Error Boundary for graceful error management
 - **OAuth Integration:** GitHub and Google authentication support
 
+## 🗂️ Project Structure
+
+The code follows the [Bulletproof React](https://github.com/alan2207/bulletproof-react) layout:
+
+```
+api/              Vercel serverless functions
+docs/             Backlog, performance budget, location sources, screenshots
+public/           Static files served as-is (sounds, icons, service worker)
+scripts/          Build tooling (performance budget check)
+supabase/         Database schema
+src/
+  app/            Application shell (App.jsx)
+  assets/         Images bundled by Vite
+  components/ui/  Shared UI components (Toast, ErrorBoundary)
+  features/       One folder per feature (timer, tasks, audio, report…)
+  hooks/          Shared React hooks
+  lib/            Pure logic and API clients, with colocated tests
+  providers/      React context providers (auth, user data, shared session)
+```
+
 ## 🚀 Getting Started
 
 ### Prerequisites
