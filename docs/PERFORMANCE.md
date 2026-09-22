@@ -7,7 +7,7 @@ World Focus uses a per-asset production budget so a single dependency or media c
 | Asset | Raw limit | Gzip limit |
 | --- | ---: | ---: |
 | JavaScript chunk | 500 kB | 150 kB |
-| CSS file | 20 kB | 10 kB |
+| CSS file | 30 kB | 10 kB |
 | Raster image | 450 kB | — |
 
 Run `npm run performance:check` after dependency or UI changes. The command builds the production bundle, prints every measured asset and exits with an error when a limit is exceeded.
@@ -21,3 +21,5 @@ Runtime resource timings are aggregated per provider (`youtube`, `supabase`, `sp
 ## Follow-up target
 
 The next performance iteration should defer nonessential authentication/music vendors until their controls are opened.
+
+Component styles live in colocated `.css` files (previously inline `<style>` strings inside the JSX), so the CSS raw budget was raised from 20 kB to 30 kB. The bytes moved out of the JavaScript chunks; total transfer did not grow.
