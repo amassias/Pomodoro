@@ -28,13 +28,14 @@
 ## Demo
 
 <p align="center">
-  <video controls muted playsinline preload="metadata" poster="docs/assets/screenshots/home-live-workspace.webp" width="960">
-    <source src="docs/assets/world-focus-demo.webm" type="video/webm" />
-    <a href="docs/assets/world-focus-demo.webm">Download the World Focus demo video</a>
+  <video controls playsinline preload="metadata" poster="https://raw.githubusercontent.com/amassias/Pomodoro/main/docs/assets/screenshots/home-live-workspace.webp" width="100%">
+    <source src="https://raw.githubusercontent.com/amassias/Pomodoro/main/docs/assets/world-focus-demo.mp4" type="video/mp4" />
+    <source src="https://raw.githubusercontent.com/amassias/Pomodoro/main/docs/assets/world-focus-demo.webm" type="video/webm" />
+    <a href="https://raw.githubusercontent.com/amassias/Pomodoro/main/docs/assets/world-focus-demo.mp4">Open the World Focus demo video</a>
   </video>
 </p>
 
-<p align="center"><a href="docs/assets/world-focus-demo.webm">Open the demo video ↗</a></p>
+<p align="center"><a href="https://raw.githubusercontent.com/amassias/Pomodoro/main/docs/assets/world-focus-demo.mp4">Open the demo video ↗</a></p>
 
 <p align="center"><sub>Live atmosphere selection · session presets · active focus timer · Insights</sub></p>
 
