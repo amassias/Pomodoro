@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe, toHaveNoViolations } from 'jest-axe';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import TaskList from './TaskList';
 
 expect.extend(toHaveNoViolations);
@@ -28,6 +28,8 @@ vi.mock('../../providers/UserDataProvider.jsx', () => ({
 }));
 
 describe('TaskList interactions', () => {
+  afterEach(cleanup);
+
   beforeEach(() => {
     mockData.tasks = [];
     mockData.archivedTasks = [];
@@ -55,6 +57,14 @@ describe('TaskList interactions', () => {
     await user.click(screen.getByRole('button', { name: 'Complete Ship roadmap' }));
     await waitFor(() => expect(mockData.archivedTasks).toHaveLength(1), { timeout: 1000 });
     expect(mockData.archivedTasks[0]).toMatchObject({ text: 'Ship roadmap', completed: true });
+  });
+
+  it('adds a task when pressing Enter', async () => {
+    const user = userEvent.setup();
+    render(<TaskList />);
+
+    await user.type(screen.getByPlaceholderText('Add a task...'), 'Write notes{Enter}');
+    expect(mockData.tasks.map((task) => task.text)).toEqual(['Write notes']);
   });
 
   it('has no automated accessibility violations in its empty state', async () => {

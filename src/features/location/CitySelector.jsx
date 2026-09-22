@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useUserData } from '../../providers/UserDataProvider.jsx';
-import { useDialogFocus } from '../../shared/ui/useDialogFocus';
+import { useDialogFocus } from '../../hooks/useDialogFocus';
 
 // Extract YouTube video ID from various URL formats
 const extractYouTubeId = (input) => {

@@ -220,7 +220,7 @@ const LofiPlayer = () => {
 
     if (playPromise && typeof playPromise.catch === 'function') {
       playPromise.catch((e) => {
-        console.log('Play/Autoplay blocked', e);
+        console.warn('Play/Autoplay blocked', e);
         setIsPlaying(false);
         setAudioError(true);
       });
