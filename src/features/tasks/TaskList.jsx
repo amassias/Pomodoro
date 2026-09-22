@@ -18,7 +18,6 @@ const TaskList = () => {
     const [confirmRemoveId, setConfirmRemoveId] = useState(null);
     const archiveDialogRef = useRef(null);
     const dragTaskIdRef = useRef(null);
-    const subtaskTriggerRef = useRef(null);
 
     const closeArchive = useCallback(() => {
         setShowArchive(false);
