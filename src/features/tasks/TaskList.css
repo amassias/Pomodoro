@@ -9,6 +9,7 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    container: task-list / inline-size;
 }
 
 .task-header {
@@ -42,23 +43,29 @@ h3 {
 .task-empty strong { color: var(--text-primary); font-size: 0.88rem; }
 .task-empty span { font-size: 0.78rem; }
 
-.task-item-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.task-item-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; }
 .task-item:hover .task-item-actions,
-.task-item:focus-within .task-item-actions {
+.task-item:focus-within .task-item-actions,
+.task-item.is-confirming .task-item-actions {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
     max-height: 6rem;
-    padding: 0.2rem;
+    padding: 0.35rem;
     border-color: rgba(255,255,255,0.1);
-    background: rgba(9,11,14,0.94);
-    box-shadow: 0 8px 22px rgba(0,0,0,0.24);
+    background: rgba(9,11,14,0.72);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.2);
     transform: translateY(0);
 }
+.task-item:hover .task-action-group-secondary,
+.task-item:focus-within .task-action-group-secondary,
+.task-item.is-confirming .task-action-group-secondary { border-left-color: rgba(255,255,255,0.1); }
 .task-item:hover .pomodoro-estimate, .task-item:focus-within .pomodoro-estimate { opacity: 1; }
-.task-item-actions button { flex: 0 0 auto; color: var(--text-secondary); background: transparent; font-size: 0.72rem; line-height: 1.2; min-height: 32px; padding: 0.35rem 0.5rem; border-radius: 999px; white-space: nowrap; }
-.task-item-actions button:hover { color: #fff; }
-.task-item-actions .danger:hover { color: var(--accent-color); }
+.task-item-actions button { flex: 0 0 auto; color: var(--text-secondary); background: transparent; font-size: 0.72rem; line-height: 1.2; min-height: 30px; padding: 0.35rem 0.55rem; border-radius: 8px; white-space: nowrap; transition: background-color 150ms ease-out, color 150ms ease-out, transform 150ms ease-out; }
+.task-item-actions button:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.task-item-actions button[aria-pressed="true"] { color: #fff; background: var(--accent-soft); }
+.task-action-group-secondary .danger { color: var(--accent-color); }
+.task-action-group-secondary .danger:hover { color: var(--accent-color); background: rgba(255,113,107,0.13); }
 .task-item.active-task { border-color: rgba(255,113,107,0.42); background: rgba(255,113,107,0.08); }
 .pomodoro-estimate { color: var(--text-muted); background: rgba(255,255,255,0.055); border: 1px solid rgba(255,255,255,0.08); border-radius: 999px; padding: 0.25rem 0.45rem; font-size: 0.72rem; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; transition: opacity 150ms ease-out; }
 .task-edit-form { flex: 1; display: flex; gap: 0.4rem; }
@@ -171,7 +178,7 @@ h3 {
     grid-row: 2;
     z-index: 1;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: space-between;
     width: 100%;
     max-height: 0;
     min-height: 0;
@@ -183,14 +190,19 @@ h3 {
     pointer-events: none;
     transform: translateY(-4px);
     border: 1px solid transparent;
-    border-radius: 999px;
+    border-radius: var(--radius-sm);
     background: transparent;
     box-shadow: none;
+    backdrop-filter: blur(12px);
     transition: opacity 150ms ease-out, visibility 150ms ease-out, border-color 150ms ease-out, background-color 150ms ease-out, box-shadow 150ms ease-out, transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
+.task-action-group { display: flex; align-items: center; gap: 0.2rem; min-width: 0; }
+.task-action-group-secondary { margin-left: auto; padding-left: 0.35rem; border-left: 1px solid transparent; }
+.task-action-group button { min-width: 0; }
 .task-item-actions button:focus-visible {
     position: relative;
     z-index: 1;
+    box-shadow: var(--focus-ring);
 }
 .subtask-list { grid-column: 2 / -1; grid-row: 3; }
 
@@ -598,6 +610,18 @@ h3 {
     padding: 3rem 2rem;
     font-style: italic;
     font-size: 1.05rem;
+}
+
+@container task-list (max-width: 360px) {
+    .task-item-actions { align-items: stretch; }
+    .task-action-group { flex: 1 1 100%; }
+    .task-action-group-secondary {
+        margin-left: 0;
+        padding-top: 0.25rem;
+        padding-left: 0;
+        border-left: 0;
+        border-top: 1px solid rgba(255,255,255,0.1);
+    }
 }
 
 @media (max-width: 768px) {

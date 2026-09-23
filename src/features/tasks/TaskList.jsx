@@ -180,7 +180,7 @@ const TaskList = () => {
                         onDragStart={() => { dragTaskIdRef.current = task.id; }}
                         onDragOver={(event) => event.preventDefault()}
                         onDrop={() => reorderTask(task.id)}
-                        className={`task-item ${task.completed ? 'completed' : ''} ${activeTask?.id === task.id ? 'active-task' : ''} ${animatingTaskId === task.id ? 'animating' : ''} ${editingTaskId === task.id ? 'is-editing' : ''}`}
+                        className={`task-item ${task.completed ? 'completed' : ''} ${activeTask?.id === task.id ? 'active-task' : ''} ${animatingTaskId === task.id ? 'animating' : ''} ${editingTaskId === task.id ? 'is-editing' : ''} ${confirmRemoveId === task.id ? 'is-confirming' : ''}`}
                     >
                         <button className="checkbox-wrapper" onClick={() => toggleTask(task.id)} aria-label={`Complete ${task.text}`}>
                             {task.completed && <span className="checkmark">✓</span>}
@@ -196,31 +196,35 @@ const TaskList = () => {
                         <div className="pomodoro-estimate" title="Focus sessions done / estimated" aria-label={`${task.completedPomodoros || 0} of ${task.estimatedPomodoros || 1} focus sessions`}>{task.completedPomodoros || 0}/{task.estimatedPomodoros || 1}</div>
 
                         <div className="task-item-actions">
-                            <button onClick={() => setSettings({ ...settings, activeTaskId: task.id })} aria-label={`Focus ${task.text}`} aria-pressed={activeTask?.id === task.id}>{activeTask?.id === task.id ? 'Active' : 'Focus'}</button>
-                            <button onClick={() => setTasks(prev => prev.map(item => item.id === task.id ? { ...item, estimatedPomodoros: Math.min(12, (item.estimatedPomodoros || 1) + 1) } : item))} aria-label={`Increase estimate for ${task.text}`} title="Add one session to the estimate">+1 session</button>
-                            <div className="subtask-trigger">
-                              <button onClick={() => { setAddingSubtaskId(task.id); setSubtaskDraft(''); }} aria-label={`Add subtask to ${task.text}`}>Subtask</button>
-                              {addingSubtaskId === task.id && (
-                                <form className="subtask-popover-form" onSubmit={(e) => { e.preventDefault(); submitSubtask(task.id); }}>
-                                  <input autoFocus value={subtaskDraft} onChange={(e) => setSubtaskDraft(e.target.value)} placeholder="What's the subtask?" aria-label={`New subtask for ${task.text}`} />
-                                  <div className="subtask-card-actions">
-                                    <button type="button" onClick={cancelSubtask}>Cancel</button>
-                                    <button type="submit">Add subtask</button>
-                                  </div>
-                                </form>
-                              )}
-                            </div>
-                            <button onClick={() => startEditing(task)} aria-label={`Edit ${task.text}`}>Edit</button>
-                            <div className="remove-trigger">
-                              {confirmRemoveId === task.id ? (
-                                <div className="remove-confirm">
-                                  <span>Remove?</span>
-                                  <button type="button" onClick={() => setConfirmRemoveId(null)}>No</button>
-                                  <button type="button" className="danger" onClick={() => removeActiveTask(task.id)}>Yes</button>
+                            <div className="task-action-group task-action-group-primary">
+                                <button onClick={() => setSettings({ ...settings, activeTaskId: task.id })} aria-label={`Focus ${task.text}`} aria-pressed={activeTask?.id === task.id}>{activeTask?.id === task.id ? 'Active' : 'Focus'}</button>
+                                <button onClick={() => setTasks(prev => prev.map(item => item.id === task.id ? { ...item, estimatedPomodoros: Math.min(12, (item.estimatedPomodoros || 1) + 1) } : item))} aria-label={`Increase estimate for ${task.text}`} title="Add one session to the estimate">+1 session</button>
+                                <div className="subtask-trigger">
+                                  <button onClick={() => { setAddingSubtaskId(task.id); setSubtaskDraft(''); }} aria-label={`Add subtask to ${task.text}`}>Subtask</button>
+                                  {addingSubtaskId === task.id && (
+                                    <form className="subtask-popover-form" onSubmit={(e) => { e.preventDefault(); submitSubtask(task.id); }}>
+                                      <input autoFocus value={subtaskDraft} onChange={(e) => setSubtaskDraft(e.target.value)} placeholder="What's the subtask?" aria-label={`New subtask for ${task.text}`} />
+                                      <div className="subtask-card-actions">
+                                        <button type="button" onClick={cancelSubtask}>Cancel</button>
+                                        <button type="submit">Add subtask</button>
+                                      </div>
+                                    </form>
+                                  )}
                                 </div>
-                              ) : (
-                                <button className="danger" onClick={() => setConfirmRemoveId(task.id)} aria-label={`Remove ${task.text}`}>Remove</button>
-                              )}
+                            </div>
+                            <div className="task-action-group task-action-group-secondary">
+                                <button onClick={() => startEditing(task)} aria-label={`Edit ${task.text}`}>Edit</button>
+                                <div className="remove-trigger">
+                                  {confirmRemoveId === task.id ? (
+                                    <div className="remove-confirm">
+                                      <span>Remove?</span>
+                                      <button type="button" onClick={() => setConfirmRemoveId(null)}>No</button>
+                                      <button type="button" className="danger" onClick={() => removeActiveTask(task.id)}>Yes</button>
+                                    </div>
+                                  ) : (
+                                    <button className="danger" onClick={() => setConfirmRemoveId(task.id)} aria-label={`Remove ${task.text}`}>Remove</button>
+                                  )}
+                                </div>
                             </div>
                         </div>
 
