@@ -42,10 +42,21 @@ h3 {
 .task-empty strong { color: var(--text-primary); font-size: 0.88rem; }
 .task-empty span { font-size: 0.78rem; }
 
-.task-item-actions { display: flex; gap: 0.35rem; margin-left: auto; opacity: 0; transition: opacity 0.2s ease; }
-.task-item:hover .task-item-actions, .task-item:focus-within .task-item-actions { opacity: 1; pointer-events: auto; transform: translateY(-50%) scale(1); }
-.task-item:hover .pomodoro-estimate, .task-item:focus-within .pomodoro-estimate { opacity: 0; }
-.task-item-actions button { color: var(--text-secondary); background: transparent; font-size: 0.72rem; line-height: 1.2; min-height: 32px; padding: 0.35rem 0.5rem; border-radius: 999px; }
+.task-item-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.task-item:hover .task-item-actions,
+.task-item:focus-within .task-item-actions {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    max-height: 6rem;
+    padding: 0.2rem;
+    border-color: rgba(255,255,255,0.1);
+    background: rgba(9,11,14,0.94);
+    box-shadow: 0 8px 22px rgba(0,0,0,0.24);
+    transform: translateY(0);
+}
+.task-item:hover .pomodoro-estimate, .task-item:focus-within .pomodoro-estimate { opacity: 1; }
+.task-item-actions button { flex: 0 0 auto; color: var(--text-secondary); background: transparent; font-size: 0.72rem; line-height: 1.2; min-height: 32px; padding: 0.35rem 0.5rem; border-radius: 999px; white-space: nowrap; }
 .task-item-actions button:hover { color: #fff; }
 .task-item-actions .danger:hover { color: var(--accent-color); }
 .task-item.active-task { border-color: rgba(255,113,107,0.42); background: rgba(255,113,107,0.08); }
@@ -142,6 +153,7 @@ h3 {
     position: relative;
     display: grid;
     grid-template-columns: 28px minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
     align-items: center;
     gap: 0.65rem;
     min-height: 52px;
@@ -154,21 +166,41 @@ h3 {
 }
 .task-item:hover { background: rgba(255,255,255,0.055); border-color: rgba(255,255,255,0.12); }
 .task-item-actions {
-    position: absolute;
-    top: 50%;
-    right: 0.45rem;
+    position: static;
+    grid-column: 2 / -1;
+    grid-row: 2;
     z-index: 1;
-    margin-left: 0;
-    padding: 0.2rem;
-    justify-content: flex-end;
-    transform: translateY(-50%) scale(0.98);
-    border: 1px solid rgba(255,255,255,0.1);
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    max-height: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-4px);
+    border: 1px solid transparent;
     border-radius: 999px;
-    background: rgba(9,11,14,0.94);
-    box-shadow: 0 8px 22px rgba(0,0,0,0.24);
-    transition: opacity 150ms ease-out, transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    background: transparent;
+    box-shadow: none;
+    transition: opacity 150ms ease-out, visibility 150ms ease-out, border-color 150ms ease-out, background-color 150ms ease-out, box-shadow 150ms ease-out, transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
-.subtask-list { grid-column: 2 / -1; }
+.task-item-actions button:focus-visible {
+    position: relative;
+    z-index: 1;
+}
+.subtask-list { grid-column: 2 / -1; grid-row: 3; }
+
+/* Keep the completion target in the first row while utility actions reveal below it. */
+.task-item.is-editing .subtask-list { grid-row: 2; }
+
+/* The action row no longer sits on top of the task label or completion target. */
+.task-item-actions > * {
+    flex-shrink: 0;
+}
 
 @keyframes slideIn {
     from {
@@ -239,6 +271,7 @@ h3 {
    grid put it. */
 .checkbox-wrapper {
     position: relative;
+    z-index: 2;
 }
 .checkbox-wrapper::after {
     content: '';
@@ -606,9 +639,11 @@ h3 {
     .task-date { grid-column: 1; width: 100%; }
     .add-btn { grid-column: 2; }
     .task-input, .task-date, .add-btn { min-height: 44px; height: 44px; }
-    .task-item { grid-template-columns: 28px minmax(0, 1fr); }
-    .pomodoro-estimate { grid-column: 2; }
-    .task-item-actions { position: static; grid-column: 2; opacity: 1; pointer-events: auto; transform: none; justify-content: flex-start; flex-wrap: wrap; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
-    .task-item:hover .task-item-actions, .task-item:focus-within .task-item-actions { transform: none; }
+    .task-item { grid-template-columns: 28px minmax(0, 1fr); grid-template-rows: auto auto auto auto; }
+    .task-content { grid-column: 2; grid-row: 1; }
+    .pomodoro-estimate { grid-column: 2; grid-row: 2; justify-self: start; }
+    .task-item-actions { grid-column: 2; grid-row: 3; opacity: 1; visibility: visible; max-height: 6rem; pointer-events: auto; transform: none; justify-content: flex-start; flex-wrap: wrap; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+    .task-item:hover .task-item-actions, .task-item:focus-within .task-item-actions { transform: none; max-height: 6rem; }
     .task-item:hover .pomodoro-estimate, .task-item:focus-within .pomodoro-estimate { opacity: 1; }
+    .subtask-list { grid-column: 2; grid-row: 4; }
 }
