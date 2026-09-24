@@ -247,21 +247,29 @@ h3 {
 .task-content { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 0.1rem; }
 .task-content small { color: var(--text-muted); font-size: 0.68rem; }
 .subtask-list { width: 100%; list-style: none; display: grid; gap: 0.25rem; margin: 0.2rem 0 0 1.8rem; padding: 0; color: var(--text-secondary); font-size: 0.72rem; }
-.subtask-list label { display: flex; gap: 0.4rem; align-items: center; }
-.subtask-list .done { text-decoration: line-through; color: var(--text-muted); }
+.subtask-list li { display: flex; align-items: center; gap: 0.4rem; min-height: 26px; }
+.subtask-list input[type="checkbox"] { flex: 0 0 auto; margin: 0; cursor: pointer; }
+.subtask-name { flex: 1 1 auto; min-width: 0; padding: 0.2rem 0.35rem; margin-left: -0.35rem; border: 0; border-radius: 6px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: text; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: background-color 150ms ease-out, color 150ms ease-out; }
+.subtask-name:hover { color: var(--text-primary); background: rgba(255,255,255,0.06); }
+.subtask-name:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.subtask-name.done { text-decoration: line-through; color: var(--text-muted); }
+.subtask-rename { flex: 1 1 auto; min-width: 0; padding: 0.2rem 0.35rem; margin-left: -0.35rem; border: 0; border-bottom: 1px solid var(--accent-color); border-radius: 6px 6px 0 0; background: rgba(255,255,255,0.06); color: var(--text-primary); font: inherit; outline: none; }
 
-.subtask-trigger { position: relative; display: inline-flex; }
 .remove-trigger { position: relative; display: inline-flex; }
 .remove-confirm { display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(255, 113, 107, 0.12); border: 1px solid rgba(255, 113, 107, 0.3); border-radius: 999px; padding: 0.2rem 0.3rem 0.2rem 0.7rem; }
 .remove-confirm span { font-size: 0.72rem; color: var(--text-secondary); white-space: nowrap; }
 .remove-confirm button { min-height: 26px; padding: 0.2rem 0.55rem; font-size: 0.7rem; border-radius: 999px; }
 .remove-confirm button.danger { background: var(--accent-color); color: #000; font-weight: 600; }
-.subtask-popover-form { position: absolute; top: calc(100% + 0.5rem); right: 0; z-index: 3; display: grid; gap: 0.4rem; background: var(--glass-bg-strong); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 0.55rem 0.6rem; min-width: 10.5rem; box-shadow: var(--shadow-panel); }
-.subtask-popover-form input { background: rgba(255, 255, 255, 0.1); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.35rem 0.55rem; color: var(--text-primary); font-family: inherit; font-size: 0.78rem; outline: none; }
-.subtask-popover-form input:focus-visible { box-shadow: var(--focus-ring); }
-.subtask-card-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
-.subtask-card-actions button[type="submit"] { background: var(--accent-color); color: #000; border: none; border-radius: 999px; padding: 0.3rem 0.8rem; font-size: 0.72rem; font-weight: 600; cursor: pointer; }
-.subtask-card-actions button[type="button"] { background: transparent; border: 1px solid var(--glass-border); color: var(--text-muted); border-radius: 999px; padding: 0.3rem 0.7rem; font-size: 0.72rem; cursor: pointer; }
+.task-item.is-adding-subtask { grid-template-rows: auto auto auto auto; }
+.task-item.is-adding-subtask .task-item-actions { max-height: 60px; opacity: 1; visibility: visible; pointer-events: auto; transform: none; }
+.task-item.is-adding-subtask .subtask-list { margin-bottom: 0; }
+.subtask-composer { grid-column: 2 / -1; grid-row: 3; display: flex; align-items: center; gap: 0.45rem; margin: 0 0 0 1.8rem; padding-bottom: 0.1rem; }
+.task-item:has(.subtask-list) .subtask-composer { grid-row: 4; }
+.subtask-ghost { flex: 0 0 auto; width: 13px; height: 13px; border: 1.5px dashed rgba(255,255,255,0.4); border-radius: 3px; }
+.subtask-composer input { flex: 1 1 auto; min-width: 0; min-height: 30px; padding: 0 0.1rem; border: 0; border-bottom: 1px solid var(--glass-border); background: transparent; color: var(--text-primary); font: inherit; font-size: 0.78rem; outline: none; transition: border-color 150ms ease-out; }
+.subtask-composer input:focus { border-bottom-color: var(--accent-color); }
+.subtask-composer input::placeholder { color: var(--text-muted); }
+.subtask-hint { flex: 0 0 auto; color: var(--text-muted); font-size: 0.66rem; letter-spacing: 0.02em; white-space: nowrap; }
 
 .checkbox-wrapper {
     width: 20px;

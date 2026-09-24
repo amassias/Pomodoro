@@ -15,6 +15,8 @@ const TaskList = () => {
     const [addingSubtaskId, setAddingSubtaskId] = useState(null);
     const [subtaskDraft, setSubtaskDraft] = useState('');
     const [confirmRemoveId, setConfirmRemoveId] = useState(null);
+    const [editingSubtaskId, setEditingSubtaskId] = useState(null);
+    const [subtaskEditText, setSubtaskEditText] = useState('');
     const dragTaskIdRef = useRef(null);
 
     const closeArchive = useCallback(() => setShowArchive(false), []);
@@ -101,6 +103,17 @@ const TaskList = () => {
         } : task));
     };
 
+    const saveSubtaskName = (taskId) => {
+        const value = subtaskEditText.trim();
+        if (value) {
+            setTasks(prev => prev.map(task => task.id === taskId ? {
+                ...task,
+                subtasks: (task.subtasks || []).map(subtask => subtask.id === editingSubtaskId ? { ...subtask, text: value } : subtask),
+            } : task));
+        }
+        setEditingSubtaskId(null);
+    };
+
     const reorderTask = (targetId) => {
         const sourceId = dragTaskIdRef.current;
         if (!sourceId || sourceId === targetId) return;
@@ -180,7 +193,7 @@ const TaskList = () => {
                         onDragStart={() => { dragTaskIdRef.current = task.id; }}
                         onDragOver={(event) => event.preventDefault()}
                         onDrop={() => reorderTask(task.id)}
-                        className={`task-item ${task.completed ? 'completed' : ''} ${activeTask?.id === task.id ? 'active-task' : ''} ${animatingTaskId === task.id ? 'animating' : ''} ${editingTaskId === task.id ? 'is-editing' : ''} ${confirmRemoveId === task.id ? 'is-confirming' : ''}`}
+                        className={`task-item ${task.completed ? 'completed' : ''} ${activeTask?.id === task.id ? 'active-task' : ''} ${animatingTaskId === task.id ? 'animating' : ''} ${editingTaskId === task.id ? 'is-editing' : ''} ${confirmRemoveId === task.id ? 'is-confirming' : ''} ${addingSubtaskId === task.id ? 'is-adding-subtask' : ''}`}
                     >
                         <button className="checkbox-wrapper" onClick={() => toggleTask(task.id)} aria-label={`Complete ${task.text}`}>
                             {task.completed && <span className="checkmark">✓</span>}
@@ -199,18 +212,7 @@ const TaskList = () => {
                             <div className="task-action-group task-action-group-primary">
                                 <button onClick={() => setSettings({ ...settings, activeTaskId: task.id })} aria-label={`Focus ${task.text}`} aria-pressed={activeTask?.id === task.id}>{activeTask?.id === task.id ? 'Active' : 'Focus'}</button>
                                 <button onClick={() => setTasks(prev => prev.map(item => item.id === task.id ? { ...item, estimatedPomodoros: Math.min(12, (item.estimatedPomodoros || 1) + 1) } : item))} aria-label={`Increase estimate for ${task.text}`} title="Add one session to the estimate">+1 session</button>
-                                <div className="subtask-trigger">
-                                  <button onClick={() => { setAddingSubtaskId(task.id); setSubtaskDraft(''); }} aria-label={`Add subtask to ${task.text}`}>Subtask</button>
-                                  {addingSubtaskId === task.id && (
-                                    <form className="subtask-popover-form" onSubmit={(e) => { e.preventDefault(); submitSubtask(task.id); }}>
-                                      <input autoFocus value={subtaskDraft} onChange={(e) => setSubtaskDraft(e.target.value)} placeholder="What's the subtask?" aria-label={`New subtask for ${task.text}`} />
-                                      <div className="subtask-card-actions">
-                                        <button type="button" onClick={cancelSubtask}>Cancel</button>
-                                        <button type="submit">Add subtask</button>
-                                      </div>
-                                    </form>
-                                  )}
-                                </div>
+                                <button onClick={() => { if (addingSubtaskId === task.id) { cancelSubtask(); } else { setAddingSubtaskId(task.id); setSubtaskDraft(''); } }} aria-label={`Add subtask to ${task.text}`} aria-expanded={addingSubtaskId === task.id} aria-pressed={addingSubtaskId === task.id}>{addingSubtaskId === task.id ? 'Close' : 'Subtask'}</button>
                             </div>
                             <div className="task-action-group task-action-group-secondary">
                                 <button onClick={() => startEditing(task)} aria-label={`Edit ${task.text}`}>Edit</button>
@@ -228,7 +230,23 @@ const TaskList = () => {
                             </div>
                         </div>
 
-                        {(task.subtasks || []).length > 0 && <ul className="subtask-list">{task.subtasks.map(subtask => <li key={subtask.id}><label><input type="checkbox" checked={subtask.completed} onChange={() => toggleSubtask(task.id, subtask.id)} /> <span className={subtask.completed ? 'done' : ''}>{subtask.text}</span></label></li>)}</ul>}
+                        {addingSubtaskId === task.id && (
+                          <form className="subtask-composer" onSubmit={(e) => { e.preventDefault(); submitSubtask(task.id); }}>
+                            <span className="subtask-ghost" aria-hidden="true" />
+                            <input autoFocus value={subtaskDraft} onChange={(e) => setSubtaskDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); cancelSubtask(); } }} placeholder="What's the subtask?" aria-label={`New subtask for ${task.text}`} />
+                            <span className="subtask-hint" aria-hidden="true">{subtaskDraft.trim() ? 'Enter to add' : 'Esc to close'}</span>
+                          </form>
+                        )}
+                        {(task.subtasks || []).length > 0 && <ul className="subtask-list">{(task.subtasks || []).map(subtask => (
+                          <li key={subtask.id}>
+                            <input type="checkbox" checked={subtask.completed} onChange={() => toggleSubtask(task.id, subtask.id)} aria-label={`Complete subtask ${subtask.text}`} />
+                            {editingSubtaskId === subtask.id ? (
+                              <input className="subtask-rename" autoFocus value={subtaskEditText} onChange={(e) => setSubtaskEditText(e.target.value)} onFocus={(e) => e.target.select()} onBlur={() => saveSubtaskName(task.id)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveSubtaskName(task.id); } else if (e.key === 'Escape') { e.preventDefault(); setEditingSubtaskId(null); } }} aria-label="Rename subtask" />
+                            ) : (
+                              <button type="button" className={`subtask-name ${subtask.completed ? 'done' : ''}`} onClick={() => { setEditingSubtaskId(subtask.id); setSubtaskEditText(subtask.text); }} title="Click to rename">{subtask.text}</button>
+                            )}
+                          </li>
+                        ))}</ul>}
                     </li>
                 ))}
             </ul>
