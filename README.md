@@ -27,7 +27,7 @@
 
 ## Demo
 
-https://github.com/user-attachments/assets/e132ea50-cffd-4edd-a9fc-e27d1ac969a3
+https://github.com/user-attachments/assets/6097f47b-d045-44a1-a0e8-4547647c785d
 
 <p align="center"><sub>Live atmosphere selection · session presets · active focus timer · Insights</sub></p>
 
