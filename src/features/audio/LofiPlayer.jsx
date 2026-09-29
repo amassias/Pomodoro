@@ -285,7 +285,7 @@ const LofiPlayer = () => {
                   position: fixed;
                   bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem);
                   left: calc(env(safe-area-inset-left, 0px) + 0.75rem);
-                  width: min(300px, calc(100vw - 1.5rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
+                  width: min(340px, calc(100vw - 1.5rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
                   height: 80px;
                   padding: 0;
                   display: flex;
@@ -346,7 +346,8 @@ const LofiPlayer = () => {
                   display: flex;
                   flex-direction: column;
                   justify-content: center;
-                  padding: 0 1rem;
+                  padding: 0 0.85rem;
+                  min-width: 0;
                   overflow: hidden;
                   cursor: grab;
                   height: 100%;
@@ -377,8 +378,8 @@ const LofiPlayer = () => {
                 .player-controls {
                   display: flex;
                   align-items: center;
-                  gap: 1rem;
-                  padding-right: 1.5rem;
+                  gap: 0.75rem;
+                  padding-right: 1.1rem;
                   touch-action: auto;
                 }
 
@@ -405,7 +406,7 @@ const LofiPlayer = () => {
                 }
 
                 .volume-mini {
-                    width: 50px;
+                    width: 44px;
                     display: flex;
                     align-items: center;
                     opacity: 0.6;

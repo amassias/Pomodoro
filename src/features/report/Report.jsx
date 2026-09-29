@@ -301,17 +301,17 @@ const Report = () => {
 
             <div className="report-cards">
               <div className="stat-card">
-                <div className="stat-icon">⏱️</div>
+                <div className="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2.5h5"/></svg></div>
                 <div className="stat-value">{stats.totalHours}h</div>
                 <div className="stat-label">Total hours</div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">✓</div>
+                <div className="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.8 2.8L16.5 9.5"/></svg></div>
                 <div className="stat-value">{stats.pomodorosCompleted}</div>
                 <div className="stat-label">Focus sessions</div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">🔥</div>
+                <div className="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 .3 1.2 1 2 2 2.3C10.5 8.5 11 5.5 12 3Z"/></svg></div>
                 <div className="stat-value">{stats.currentStreak}</div>
                 <div className="stat-label">Day streak</div>
               </div>

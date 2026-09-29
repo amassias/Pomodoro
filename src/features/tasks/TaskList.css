@@ -82,11 +82,14 @@ h3 {
 
 .task-form {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(8.5rem, 0.55fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: stretch;
     gap: 0.5rem;
 }
-.task-date { width: 100%; min-height: 40px; box-sizing: border-box; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; padding: 0.45rem; font-size: 0.9rem; color-scheme: dark; }
+.task-form .task-input { grid-column: 1 / -1; }
+.task-form .task-date { grid-column: 1; }
+.task-form .add-btn { grid-column: 2; }
+.task-date { width: 100%; min-height: 40px; box-sizing: border-box; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; padding: 0.45rem; font-size: 0.9rem; font-family: inherit; color-scheme: dark; }
 .routine-bar { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .routine-bar button { padding: 0.35rem 0.55rem; min-height: 32px; color: var(--text-secondary); background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 999px; font-size: 0.72rem; line-height: 1.2; }
 
@@ -117,7 +120,7 @@ h3 {
 .add-btn {
     background: var(--accent-color);
     color: #1a0807;
-    width: 40px;
+    width: 48px;
     min-height: 40px;
     height: 100%;
     align-self: stretch;

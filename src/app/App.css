@@ -38,7 +38,7 @@
 .sync-indicator { margin-right: auto; flex: 0 0 auto; white-space: nowrap; padding: 0.35rem 0.55rem; border-radius: 999px; color: var(--text-muted); background: rgba(255,255,255,0.04); font-size: 0.72rem; line-height: 1.2; text-transform: capitalize; }
 .sync-indicator.synced { color: var(--success-color); }
 .sync-indicator.error { color: var(--accent-color); }
-.ambient-label { position: fixed; left: 1.25rem; bottom: 1.3rem; display: flex; align-items: center; gap: 0.45rem; color: var(--text-secondary); font-size: 0.72rem; z-index: 90; text-transform: uppercase; letter-spacing: 0.12em; }
+.ambient-label { display: none; position: fixed; left: 1.25rem; bottom: 1.3rem; display: flex; align-items: center; gap: 0.45rem; color: var(--text-secondary); font-size: 0.72rem; z-index: 90; text-transform: uppercase; letter-spacing: 0.12em; }
 .live-dot { width: 6px; height: 6px; background: var(--success-color); border-radius: 50%; box-shadow: 0 0 10px var(--success-color); }
 @supports (min-height: 100dvh) {
   .overlay {
@@ -249,6 +249,14 @@
 /* The Settings / Insights / Feedback / Sign in rail is position: fixed on the
    right edge. Keep the header widgets clear of it until the viewport is wide
    enough for the centred 1180px header to sit inside the rail. */
+/* Uniform, left-aligned action rail */
+@media (min-width: 769px) {
+  .app-container .settings-btn,
+  .app-container .report-btn,
+  .app-container .recommend-btn,
+  .app-container .auth-btn { width: 7.5rem; justify-content: flex-start; }
+}
+
 @media (min-width: 769px) and (max-width: 1460px) {
   .focus-header { padding-right: 130px; }
 }
@@ -266,6 +274,7 @@
   .app-container .top-widget-area { width: 100%; justify-content: space-between; background: rgba(9,11,14,0.9); border-radius: 12px; padding: 0.5rem; }
   .app-container .progress-copy { display: flex; }
   .app-container .main-content { padding-top: 1rem; margin-bottom: 1rem; }
+  .app-container .overlay { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)); }
   .app-container .lofi-player, .app-container .spotify-player-wrapper { position: relative; left: auto; right: auto; bottom: auto; width: calc(100% - 2rem); margin: 1rem auto 6rem; transform: none !important; }
   .app-container .bottom-bar:not(.expanded) { position: relative; left: auto; bottom: auto; transform: none; max-width: 100%; border-radius: 12px; }
   .app-container .mobile-nav { grid-template-columns: repeat(5, 1fr); }
@@ -282,4 +291,7 @@
   .top-bar {
     width: 100%;
   }
+  /* The expanded atmosphere sheet must not be covered by the audio player */
+  body:has(.bottom-bar.expanded) .lofi-player,
+  body:has(.bottom-bar.expanded) .spotify-player-wrapper { visibility: hidden; }
 }

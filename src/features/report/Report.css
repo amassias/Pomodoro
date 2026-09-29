@@ -389,7 +389,7 @@
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  padding: 2rem;
+  padding: 1.5rem 1rem;
   text-align: center;
   transition: all 0.2s;
 }
@@ -400,8 +400,10 @@
 }
 
 .stat-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
+  display: flex;
+  justify-content: center;
+  color: var(--accent-color);
+  margin-bottom: 0.75rem;
 }
 
 .stat-value {
@@ -660,4 +662,21 @@
   .chart-bar-container {
     height: 150px;
   }
+}
+
+@media (max-width: 600px) {
+  .report-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+  .stat-card { padding: 0.9rem 0.4rem; border-radius: 12px; }
+  .stat-icon { margin-bottom: 0.4rem; }
+  .stat-icon svg { width: 22px; height: 22px; }
+  .stat-value { font-size: 1.5rem; margin-bottom: 0.25rem; }
+  .stat-label { font-size: 0.62rem; letter-spacing: 0.04em; }
+}
+
+@media (max-width: 600px) {
+  .chart-container { padding: 0.9rem 0.5rem; }
+  .chart { gap: 0.3rem; }
+  .chart-bar-wrapper { min-width: 0; gap: 0.5rem; }
+  .chart-bar-label { font-size: 0.72rem; }
+  .chart-bar-value { font-size: 0.68rem; }
 }
