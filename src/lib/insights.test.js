@@ -29,8 +29,18 @@ describe('getProductivityPatterns', () => {
     expect(getProductivityPatterns(history)).toMatchObject({
       totalSessions: 3,
       completionRate: 67,
-      abandoned: 1,
+      abandoned: 0,
+      blocked: 1,
       bestHour: { hour: 9, minutes: 100 },
     });
   });
+});
+
+it('counts only explicit reflections in the completion rate and separates blocked work from abandonment', () => {
+  const history = { '2026-10-14': [
+    { duration: 25 }, { duration: 25, result: 'completed' }, { duration: 25, result: 'partial' },
+    { duration: 25, result: 'blocked' }, { duration: 25, result: 'abandoned' },
+  ] };
+  expect(getProductivityPatterns(history)).toMatchObject({ totalSessions: 5, completionRate: 25, abandoned: 1, blocked: 1, reflected: 4 });
+  expect(getProductivityPatterns({ '2026-10-14': [{ duration: 25 }] }).completionRate).toBeNull();
 });

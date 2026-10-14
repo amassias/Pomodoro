@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ALARM_SOUNDS, TICKING_SOUNDS } from '../../lib/sounds';
 import { requestNotificationPermission, showNotification } from '../../lib/notifications';
+import { emitFocusCompletion } from '../../lib/sessionEvents';
 import { getModeMinutes } from '../../lib/timer';
 import { clearTimerSession, readTimerSession, writeTimerSession } from '../../lib/timerSession';
 import { useSharedSession } from '../../providers/SharedSessionProvider';
@@ -9,15 +10,15 @@ import CalendarActions from '../calendar/CalendarActions';
 const Timer = ({ settings, updateSettings }) => {
   const { roomId, isHost, remoteTimerState, publishTimerState, sendRoomEvent } = useSharedSession();
   const sharedLocked = Boolean(roomId && !isHost);
-  const [initialSession] = useState(() => readTimerSession());
+  const [initialSession] = useState(() => readTimerSession(undefined, Date.now(), { allowExpired: true }));
   const initialRemainingMs = initialSession?.remainingMs ?? getModeMinutes('focus', settings) * 60 * 1000;
   const initialTotalSeconds = Math.ceil(initialRemainingMs / 1000);
   const [minutes, setMinutes] = useState(() => Math.floor(initialTotalSeconds / 60));
   const [seconds, setSeconds] = useState(() => initialTotalSeconds % 60);
-  const [isActive, setIsActive] = useState(() => initialSession?.isActive ?? false);
+  const [isActive, setIsActive] = useState(() => Boolean(initialSession?.isActive && initialRemainingMs > 0));
   const [mode, setMode] = useState(() => initialSession?.mode ?? 'focus');
   const [optionsOpen, setOptionsOpen] = useState(false);
-  const pomodorosCompletedRef = useRef(0);
+  const pomodorosCompletedRef = useRef(initialSession?.completedFocusSessions ?? 0);
 
   const tickingAudioRef = useRef(null);
   const modeRef = useRef(mode);
@@ -28,6 +29,12 @@ const Timer = ({ settings, updateSettings }) => {
   const remainingMsRef = useRef(initialRemainingMs);
   const configuredMinutesRef = useRef(getModeMinutes(initialSession?.mode ?? 'focus', settings));
   const lastSharedActivityRef = useRef(null);
+  const durationMsRef = useRef(initialSession?.durationMs ?? getModeMinutes(initialSession?.mode ?? 'focus', settings) * 60 * 1000);
+  const transitionRef = useRef(null);
+  const completionHandledRef = useRef(false);
+  const sharedLockedRef = useRef(sharedLocked);
+  useEffect(() => { sharedLockedRef.current = sharedLocked; }, [sharedLocked]);
+  useEffect(() => () => clearTimeout(transitionRef.current), []);
 
   // Keep refs in sync with state/props
   useEffect(() => {
@@ -84,6 +91,8 @@ const Timer = ({ settings, updateSettings }) => {
       requestNotificationPermission();
     }
     if (!isActive) {
+      clearTimeout(transitionRef.current);
+      completionHandledRef.current = false;
       endAtRef.current = Date.now() + remainingMsRef.current;
     } else {
       remainingMsRef.current = Math.max(0, endAtRef.current - Date.now());
@@ -95,8 +104,11 @@ const Timer = ({ settings, updateSettings }) => {
   // Stable reset callback using refs to access current mode/settings
   const resetTimer = useCallback(() => {
     if (sharedLocked) return;
+    clearTimeout(transitionRef.current);
+    completionHandledRef.current = false;
     setIsActive(false);
     const mins = getModeMinutes(modeRef.current, settingsRef.current);
+    durationMsRef.current = mins * 60 * 1000;
     remainingMsRef.current = mins * 60 * 1000;
     endAtRef.current = null;
     setMinutes(mins);
@@ -106,6 +118,7 @@ const Timer = ({ settings, updateSettings }) => {
 
   const addFiveMinutes = () => {
     const extra = 5 * 60 * 1000;
+    durationMsRef.current += extra;
     remainingMsRef.current += extra;
     if (isActive && endAtRef.current) endAtRef.current += extra;
     const totalSeconds = Math.ceil(remainingMsRef.current / 1000);
@@ -138,20 +151,22 @@ const Timer = ({ settings, updateSettings }) => {
     };
   }, [toggleTimer, resetTimer]);
 
+  const configuredMinutes = getModeMinutes(mode, settings);
   useEffect(() => {
-    const mins = getModeMinutes(mode, settings);
+    const mins = configuredMinutes;
     // Only a changed duration resets an idle timer. Pause and audio settings
     // must preserve the user's remaining time, including restored sessions.
     if (mins === configuredMinutesRef.current) return;
     configuredMinutesRef.current = mins;
     if (isActive || sharedLocked) return;
+    durationMsRef.current = mins * 60 * 1000;
     remainingMsRef.current = mins * 60 * 1000;
     const timeoutId = setTimeout(() => {
       setMinutes(mins);
       setSeconds(0);
     }, 0);
     return () => clearTimeout(timeoutId);
-  }, [settings, mode, isActive, sharedLocked]);
+  }, [configuredMinutes, isActive, sharedLocked]);
 
   useEffect(() => {
     writeTimerSession({
@@ -159,12 +174,14 @@ const Timer = ({ settings, updateSettings }) => {
       isActive,
       endAt: endAtRef.current,
       remainingMs: remainingMsRef.current,
+      durationMs: durationMsRef.current,
+      completedFocusSessions: pomodorosCompletedRef.current,
     });
   }, [mode, isActive, minutes, seconds]);
 
   useEffect(() => {
     if (!roomId || !isHost) return;
-    publishTimerState({ mode, isActive, endAt: endAtRef.current, remainingMs: remainingMsRef.current, sentAt: Date.now() });
+    publishTimerState({ mode, isActive, endAt: endAtRef.current, remainingMs: remainingMsRef.current, durationMs: durationMsRef.current, completedFocusSessions: pomodorosCompletedRef.current, sentAt: Date.now() });
   }, [roomId, isHost, mode, isActive, minutes, seconds, publishTimerState]);
 
   useEffect(() => {
@@ -188,6 +205,8 @@ const Timer = ({ settings, updateSettings }) => {
       setIsActive(Boolean(remoteTimerState.isActive && remaining > 0));
       endAtRef.current = remoteTimerState.isActive ? remoteTimerState.endAt : null;
       remainingMsRef.current = remaining;
+      if (Number.isFinite(remoteTimerState.durationMs) && remoteTimerState.durationMs > 0) durationMsRef.current = remoteTimerState.durationMs;
+      if (Number.isInteger(remoteTimerState.completedFocusSessions) && remoteTimerState.completedFocusSessions >= 0) pomodorosCompletedRef.current = remoteTimerState.completedFocusSessions;
       setMinutes(Math.floor(totalSeconds / 60));
       setSeconds(totalSeconds % 60);
     }, 0);
@@ -256,17 +275,13 @@ const Timer = ({ settings, updateSettings }) => {
     }
 
     // Emit pomodoro completion event
-    if (modeRef.current === 'focus') {
-      window.dispatchEvent(new CustomEvent('pomodoroCompleted', {
-        detail: {
-          duration: currentSettings.focusDuration,
-          sessionId: crypto.randomUUID(),
-        }
-      }));
+    if (modeRef.current === 'focus' && !sharedLockedRef.current) {
+      emitFocusCompletion({ duration: durationMsRef.current / 60_000, sessionId: crypto.randomUUID() });
     }
 
-    // Auto start next timer after 1 second
-    setTimeout(() => {
+    // Guests follow host transitions; local controls cancel this delayed action.
+    if (sharedLockedRef.current) return;
+    transitionRef.current = setTimeout(() => {
       const currentMode = modeRef.current;
       const latestSettings = settingsRef.current;
       
@@ -276,6 +291,8 @@ const Timer = ({ settings, updateSettings }) => {
         const nextMins = getModeMinutes(nextMode, latestSettings);
 
         setMode(nextMode);
+        durationMsRef.current = nextMins * 60 * 1000;
+        completionHandledRef.current = false;
         remainingMsRef.current = nextMins * 60 * 1000;
         setMinutes(nextMins);
         setSeconds(0);
@@ -287,6 +304,8 @@ const Timer = ({ settings, updateSettings }) => {
       } else {
         const nextMins = getModeMinutes('focus', latestSettings);
         setMode('focus');
+        durationMsRef.current = nextMins * 60 * 1000;
+        completionHandledRef.current = false;
         remainingMsRef.current = nextMins * 60 * 1000;
         setMinutes(nextMins);
         setSeconds(0);
@@ -298,6 +317,17 @@ const Timer = ({ settings, updateSettings }) => {
       }
     }, 1000);
   }, []);
+
+  useEffect(() => {
+    if (!initialSession?.isActive || initialRemainingMs > 0) return;
+    // Defer recovery so React's initial effect replay cannot duplicate it.
+    const timeout = setTimeout(() => {
+      if (completionHandledRef.current) return;
+      completionHandledRef.current = true;
+      handleTimerComplete();
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [initialSession, initialRemainingMs, handleTimerComplete]);
 
   // Track previous second for ticking sound
   const prevSecondRef = useRef(-1);
@@ -345,7 +375,8 @@ const Timer = ({ settings, updateSettings }) => {
       }
       
       // Timer completed
-      if (remaining <= 0) {
+      if (remaining <= 0 && !completionHandledRef.current) {
+        completionHandledRef.current = true;
         setIsActive(false);
         endAtRef.current = null;
         setMinutes(0);
@@ -364,9 +395,12 @@ const Timer = ({ settings, updateSettings }) => {
 
 
   const setTimerMode = (newMode) => {
+    clearTimeout(transitionRef.current);
+    completionHandledRef.current = false;
     setMode(newMode);
     setIsActive(false);
     const mins = getModeMinutes(newMode, settings);
+    durationMsRef.current = mins * 60 * 1000;
     remainingMsRef.current = mins * 60 * 1000;
     endAtRef.current = null;
     setMinutes(mins);
@@ -375,9 +409,12 @@ const Timer = ({ settings, updateSettings }) => {
   };
 
   const applyPreset = (focusDuration, shortBreakDuration, longBreakDuration) => {
+    clearTimeout(transitionRef.current);
+    completionHandledRef.current = false;
     updateSettings(prev => ({ ...prev, focusDuration, shortBreakDuration, longBreakDuration }));
     setMode('focus');
     setIsActive(false);
+    durationMsRef.current = focusDuration * 60 * 1000;
     remainingMsRef.current = focusDuration * 60 * 1000;
     endAtRef.current = null;
     setMinutes(focusDuration);

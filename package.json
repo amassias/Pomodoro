@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/build-offline-shell.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
@@ -34,5 +34,8 @@
     "jsdom": "^29.1.1",
     "vite": "^7.2.4",
     "vitest": "^4.0.18"
+  },
+  "overrides": {
+    "deepmerge-ts": "8.0.2"
   }
 }

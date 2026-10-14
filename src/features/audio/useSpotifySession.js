@@ -27,7 +27,7 @@ export const useSpotifySession = ({ userId, settings, setSettings, persistSpotif
 
   useEffect(() => {
     const handleMessage = (event) => {
-      if (event.origin !== window.location.origin) return;
+      if (event.origin !== window.location.origin || !event.data || typeof event.data !== 'object') return;
 
       if (event.data.type === 'SPOTIFY_TOKEN' && event.data.token) {
         persistSpotifyTokens({
@@ -81,8 +81,10 @@ export const useSpotifySession = ({ userId, settings, setSettings, persistSpotif
     };
 
     const tick = async () => {
-      if (!settings.spotifyRefreshToken || !settings.spotifyClientId) return;
-      if (!isTokenExpired(settings.spotifyTokenExpiresAt)) return;
+      if (!settings.spotifyRefreshToken || !settings.spotifyClientId || !isTokenExpired(settings.spotifyTokenExpiresAt)) {
+        schedule(BASE_POLL_MS);
+        return;
+      }
 
       if (inFlight) {
         schedule(BASE_POLL_MS);
@@ -91,6 +93,7 @@ export const useSpotifySession = ({ userId, settings, setSettings, persistSpotif
 
       if (retryCount >= MAX_RETRIES) {
         console.warn('Spotify token refresh paused (too many failures).');
+        retryCount = 0;
         schedule(MAX_BACKOFF_MS);
         return;
       }

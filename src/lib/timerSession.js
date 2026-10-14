@@ -2,7 +2,7 @@ export const TIMER_SESSION_KEY = 'pomodoro-active-session-v1';
 
 const VALID_MODES = new Set(['focus', 'shortBreak', 'longBreak']);
 
-export const normalizeTimerSession = (value, now = Date.now()) => {
+export const normalizeTimerSession = (value, now = Date.now(), { allowExpired = false } = {}) => {
   if (!value || typeof value !== 'object' || !VALID_MODES.has(value.mode)) return null;
 
   const isActive = value.isActive === true;
@@ -12,9 +12,11 @@ export const normalizeTimerSession = (value, now = Date.now()) => {
   if (!isActive && (typeof storedRemaining !== 'number' || !Number.isFinite(storedRemaining))) return null;
   const remainingMs = isActive ? Math.max(0, endAt - now) : Math.max(0, storedRemaining);
 
-  if (remainingMs <= 0) return null;
+  if (remainingMs <= 0 && !(allowExpired && isActive)) return null;
 
   return {
+    ...(typeof value.durationMs === 'number' && Number.isFinite(value.durationMs) && value.durationMs > 0 ? { durationMs: value.durationMs } : {}),
+    ...(Number.isInteger(value.completedFocusSessions) && value.completedFocusSessions >= 0 ? { completedFocusSessions: value.completedFocusSessions } : {}),
     mode: value.mode,
     isActive,
     endAt: isActive ? endAt : null,
@@ -22,9 +24,9 @@ export const normalizeTimerSession = (value, now = Date.now()) => {
   };
 };
 
-export const readTimerSession = (storage, now = Date.now()) => {
+export const readTimerSession = (storage, now = Date.now(), options) => {
   try {
-    return normalizeTimerSession(JSON.parse((storage ?? globalThis.localStorage).getItem(TIMER_SESSION_KEY)), now);
+    return normalizeTimerSession(JSON.parse((storage ?? globalThis.localStorage).getItem(TIMER_SESSION_KEY)), now, options);
   } catch {
     return null;
   }

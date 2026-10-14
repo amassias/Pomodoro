@@ -9,6 +9,8 @@ import { useDialogFocus } from '../../hooks/useDialogFocus';
 import { getProductivityPatterns, getWeeklyComparison } from '../../lib/insights';
 import { computeReportStats } from '../../lib/reportStats';
 import './Report.css';
+import { listenFocusCompletion } from '../../lib/sessionEvents';
+import { createBackup, parseBackup } from '../../lib/backup';
 
 const Report = () => {
   const [showReport, setShowReport] = useState(false);
@@ -19,8 +21,9 @@ const Report = () => {
 
   useDialogFocus({ open: showReport, onClose: closeReport, dialogRef: reportModalRef });
 
-  const { pomodoroHistory, setPomodoroHistory, tasks, setTasks, activeTask, archivedTasks, setArchivedTasks, settings, setSettings } = useUserData();
+  const { pomodoroHistory, setPomodoroHistory, tasks, setTasks, activeTask, archivedTasks, setArchivedTasks, settings, setSettings, city, setCity, favoriteCities, setFavoriteCities, customLocations, setCustomLocations } = useUserData();
   const importInputRef = useRef(null);
+  const handledSessionsRef = useRef(new Set());
   const [stats, setStats] = useState({
     totalHours: 0,
     pomodorosCompleted: 0,
@@ -37,7 +40,7 @@ const Report = () => {
     Object.values(pomodoroHistory || {}).forEach((sessions) => (sessions || []).forEach((session) => {
       if (!session.taskId && !session.taskName) return;
       const key = session.taskId || session.taskName;
-      const current = summary.get(key) || { name: session.taskName || 'Untitled task', minutes: 0, sessions: 0, difficultyTotal: 0, difficultyCount: 0, interruptions: 0 };
+      const current = summary.get(key) || { key, name: session.taskName || 'Untitled task', minutes: 0, sessions: 0, difficultyTotal: 0, difficultyCount: 0, interruptions: 0 };
       current.minutes += Number(session.duration) || 0;
       current.sessions += 1;
       current.interruptions += Number(session.interruptions) || 0;
@@ -80,7 +83,7 @@ const Report = () => {
       if (interruptions != null) entry.interruptions = interruptions;
       if (notes) entry.notes = notes;
 
-      history[today].push(entry);
+      history[today] = [...history[today], entry];
 
       return history;
     });
@@ -96,6 +99,8 @@ const Report = () => {
       taskId: activeTask?.id || null,
       taskName: activeTask?.text || null,
     };
+    if (handledSessionsRef.current.has(sessionId)) return;
+    handledSessionsRef.current.add(sessionId);
     savePomodoroData(duration, completedSession);
     if (completedSession.taskId) {
       setTasks(prev => prev.map(task => task.id === completedSession.taskId ? { ...task, completedPomodoros: (task.completedPomodoros || 0) + 1 } : task));
@@ -112,8 +117,7 @@ const Report = () => {
   }, [loadStats]);
 
   useEffect(() => {
-    window.addEventListener('pomodoroCompleted', handlePomodoroComplete);
-    return () => window.removeEventListener('pomodoroCompleted', handlePomodoroComplete);
+    return listenFocusCompletion(handlePomodoroComplete);
   }, [handlePomodoroComplete]);
 
   useEffect(() => {
@@ -234,13 +238,14 @@ const Report = () => {
     return data;
   };
 
+  const ChartBar = timeRange === 'week' ? 'button' : 'div';
   const maxHours = Math.max(...Object.values(getChartData()).map(d => d.value), 1);
   const chartData = getChartData();
 
   const getTasksForDate = (dateStr) => {
     return stats.archivedTasks.filter(task => {
       if (!task.archivedAt) return false;
-      return task.archivedAt.startsWith(dateStr);
+      return getLocalDateKey(new Date(task.archivedAt)) === dateStr;
     });
   };
 
@@ -331,7 +336,7 @@ const Report = () => {
               <div className="pattern-grid">
                 {productivityPatterns.bestHour && <p>Your strongest focus window is <strong>{String(productivityPatterns.bestHour.hour).padStart(2, '0')}:00–{String((productivityPatterns.bestHour.hour + 1) % 24).padStart(2, '0')}:00</strong>.</p>}
                 {productivityPatterns.bestWeekday && <p><strong>{productivityPatterns.bestWeekday.day}</strong> is your most productive day.</p>}
-                {productivityPatterns.completionRate !== null && <p><strong>{productivityPatterns.completionRate}%</strong> of reflected sessions were completed; {productivityPatterns.abandoned} were abandoned.</p>}
+                {productivityPatterns.completionRate !== null && <p><strong>{productivityPatterns.completionRate}%</strong> of reflected sessions were completed; {productivityPatterns.blocked} were blocked and {productivityPatterns.abandoned} were abandoned.</p>}
               </div>
             </section>}
 
@@ -362,7 +367,10 @@ const Report = () => {
                   <div key={dateStr} className="chart-bar-wrapper">
                     <div className="chart-bar-label">{data.label.split(',')[0]}</div>
                     <div className="chart-bar-container">
-                      <div
+                      <ChartBar
+                        type={timeRange === 'week' ? 'button' : undefined}
+                        aria-label={timeRange === 'week' ? `${data.label}: ${data.value.toFixed(1)} hours` : undefined}
+                        aria-pressed={timeRange === 'week' ? selectedDay?.date === dateStr : undefined}
                         className={`chart-bar ${(timeRange === 'week' && selectedDay?.date === dateStr) ? 'selected' : ''}`}
                         style={{ height: `${(data.value / maxHours) * 120}px` }}
                         title={`${data.value.toFixed(1)}h`}
@@ -380,7 +388,7 @@ const Report = () => {
 
             <Achievements history={pomodoroHistory} />
 
-            {taskInsights.length > 0 && <section className="task-insights"><h3>Task history</h3>{taskInsights.map(task => <div key={task.name}><strong>{task.name}</strong><span>{task.sessions} sessions · {(task.minutes / 60).toFixed(1)}h · {task.interruptions} interruptions{task.difficultyCount ? ` · difficulty ${(task.difficultyTotal / task.difficultyCount).toFixed(1)}/5` : ''}</span></div>)}</section>}
+            {taskInsights.length > 0 && <section className="task-insights"><h3>Task history</h3>{taskInsights.map(task => <div key={task.key}><strong>{task.name}</strong><span>{task.sessions} sessions · {(task.minutes / 60).toFixed(1)}h · {task.interruptions} interruptions{task.difficultyCount ? ` · difficulty ${(task.difficultyTotal / task.difficultyCount).toFixed(1)}/5` : ''}</span></div>)}</section>}
 
             {renderTasks()}
 
@@ -393,7 +401,7 @@ const Report = () => {
                 Export CSV
               </button>
               <button className="export-btn" onClick={() => {
-                const backup = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), tasks, archivedTasks, pomodoroHistory, settings }, null, 2);
+                const backup = JSON.stringify(createBackup({ tasks, archivedTasks, pomodoroHistory, settings, city, favoriteCities, customLocations }), null, 2);
                 downloadFile(backup, `world_focus_backup_${getLocalDateKey()}.json`, 'application/json');
               }}>Export JSON</button>
               <button className="export-btn" onClick={() => importInputRef.current?.click()}>Import JSON</button>
@@ -401,9 +409,11 @@ const Report = () => {
                 const file = event.target.files?.[0];
                 if (!file) return;
                 try {
-                  const backup = JSON.parse(await file.text());
-                  if (backup.version !== 1 || !Array.isArray(backup.tasks) || !Array.isArray(backup.archivedTasks) || !backup.pomodoroHistory || typeof backup.settings !== 'object') throw new Error('Unsupported backup');
+                  const backup = parseBackup(await file.text());
                   if (!window.confirm('Replace current tasks, history and settings with this backup?')) return;
+                  if (typeof backup.city === 'string') setCity(backup.city);
+                  if (backup.favoriteCities) setFavoriteCities(backup.favoriteCities);
+                  if (backup.customLocations) setCustomLocations(backup.customLocations);
                   setTasks(backup.tasks);
                   setArchivedTasks(backup.archivedTasks);
                   setPomodoroHistory(backup.pomodoroHistory);

@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { supabase } from '../lib/supabase';
 import { readJson, removeKey, scopedKey, storageKeys, writeJson } from '../lib/storage';
 import { getLocalDateKey } from '../lib/date';
+import { normalizeTasks, normalizeArchivedTasks, normalizeHistory, publicSettings } from '../lib/userState';
 import { useAuth } from './AuthProvider.jsx';
 
 const UserDataContext = createContext(null);
@@ -85,7 +86,7 @@ const mergeSettings = ({ defaults, persisted }) => {
   if (!persisted || typeof persisted !== 'object') return defaults;
   return {
     ...defaults,
-    ...persisted,
+    ...publicSettings(persisted),
 
     // Ensure spotify secrets always come from localStorage-scoped defaults.
     spotifyToken: defaults.spotifyToken,
@@ -98,54 +99,6 @@ const isEffectivelyEmpty = (value, type) => {
   if (type === 'array') return !Array.isArray(value) || value.length === 0;
   if (type === 'object') return !value || typeof value !== 'object' || Object.keys(value).length === 0;
   return value == null;
-};
-
-const normalizeTask = (task) => {
-  if (!task || typeof task !== 'object') return null;
-  const id =
-    typeof task.id === 'string'
-      ? task.id
-      : typeof task.id === 'number'
-        ? String(task.id)
-        : null;
-  if (!id) return null;
-
-  return {
-    id,
-    text: typeof task.text === 'string' ? task.text : '',
-    completed: typeof task.completed === 'boolean' ? task.completed : false,
-    estimatedPomodoros: Number.isInteger(Number(task.estimatedPomodoros)) && Number(task.estimatedPomodoros) > 0 ? Number(task.estimatedPomodoros) : 1,
-    completedPomodoros: Number.isInteger(Number(task.completedPomodoros)) && Number(task.completedPomodoros) >= 0 ? Number(task.completedPomodoros) : 0,
-    dueDate: typeof task.dueDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(task.dueDate) ? task.dueDate : null,
-    subtasks: Array.isArray(task.subtasks)
-      ? task.subtasks.filter((subtask) => subtask && typeof subtask.text === 'string').map((subtask) => ({
-        id: typeof subtask.id === 'string' ? subtask.id : crypto.randomUUID(),
-        text: subtask.text,
-        completed: subtask.completed === true,
-      }))
-      : [],
-    createdAt: typeof task.createdAt === 'string' ? task.createdAt : null,
-  };
-};
-
-const normalizeTasks = (maybeTasks) => {
-  if (!Array.isArray(maybeTasks)) return [];
-  return maybeTasks.map(normalizeTask).filter(Boolean);
-};
-
-const normalizeArchivedTask = (task) => {
-  const normalized = normalizeTask(task);
-  if (!normalized) return null;
-  const archivedAt = typeof task.archivedAt === 'string' ? task.archivedAt : null;
-  return {
-    ...normalized,
-    archivedAt,
-  };
-};
-
-const normalizeArchivedTasks = (maybeTasks) => {
-  if (!Array.isArray(maybeTasks)) return [];
-  return maybeTasks.map(normalizeArchivedTask).filter(Boolean);
 };
 
 export const UserDataProvider = ({ children }) => {
@@ -162,7 +115,7 @@ export const UserDataProvider = ({ children }) => {
   const [favoriteCities, setFavoriteCities] = useState([]);
   const [customLocations, setCustomLocations] = useState({});
   const [city, setCity] = useState(DEFAULT_CITY);
-  const [settings, setSettings] = useState(() => getDefaultSettings({ userId: null }));
+  const [settings, setSettings] = useState(() => mergeSettings({ defaults: getDefaultSettings({ userId: null }), persisted: readJson(storageKeys.settings, {}) }));
 
   const debounceRef = useRef(null);
   const lastLoadedUserIdRef = useRef(null);
@@ -174,13 +127,18 @@ export const UserDataProvider = ({ children }) => {
     let cancelled = false;
 
     const loadGuest = () => {
+      lastLoadedUserIdRef.current = null;
+      setSyncStatus('local');
+      setLastSyncedAt(null);
       setTasks(normalizeTasks(readJson(storageKeys.tasks, [])));
       setArchivedTasks(normalizeArchivedTasks(readJson(storageKeys.archivedTasks, [])));
-      setPomodoroHistory(readJson(storageKeys.history, {}));
-      setFavoriteCities(readJson(storageKeys.favoriteCities, []));
-      setCustomLocations(readJson(storageKeys.customLocations, {}));
+      setPomodoroHistory(normalizeHistory(readJson(storageKeys.history, {})));
+      const favorites = readJson(storageKeys.favoriteCities, []);
+      setFavoriteCities(Array.isArray(favorites) ? favorites.filter(id => typeof id === 'string') : []);
+      const locations = readJson(storageKeys.customLocations, {});
+      setCustomLocations(locations && typeof locations === 'object' && !Array.isArray(locations) ? Object.fromEntries(Object.entries(locations).filter(([, location]) => location && typeof location.id === 'string' && typeof location.name === 'string')) : {});
       setCity(localStorage.getItem(storageKeys.city) || DEFAULT_CITY);
-      setSettings(getDefaultSettings({ userId: null }));
+      setSettings(mergeSettings({ defaults: getDefaultSettings({ userId: null }), persisted: readJson(storageKeys.settings, {}) }));
     };
 
     const ensureRow = async (id) => {
@@ -189,6 +147,7 @@ export const UserDataProvider = ({ children }) => {
         .from('user_state')
         .select('user_id, city, tasks, archived_tasks, pomodoro_history, settings, updated_at')
         .eq('user_id', id)
+        .abortSignal(AbortSignal.timeout(10_000))
         .maybeSingle();
 
       if (error) throw error;
@@ -217,6 +176,7 @@ export const UserDataProvider = ({ children }) => {
         }
 
         const row = await ensureRow(userId);
+        if (cancelled) return;
 
         // Optional one-time migration from guest localStorage → account.
         // Only when the account is empty and guest has data.
@@ -251,11 +211,7 @@ export const UserDataProvider = ({ children }) => {
         if (!cancelled) {
           setTasks(normalizeTasks(mergedRow.tasks));
           setArchivedTasks(normalizeArchivedTasks(mergedRow.archived_tasks));
-          setPomodoroHistory(
-            mergedRow.pomodoro_history && typeof mergedRow.pomodoro_history === 'object'
-              ? mergedRow.pomodoro_history
-              : {}
-          );
+          setPomodoroHistory(normalizeHistory(mergedRow.pomodoro_history));
           setCity(mergedRow.city || DEFAULT_CITY);
 
           const defaults = getDefaultSettings({ userId });
@@ -282,7 +238,7 @@ export const UserDataProvider = ({ children }) => {
 
         if (shouldMigrate) {
           // Persist migrated state, then clear guest keys to avoid cross-account leakage.
-          await supabase
+          const migration = await supabase
             .from('user_state')
             .upsert(
               {
@@ -296,6 +252,7 @@ export const UserDataProvider = ({ children }) => {
               { onConflict: 'user_id' }
             );
 
+          if (migration.error) throw migration.error;
           removeKey(storageKeys.tasks);
           removeKey(storageKeys.archivedTasks);
           removeKey(storageKeys.history);
@@ -306,6 +263,7 @@ export const UserDataProvider = ({ children }) => {
         if (!cancelled) {
           // Fall back to guest state if DB fails.
           loadGuest();
+          setSyncStatus('error');
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -353,6 +311,11 @@ export const UserDataProvider = ({ children }) => {
     if (city) localStorage.setItem(storageKeys.city, city);
   }, [userId, city, loading]);
 
+  useEffect(() => {
+    if (userId || loading) return;
+    writeJson(storageKeys.settings, publicSettings(settings));
+  }, [userId, loading, settings]);
+
   // Debounced DB persistence for logged-in users.
   useEffect(() => {
     if (!userId) return;
@@ -361,7 +324,7 @@ export const UserDataProvider = ({ children }) => {
     if (loading) return;
 
     // If the auth user changed and we haven't loaded yet, skip.
-    if (lastLoadedUserIdRef.current && lastLoadedUserIdRef.current !== userId) return;
+    if (lastLoadedUserIdRef.current !== userId) return;
     if (skipNextPersistRef.current) {
       skipNextPersistRef.current = false;
       return;
@@ -402,14 +365,16 @@ export const UserDataProvider = ({ children }) => {
 
   useEffect(() => {
     if (!userId || loading) return undefined;
+    let cancelled = false;
     const channel = supabase.channel(`user-state-sync:${userId}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'user_state', filter: `user_id=eq.${userId}` }, ({ new: row }) => {
-        if (!row?.updated_at || row.updated_at === lastRemoteUpdatedAtRef.current) return;
+        if (cancelled || !row?.updated_at || row.updated_at === lastRemoteUpdatedAtRef.current) return;
+        lastLoadedUserIdRef.current = userId;
         lastRemoteUpdatedAtRef.current = row.updated_at;
         skipNextPersistRef.current = true;
         setTasks(normalizeTasks(row.tasks));
         setArchivedTasks(normalizeArchivedTasks(row.archived_tasks));
-        setPomodoroHistory(row.pomodoro_history && typeof row.pomodoro_history === 'object' ? row.pomodoro_history : {});
+        setPomodoroHistory(normalizeHistory(row.pomodoro_history));
         setCity(row.city || DEFAULT_CITY);
         const persistedSettings = row.settings || {};
         const {
@@ -424,7 +389,7 @@ export const UserDataProvider = ({ children }) => {
         setSyncStatus('synced');
       })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { cancelled = true; supabase.removeChannel(channel); };
   }, [loading, userId]);
 
   const persistSpotifySecretsToLocalStorage = useCallback(({ token, refreshToken, expiresAt }) => {
@@ -471,6 +436,8 @@ export const UserDataProvider = ({ children }) => {
       city,
       setCity,
 
+      setFavoriteCities,
+      setCustomLocations,
       favoriteCities, // expose to consumers
       toggleFavorite: (cityId) => {
         setFavoriteCities((prev) => {

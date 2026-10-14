@@ -36,9 +36,9 @@ https://github.com/user-attachments/assets/6097f47b-d045-44a1-a0e8-4547647c785d
 - **Focus timer** — Focus, Short break, and Long break modes with Classic, Deep 50, Flow 90, or custom presets.
 - **Live atmospheres** — Curated YouTube live views across cities, nature, and focus scenes; favorites, custom streams, temporary quarantine, and retry fallback.
 - **Session planning** — Tasks, due dates, estimated sessions, subtasks, routines, calendar blocks, and temporary shared rooms.
-- **Audio** — Built-in Lofi radio or optional Spotify playback.
+- **Audio** — Built-in Lofi radio, locally generated rain as a fallback, or optional Spotify playback.
 - **Insights** — Total hours, completed sessions, streaks, 28-day consistency, period charts, achievements, and CSV/JSON export.
-- **Local-first** — Works without an account using browser persistence; Supabase sync is optional.
+- **Local-first** — Works without an account or Supabase configuration using browser persistence; guest settings and active sessions survive reload. After the first online load, the app shell, lazy views and sounds are available offline. Supabase sync is optional.
 
 ## Screenshots
 
@@ -92,6 +92,10 @@ npm run test:run
 npm run build
 ```
 
+## Quality and current limitations
+
+See [the checked backlog](docs/BACKLOG.md) and [the full validation report](docs/QA_2026-10-14.md) for tested flows, release checks and integration limits.
+
 ## Optional integrations
 
 ### Supabase auth and sync
@@ -103,7 +107,7 @@ VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_PUBLIC_KEY
 ```
 
-Run [`supabase/user_state.sql`](supabase/user_state.sql) in the Supabase SQL editor, then add these redirect URLs:
+Run [`supabase/user_state.sql`](supabase/user_state.sql) in the Supabase SQL editor. For an existing database with the feedback table, also apply [`supabase/quality_hardening.sql`](supabase/quality_hardening.sql) to restrict client privileges. Then add these redirect URLs:
 
 - `http://localhost:5173/auth-callback`
 - `https://pomodoro-khaki-one.vercel.app/auth-callback`

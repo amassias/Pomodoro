@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import { useUserData } from '../../providers/UserDataProvider.jsx';
-import { getLocalDateKey } from '../../lib/date';
 import { useDialogFocus } from '../../hooks/useDialogFocus';
 
 // Stays mounted between sessions so the last chosen answers are kept as defaults.
@@ -19,7 +18,8 @@ const ReflectionDialog = ({ reflection, onClose }) => {
     if (!reflection) return;
     setPomodoroHistory((prevHistory) => {
       const history = prevHistory && typeof prevHistory === 'object' ? { ...prevHistory } : {};
-      const today = getLocalDateKey();
+      const today = Object.keys(history).find(date => Array.isArray(history[date]) && history[date].some(session => session.sessionId === reflection.sessionId));
+      if (!today) return prevHistory;
       const sessions = Array.isArray(history[today]) ? history[today] : [];
       history[today] = sessions.map((session) => session.sessionId === reflection.sessionId ? {
         ...session,

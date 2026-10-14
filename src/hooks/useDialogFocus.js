@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 const FOCUSABLE_SELECTOR = [
   'button:not([disabled])',
@@ -9,19 +9,30 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
+const openDialogs = [];
+
 export const useDialogFocus = ({ open, onClose, dialogRef }) => {
+  const closeRef = useRef(onClose);
+  useEffect(() => { closeRef.current = onClose; }, [onClose]);
   useEffect(() => {
     if (!open || !dialogRef.current) return undefined;
 
     const dialog = dialogRef.current;
+    openDialogs.push(dialog);
     const previouslyFocused = document.activeElement;
-    const getFocusable = () => Array.from(dialog.querySelectorAll(FOCUSABLE_SELECTOR));
+    const getFocusable = () => Array.from(dialog.querySelectorAll(FOCUSABLE_SELECTOR)).filter(element => {
+      if (element.closest('[hidden], [inert], [aria-hidden="true"]') || element.tabIndex < 0) return false;
+      const style = getComputedStyle(element);
+      return style.display !== 'none' && style.visibility !== 'hidden';
+    });
     getFocusable()[0]?.focus();
 
     const handleKeyDown = (event) => {
+      if (openDialogs.at(-1) !== dialog) return;
       if (event.key === 'Escape') {
         event.preventDefault();
-        onClose?.();
+        event.stopPropagation();
+        closeRef.current?.();
         return;
       }
 
@@ -35,7 +46,10 @@ export const useDialogFocus = ({ open, onClose, dialogRef }) => {
 
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
+      if (!dialog.contains(document.activeElement)) {
+        event.preventDefault();
+        first.focus();
+      } else if (event.shiftKey && document.activeElement === first) {
         event.preventDefault();
         last.focus();
       } else if (!event.shiftKey && document.activeElement === last) {
@@ -46,8 +60,9 @@ export const useDialogFocus = ({ open, onClose, dialogRef }) => {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => {
+      openDialogs.splice(openDialogs.indexOf(dialog), 1);
       document.removeEventListener('keydown', handleKeyDown);
       previouslyFocused?.focus?.();
     };
-  }, [dialogRef, onClose, open]);
+  }, [dialogRef, open]);
 };

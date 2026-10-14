@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+
+import { useDialogFocus } from '../../hooks/useDialogFocus';
 
 const TOUR_STEPS = [
   {
@@ -23,6 +25,8 @@ const TOUR_STEPS = [
 ];
 
 const OnboardingTour = ({ onComplete }) => {
+  const dialogRef = useRef(null);
+  useDialogFocus({ open: true, onClose: onComplete, dialogRef });
   const [currentStep, setCurrentStep] = useState(0);
   const [targetRect, setTargetRect] = useState(null);
   const [tooltipStyle, setTooltipStyle] = useState({});
@@ -128,7 +132,7 @@ const OnboardingTour = ({ onComplete }) => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         onComplete();
-      } else if (e.key === 'ArrowRight' || e.key === 'Enter') {
+      } else if (e.key === 'ArrowRight') {
         if (isLastStep) {
           onComplete();
         } else {
@@ -177,13 +181,13 @@ const OnboardingTour = ({ onComplete }) => {
       )}
 
       {/* Tooltip */}
-      <div className="tour-tooltip glass-panel" style={tooltipStyle}>
+      <div ref={dialogRef} className="tour-tooltip glass-panel" style={tooltipStyle} role="dialog" aria-modal="true" aria-labelledby="tour-title">
         <div className="tooltip-header">
           <span className="step-indicator">{currentStep + 1} / {TOUR_STEPS.length}</span>
           <button className="skip-btn" onClick={handleSkip}>Skip tour</button>
         </div>
 
-        <h3>{step?.title}</h3>
+        <h3 id="tour-title">{step?.title}</h3>
         <p>{step?.description}</p>
 
         <div className="tooltip-actions">

@@ -102,7 +102,7 @@ function App() {
         </div>
         <main className="main-content">
           <div className="main-grid">
-            <Timer settings={settings} updateSettings={setSettings} />
+            {userDataLoading ? <div className="timer-container glass-panel" role="status">Loading your workspace…</div> : <Timer settings={settings} updateSettings={setSettings} />}
             <TaskList />
           </div>
         </main>

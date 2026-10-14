@@ -1,8 +1,9 @@
+import { normalizeHistory } from './userState';
 import { getLocalDateKey, parseLocalDateKey } from './date';
 
 // Aggregates totals, the current day streak and per-day hours for the Insights report.
 export const computeReportStats = (pomodoroHistory, archivedTasks, today = new Date()) => {
-  const history = pomodoroHistory && typeof pomodoroHistory === 'object' ? pomodoroHistory : {};
+  const history = normalizeHistory(pomodoroHistory);
   const tasks = Array.isArray(archivedTasks) ? archivedTasks : [];
 
   let totalMinutes = 0;

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useRainAudio } from './useRainAudio';
 import lofiGirlImg from '../../assets/lofi-girl.webp';
 
 const LofiPlayer = () => {
@@ -6,6 +7,9 @@ const LofiPlayer = () => {
   const [volume, setVolume] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
   const [audioError, setAudioError] = useState(false);
+  const [usingRain, setUsingRain] = useState(false);
+  const usingRainRef = useRef(false);
+  const { play: playRain, stop: stopRain } = useRainAudio(volume);
   const playerRef = useRef(null);
   const isDraggingRef = useRef(false);
   const positionRef = useRef({ x: 0, y: 0 });
@@ -16,10 +20,11 @@ const LofiPlayer = () => {
   const resumeAfterAlarmRef = useRef(false);
 
   // Hardcoded Lofi Girl Radio
-  const trackUrl = 'https://stream-156.zeno.fm/tabzverz0fctv?zt=eyJhbGciOiJIUzI1NiJ9.eyJzdHJlYW0iOiJ0YWJ6dmVyejBmY3R2IiwiaG9zdCI6InN0cmVhbS0xNTYuemVuby5mbSIsInJ0dGwiOjUsImp0aSI6ImtMbk1BSW5aU1hlMkowQ041VVV3OEEiLCJpYXQiOjE3NjY3ODU0MTUsImV4cCI6MTc2Njc4NTQ3NX0._s6l1U1wRdc51D-SwATyaGGUEKomqDfWFzgDp7t9CIQ';
+  const trackUrl = 'https://stream.zeno.fm/tabzverz0fctv';
   const lofiImage = lofiGirlImg;
 
-  const audioRef = useRef(new Audio());
+  const audioRef = useRef(null);
+  if (!audioRef.current) audioRef.current = new Audio();
 
   const configureAudioSource = useCallback(() => {
     const audio = audioRef.current;
@@ -27,14 +32,14 @@ const LofiPlayer = () => {
 
     if (audio.src !== trackUrl) {
       audio.src = trackUrl;
-      audio.crossOrigin = 'anonymous';
+
     }
 
     return audio;
   }, [trackUrl]);
 
   const handlePointerDown = (event) => {
-    if (event.button !== 0 || event.target.closest('.player-controls') || event.target.closest('.volume-mini')) return;
+    if (event.button !== 0 || event.target.closest('.player-controls') || event.target.closest('.volume-mini') || event.target.closest('button')) return;
     event.preventDefault();
     isDraggingRef.current = true;
     activePointerIdRef.current = event.pointerId;
@@ -73,6 +78,7 @@ const LofiPlayer = () => {
   useEffect(() => {
     const audio = audioRef.current;
     const handleError = () => {
+      if (usingRainRef.current) return;
       setAudioError(true);
       setIsPlaying(false);
     };
@@ -83,9 +89,10 @@ const LofiPlayer = () => {
   useEffect(() => {
     const pauseForAlarm = () => {
       const audio = audioRef.current;
-      resumeAfterAlarmRef.current = !audio.paused;
+      resumeAfterAlarmRef.current = usingRainRef.current ? isPlaying : !audio.paused;
       if (resumeAfterAlarmRef.current) {
         audio.pause();
+        stopRain();
         setIsPlaying(false);
       }
     };
@@ -93,7 +100,7 @@ const LofiPlayer = () => {
     const resumeAfterAlarm = () => {
       if (!resumeAfterAlarmRef.current) return;
       resumeAfterAlarmRef.current = false;
-      configureAudioSource().play()
+      (usingRainRef.current ? playRain() : configureAudioSource().play())
         .then(() => {
           setAudioError(false);
           setIsPlaying(true);
@@ -107,7 +114,7 @@ const LofiPlayer = () => {
       window.removeEventListener('timer-alarm-start', pauseForAlarm);
       window.removeEventListener('timer-alarm-end', resumeAfterAlarm);
     };
-  }, [configureAudioSource]);
+  }, [configureAudioSource, isPlaying, playRain, stopRain]);
 
   const paintPendingPosition = useCallback(() => {
     const nextPosition = pendingPositionRef.current;
@@ -183,7 +190,7 @@ const LofiPlayer = () => {
 
     // If blocked, try again on first user interaction
     const startOnInteraction = () => {
-      if (!audioRef.current.paused) return; // Already playing
+      if (usingRainRef.current || !audioRef.current.paused) return; // Already playing
       const audio = configureAudioSource();
       audio.volume = audioRef.current.volume; // Use current audio volume, not stale closure
       audio.play()
@@ -204,7 +211,20 @@ const LofiPlayer = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [configureAudioSource]);
 
+  const startRain = async () => {
+    audioRef.current.pause();
+    usingRainRef.current = true;
+    setUsingRain(true);
+    try { await playRain(); setIsPlaying(true); setAudioError(false); }
+    catch { setIsPlaying(false); setAudioError(true); }
+  };
+
   const togglePlay = () => {
+    if (usingRainRef.current) {
+      if (isPlaying) { stopRain(); setIsPlaying(false); }
+      else startRain();
+      return;
+    }
     const audio = configureAudioSource();
     audio.volume = volume / 100;
 
@@ -214,6 +234,7 @@ const LofiPlayer = () => {
       return;
     }
 
+    if (audioError) audio.load();
     const playPromise = audio.play();
     setIsPlaying(true);
     setAudioError(false);
@@ -250,8 +271,10 @@ const LofiPlayer = () => {
               </div>
 
               <div className="track-info">
-                <div className="track-name">Lofi Girl</div>
-                <div className={`track-artist ${audioError ? 'error' : ''}`}>{audioError ? 'Stream unavailable — retry' : 'Lofi Radio'}</div>
+                <div className="track-name">{usingRain ? 'Rain ambience' : 'Lofi Girl'}</div>
+                <div className={`track-artist ${audioError ? 'error' : ''}`}>{audioError ? 'Stream unavailable — retry' : usingRain ? 'Generated on your device' : 'Lofi Radio'}</div>
+                {audioError && <button className="audio-fallback-btn" onClick={startRain}>Try rain ambience</button>}
+                {usingRain && <button className="audio-fallback-btn" onClick={() => { stopRain(); usingRainRef.current = false; setUsingRain(false); setIsPlaying(false); setAudioError(true); }}>Retry radio</button>}
               </div>
 
       <div className="player-controls">
@@ -281,6 +304,7 @@ const LofiPlayer = () => {
               </div>
 
               <style>{`
+        .audio-fallback-btn { background: transparent; padding: 0.2rem 0; min-height: 32px; color: var(--text-secondary); text-decoration: underline; text-underline-offset: 3px; font-size: 0.7rem; }
         .lofi-player {
                   position: fixed;
                   bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem);

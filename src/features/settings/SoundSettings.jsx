@@ -3,8 +3,9 @@ const SoundSettings = ({ settings, onChange }) => (
         <h3>Sound</h3>
 
         <div className="sound-section">
-            <label>Alarm sound</label>
+            <label htmlFor="setting-sound">Alarm sound</label>
             <select
+                id="setting-sound"
                 name="sound"
                 value={settings.sound || 'bell'}
                 onChange={onChange}
@@ -21,9 +22,10 @@ const SoundSettings = ({ settings, onChange }) => (
             </select>
 
             <div className="slider-group">
-                <label>Volume</label>
+                <label htmlFor="setting-alarmVolume">Volume</label>
                 <input
                     type="range"
+                    id="setting-alarmVolume"
                     name="alarmVolume"
                     value={settings.alarmVolume ?? 70}
                     onChange={onChange}
@@ -35,9 +37,10 @@ const SoundSettings = ({ settings, onChange }) => (
             </div>
 
             <div className="slider-group">
-                <label>Repeat</label>
+                <label htmlFor="setting-alarmRepeat">Repeat</label>
                 <input
                     type="number"
+                    id="setting-alarmRepeat"
                     name="alarmRepeat"
                     value={settings.alarmRepeat || 1}
                     onChange={onChange}
@@ -49,8 +52,9 @@ const SoundSettings = ({ settings, onChange }) => (
         </div>
 
         <div className="sound-section">
-            <label>Ticking sound</label>
+            <label htmlFor="setting-tickingSound">Ticking sound</label>
             <select
+                id="setting-tickingSound"
                 name="tickingSound"
                 value={settings.tickingSound || 'none'}
                 onChange={onChange}
@@ -66,9 +70,10 @@ const SoundSettings = ({ settings, onChange }) => (
             </select>
 
             <div className="slider-group">
-                <label>Volume</label>
+                <label htmlFor="setting-tickingVolume">Volume</label>
                 <input
                     type="range"
+                    id="setting-tickingVolume"
                     name="tickingVolume"
                     value={settings.tickingVolume ?? 50}
                     onChange={onChange}

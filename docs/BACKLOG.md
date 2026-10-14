@@ -79,3 +79,31 @@ Engineering approach: behavior tests through the existing timer UI, keyboard hoo
 Validation: each reported failure reproduced by a failing regression test before the fix. Timer UI tests also cover changed idle/running durations and guest controls remaining locked against global timer events. The changes preserve existing layouts and integrations.
 
 Release checks: 39 tests pass across 13 files, including the pause/reload flow under React StrictMode; lint and the production build/performance budget pass. Browser validation confirms paused time survives reload. Guest timer event handlers now enforce the same lock as the visible buttons.
+
+## Audit complet — 2026-10-14
+
+La [matrice de contrôle](QA_2026-10-14.md) remplace les anciennes coches comme preuve de vérification. Les fonctions optionnelles et les fonctions différées y sont distinguées.
+
+| ID | Priorité | État | Critère / preuve |
+| --- | --- | --- | --- |
+| QA-01 | P0 | Fait | Session échue récupérée une fois, cycle de pause conservé, durée/extension exactes et transition annulable. Tests Timer sous StrictMode. |
+| QA-02 | P0 | Fait | Aucun double comptage ; bilan enregistré après minuit à la bonne date. Tests Report UI. |
+| QA-03 | P0 | Fait | Réglages invité persistés ; création pendant un archivage conserve la nouvelle tâche ; sous-tâches et routines contrôlées. |
+| QA-04 | P0 | Fait | Sauvegarde sans jetons ; validation avant remplacement ; lieux/favoris inclus ; CSV résilient. |
+| QA-05 | P0 | Fait | Supabase restauré ; feedback non public ; droits client minimaux ; RLS et Realtime vérifiés sur le service réel. |
+| QA-06 | P0 | Fait | Zéro alerte npm ; audit ajouté en CI ; installation propre du lockfile réussie. |
+| QA-07 | P1 | Fait | Dialogues imbriqués, labels, switch audio, favoris clavier, visite guidée et graphique interactif corrigés. Tests DOM et axe. |
+| QA-08 | P1 | Fait | PWA précharge écrans et sons ; rechargement, tâche, réglages et Insights vérifiés hors ligne sur ordinateur et mobile. |
+| QA-09 | P1 | Fait | Radio sans URL signée périmée ; fallback de pluie local testé ; erreurs média ne bloquent pas le travail. |
+| QA-10 | P1 | Fait | OAuth code seul, erreur explicite ; polling Spotify continu ; PKCE sûr ; callback sans double échange. |
+| QA-11 | P1 | Fait | Mode sans configuration Supabase vérifié dans un navigateur ; timer/tâches utilisables et partage indisponible expliqué. |
+| QA-12 | P1 | Fait | API YouTube bornée et validée ; succès/rejets testés. |
+| QA-13 | P1 | À valider avec le compte | Lecture Spotify Premium et connexion interactive personnelle Google/GitHub/email. Le service actif et les tests ne prouvent pas ces consentements. |
+| QA-14 | P2 | Limite documentée | Conflits et modifications de compte offline : last-write-wins actuel ; fusion/file offline non implémentée. |
+| QA-15 | P2 | Limite documentée | Password-leak protection Supabase désactivée ; changement de configuration/éligibilité à décider. |
+
+Les exigences anciennes « calendrier read/write », « verrou de salle imposé » et « widget natif » restent différées. Les liens de création calendrier, les salles coopératives et la PWA ont leur propre preuve, sans substitution de critères.
+
+Contrôle local final : lint sans erreur ni warning, suite de régression, build de production, budget de performance, audit npm sans vulnérabilité et installation propre du lockfile. La publication et la CI sont vérifiées après le push.
+
+- [x] QA — 68 tests dans 30 fichiers ; événements tardifs d’un ancien compte ignorés et transfert de durée/cycle entre hôtes couvert.

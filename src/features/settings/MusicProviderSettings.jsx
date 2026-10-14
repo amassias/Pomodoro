@@ -14,9 +14,9 @@ const MusicProviderSettings = ({ settings, updateSettings }) => {
             <div className="toggle-group">
                 <label className="toggle-label provider-toggle">
                     <span className={settings.musicProvider === 'spotify' ? '' : 'active'}>Lofi</span>
-                    <div className="switch" onClick={() => updateSettings({ ...settings, musicProvider: settings.musicProvider === 'spotify' ? 'lofi' : 'spotify' })}>
+                    <button type="button" role="switch" aria-label="Use Spotify" aria-checked={settings.musicProvider === 'spotify'} className="switch" onClick={() => updateSettings({ ...settings, musicProvider: settings.musicProvider === 'spotify' ? 'lofi' : 'spotify' })}>
                         <div className={`slider-round ${settings.musicProvider === 'spotify' ? 'right' : 'left'}`}></div>
-                    </div>
+                    </button>
                     <span className={settings.musicProvider === 'spotify' ? 'active' : ''}>Spotify</span>
                 </label>
             </div>

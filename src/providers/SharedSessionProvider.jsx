@@ -55,6 +55,8 @@ export const SharedSessionProvider = ({ children }) => {
   const [isReady, setIsReady] = useState(false);
   const [profile] = useState(defaultProfile);
   const [isHost, setIsHost] = useState(() => Boolean(roomId && sessionStorage.getItem(`world-focus-host:${roomId}`)));
+  const isHostRef = useRef(isHost);
+  useEffect(() => { isHostRef.current = isHost; }, [isHost]);
   const channelRef = useRef(null);
   const latestTimerStateRef = useRef(null);
   const participantIdRef = useRef(sessionStorage.getItem('world-focus-participant-id') || crypto.randomUUID());
@@ -75,6 +77,10 @@ export const SharedSessionProvider = ({ children }) => {
 
   useEffect(() => {
     if (!roomId) return undefined;
+    if (!supabase) {
+      const timeoutId = window.setTimeout(() => setConnectionStatus('error'), 0);
+      return () => window.clearTimeout(timeoutId);
+    }
 
     if (!expiresAt && roomKey !== 'public-session') {
       const timeoutId = window.setTimeout(() => setConnectionStatus('expired'), 0);
@@ -99,10 +105,10 @@ export const SharedSessionProvider = ({ children }) => {
         }
       })
       .on('broadcast', { event: 'timer-state' }, ({ payload }) => {
-        if (!isHost && payload?.mode) setRemoteTimerState(payload);
+        if (!isHostRef.current && ['focus', 'shortBreak', 'longBreak'].includes(payload?.mode) && Number.isFinite(payload.remainingMs) && payload.remainingMs >= 0 && (!payload.isActive || Number.isFinite(payload.endAt))) setRemoteTimerState(payload);
       })
       .on('broadcast', { event: 'request-state' }, () => {
-        if (isHost && latestTimerStateRef.current) {
+        if (isHostRef.current && latestTimerStateRef.current) {
           channel.send({ type: 'broadcast', event: 'timer-state', payload: latestTimerStateRef.current });
         }
       })
@@ -117,8 +123,8 @@ export const SharedSessionProvider = ({ children }) => {
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           setConnectionStatus('connected');
-          await channel.track({ role: isHost ? 'host' : 'guest', joinedAt: new Date().toISOString(), ...profile, ready: isReady });
-          if (!isHost) channel.send({ type: 'broadcast', event: 'request-state', payload: {} });
+          await channel.track({ role: isHostRef.current ? 'host' : 'guest', joinedAt: new Date().toISOString(), ...profile, ready: false });
+          if (!isHostRef.current) channel.send({ type: 'broadcast', event: 'request-state', payload: {} });
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           setConnectionStatus('error');
         }
@@ -128,7 +134,12 @@ export const SharedSessionProvider = ({ children }) => {
       channelRef.current = null;
       supabase.removeChannel(channel);
     };
-  }, [appendMessage, expiresAt, isHost, isReady, profile, roomId, roomKey]);
+  }, [appendMessage, expiresAt, profile, roomId, roomKey]);
+
+  useEffect(() => {
+    if (connectionStatus !== 'connected' || !channelRef.current) return;
+    channelRef.current.track({ role: isHost ? 'host' : 'guest', joinedAt: new Date().toISOString(), ...profile, ready: isReady });
+  }, [connectionStatus, isHost, isReady, profile]);
 
   const publishTimerState = useCallback((timerState) => {
     latestTimerStateRef.current = timerState;
@@ -153,17 +164,16 @@ export const SharedSessionProvider = ({ children }) => {
 
   const toggleRoomLock = useCallback(() => {
     if (!isHost) return;
-    setRoomLocked((value) => {
-      sendRoomEvent({ type: 'lock', locked: !value });
-      return !value;
-    });
-  }, [isHost, sendRoomEvent]);
+    sendRoomEvent({ type: 'lock', locked: !roomLocked });
+    setRoomLocked(!roomLocked);
+  }, [isHost, roomLocked, sendRoomEvent]);
 
   const kickParticipant = useCallback((targetId) => {
     if (isHost && targetId !== participantIdRef.current) sendRoomEvent({ type: 'kick', targetId });
   }, [isHost, sendRoomEvent]);
 
   const createRoom = useCallback(() => {
+    if (!supabase) return;
     const nextRoomId = crypto.randomUUID().replaceAll('-', '').slice(0, 8);
     const nextRoomKey = crypto.randomUUID().replaceAll('-', '').slice(0, 16);
     const nextExpiry = Date.now() + 4 * 60 * 60 * 1000;
@@ -192,6 +202,10 @@ export const SharedSessionProvider = ({ children }) => {
     setRoomKey('public-session');
     setExpiresAt(null);
     setIsHost(false);
+    setParticipants([]);
+    setMessages([]);
+    setRoomLocked(false);
+    setIsReady(false);
     setRemoteTimerState(null);
     setParticipantCount(1);
     setConnectionStatus('idle');
@@ -218,7 +232,7 @@ export const SharedSessionProvider = ({ children }) => {
     return url.toString();
   }, [expiresAt, roomId, roomKey]);
 
-  const value = useMemo(() => ({ roomId, isHost, participantCount, connectionStatus, expiresAt, remoteTimerState, participants, messages, roomLocked, isReady, profile, publishTimerState, createRoom, leaveRoom, shareUrl, sendMessage, sendReaction, toggleReady, toggleRoomLock, kickParticipant, sendRoomEvent }), [roomId, isHost, participantCount, connectionStatus, expiresAt, remoteTimerState, participants, messages, roomLocked, isReady, profile, publishTimerState, createRoom, leaveRoom, shareUrl, sendMessage, sendReaction, toggleReady, toggleRoomLock, kickParticipant, sendRoomEvent]);
+  const value = useMemo(() => ({ isAvailable: Boolean(supabase), roomId, isHost, participantCount, connectionStatus, expiresAt, remoteTimerState, participants, messages, roomLocked, isReady, profile, publishTimerState, createRoom, leaveRoom, shareUrl, sendMessage, sendReaction, toggleReady, toggleRoomLock, kickParticipant, sendRoomEvent }), [roomId, isHost, participantCount, connectionStatus, expiresAt, remoteTimerState, participants, messages, roomLocked, isReady, profile, publishTimerState, createRoom, leaveRoom, shareUrl, sendMessage, sendReaction, toggleReady, toggleRoomLock, kickParticipant, sendRoomEvent]);
   return <SharedSessionContext.Provider value={value}>{children}</SharedSessionContext.Provider>;
 };
 

@@ -1,37 +1,18 @@
+import { normalizeHistory } from './userState';
+
 export const generateCSV = (history) => {
-    // History is an object: { "YYYY-MM-DD": [{ duration: 25, timestamp: ... }, ...], ... }
-
-    // Flatten to rows
-    const rows = [];
-    // Header
-    rows.push(['Date', 'Session Duration (min)', 'Task Name', 'Completed', 'Timestamp']);
-
-    const sortedDates = Object.keys(history).sort();
-
-    sortedDates.forEach(date => {
-        const sessions = history[date];
-        if (Array.isArray(sessions)) {
-            sessions.forEach(session => {
-                const duration = session.duration || 0;
-                const timestamp = session.timestamp ? new Date(session.timestamp).toISOString() : date;
-                // session might not have task info if it was a simple timer, but let's check
-                // Assuming session structure might evolve, but for now mostly duration.
-                // If we tracked task IDs, we'd need to lookup content, but simple export is fine.
-                const taskName = session.taskName || '-';
-                const completed = session.completed ? 'Yes' : 'No';
-
-                rows.push([
-                    date,
-                    duration,
-                    `"${taskName.replace(/"/g, '""')}"`, // Escape quotes
-                    completed,
-                    timestamp
-                ]);
-            });
-        }
-    });
-
-    return rows.map(r => r.join(',')).join('\n');
+  const rows = [['Date', 'Session Duration (min)', 'Task Name', 'Completed', 'Timestamp']];
+  const normalized = normalizeHistory(history);
+  for (const date of Object.keys(normalized).sort()) {
+    for (const session of normalized[date]) {
+      const parsedTimestamp = new Date(session.timestamp);
+      const timestamp = session.timestamp && !Number.isNaN(parsedTimestamp.valueOf()) ? parsedTimestamp.toISOString() : date;
+      let taskName = String(session.taskName || '-');
+      if (/^[\s]*[=+@-]/.test(taskName)) taskName = `'${taskName}`;
+      rows.push([date, session.duration, `"${taskName.replaceAll('"', '""')}"`, session.completed ? 'Yes' : 'No', timestamp]);
+    }
+  }
+  return rows.map(row => row.join(',')).join('\n');
 };
 
 export const downloadFile = (content, filename, mimeType) => {

@@ -62,8 +62,10 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
         if (durationFieldNames.has(name)) return;
-        const newValue = type === 'checkbox' ? checked : (name.includes('Volume') || name.includes('Repeat') || name.includes('Goal') ? Number(value) : value);
+        let newValue = type === 'checkbox' ? checked : (name.includes('Volume') || name.includes('Repeat') || name.includes('Goal') ? Number(value) : value);
 
+        if (name.includes('Volume')) newValue = Math.min(100, Math.max(0, newValue || 0));
+        if (name === 'alarmRepeat') newValue = Math.min(10, Math.max(1, Math.round(newValue) || 1));
         updateSettings({
             ...settings,
             [name]: newValue
@@ -201,9 +203,10 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                 <div className="setting-group">
                     <h3>Daily goal</h3>
                     <div className="slider-group">
-                        <label>Target</label>
+                        <label htmlFor="dailyGoal">Target</label>
                         <input
                             type="range"
+                            id="dailyGoal"
                             name="dailyGoal"
                             value={settings.dailyGoal || 120}
                             onChange={(e) => updateSettings({ ...settings, dailyGoal: Number(e.target.value) })}
@@ -218,8 +221,8 @@ const SettingsModal = ({ settings, updateSettings, onClose, onRestartTour }) => 
                 <div className="setting-group">
                     <h3>Weekly goal</h3>
                     <div className="slider-group">
-                        <span className="slider-label">Target</span>
-                        <input type="range" name="weeklyGoal" min="120" max="2400" step="30" value={settings.weeklyGoal || 600} onChange={handleChange} className="slider" />
+                        <label htmlFor="weeklyGoal" className="slider-label">Target</label>
+                        <input type="range" id="weeklyGoal" name="weeklyGoal" min="120" max="2400" step="30" value={settings.weeklyGoal || 600} onChange={handleChange} className="slider" />
                         <span className="slider-value">{Math.floor((settings.weeklyGoal || 600) / 60)}h</span>
                     </div>
                 </div>

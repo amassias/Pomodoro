@@ -1,9 +1,12 @@
+import { axe, toHaveNoViolations } from 'jest-axe';
 // @vitest-environment jsdom
 import React from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import SettingsModal from './SettingsModal';
+
+expect.extend(toHaveNoViolations);
 
 const baseSettings = { focusDuration: 25, shortBreakDuration: 5, longBreakDuration: 15 };
 
@@ -40,4 +43,9 @@ describe('SettingsModal', () => {
     expect(document.querySelector('input[name="alarmVolume"]').value).toBe('0');
     expect(document.querySelector('input[name="tickingVolume"]').value).toBe('0');
   });
+});
+
+it('provides accessible settings controls', async () => {
+  const { container } = render(<SettingsModal settings={baseSettings} updateSettings={() => {}} onClose={() => {}} onRestartTour={() => {}} />);
+  expect(await axe(container)).toHaveNoViolations();
 });

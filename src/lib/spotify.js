@@ -17,8 +17,14 @@ export const scopes = [
 const generateRandomString = (length = 64) => {
     const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     let text = "";
-    for (let i = 0; i < length; i += 1) {
-        text += possible.charAt(Math.floor(Math.random() * possible.length));
+    const bytes = new Uint8Array(length * 2);
+    while (text.length < length) {
+        crypto.getRandomValues(bytes);
+        for (const byte of bytes) {
+            if (byte >= 248) continue; // Rejection sampling avoids modulo bias.
+            text += possible[byte % possible.length];
+            if (text.length === length) break;
+        }
     }
     return text;
 };
@@ -69,6 +75,7 @@ export const clearPkceValues = () => {
 };
 
 export const getLoginUrl = async (clientId) => {
+    localStorage.setItem('spotifyClientId', clientId);
     const verifier = generateRandomString(64);
     const challenge = await buildCodeChallenge(verifier);
     const state = generateRandomString(16);

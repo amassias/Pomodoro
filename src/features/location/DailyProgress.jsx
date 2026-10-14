@@ -1,4 +1,5 @@
 import React from 'react';
+import { getWeeklyComparison } from '../../lib/insights';
 import { useUserData } from '../../providers/UserDataProvider';
 
 const DailyProgress = () => {
@@ -8,13 +9,7 @@ const DailyProgress = () => {
 
     const percentage = Math.min(100, (todayProgress / dailyGoal) * 100);
     const isCompleted = percentage >= 100;
-    const weekStart = new Date();
-    weekStart.setHours(0, 0, 0, 0);
-    weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
-    const weeklyProgress = Object.entries(pomodoroHistory || {}).reduce((sum, [date, sessions]) => {
-        if (new Date(`${date}T00:00:00`) < weekStart || !Array.isArray(sessions)) return sum;
-        return sum + sessions.reduce((total, session) => total + (session.duration || 0), 0);
-    }, 0);
+    const weeklyProgress = getWeeklyComparison(pomodoroHistory).currentMinutes;
 
     const strokeDasharray = 2 * Math.PI * 18; // Radius 18
     const strokeDashoffset = strokeDasharray * ((100 - percentage) / 100);

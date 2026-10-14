@@ -191,45 +191,15 @@ const CitySelector = ({ currentCity, currentCityLabel, cities, onSelect, isLoadi
             const isFav = favoriteCities.includes(key);
             const isCustom = key.startsWith('custom_');
             return (
-              <button
-                key={key}
-                className={`city-btn ${currentCity === key ? 'active' : ''}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelect(key);
-                  closeExpandedMenu();
-                }}
-              >
+              <div key={key} className={`city-btn ${currentCity === key ? 'active' : ''}`}>
                 <div className="city-btn-inner">
-                  <span>{city.name}</span>
+                  <button type="button" className="city-select-button" aria-pressed={currentCity === key} onClick={() => { onSelect(key); closeExpandedMenu(); }}>{city.name}</button>
                   <div className="city-btn-actions">
-                    {isCustom && (
-                      <span
-                        className="delete-icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (confirm(`Remove "${city.name}" from your custom locations?`)) {
-                            removeCustomLocation(key);
-                          }
-                        }}
-                        title="Remove custom location"
-                      >
-                        🗑️
-                      </span>
-                    )}
-                    <span
-                      className={`fav-icon ${isFav ? 'liked' : ''}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleFavorite(key);
-                      }}
-                      title={isFav ? "Remove from favorites" : "Add to favorites"}
-                    >
-                      {isFav ? '❤️' : '🤍'}
-                    </span>
+                    {isCustom && <button type="button" className="delete-icon" aria-label={`Remove ${city.name}`} onClick={() => { if (confirm(`Remove "${city.name}" from your custom locations?`)) removeCustomLocation(key); }}>🗑️</button>}
+                    <button type="button" className={`fav-icon ${isFav ? 'liked' : ''}`} aria-label={`${isFav ? 'Remove' : 'Add'} ${city.name} ${isFav ? 'from' : 'to'} favorites`} aria-pressed={isFav} onClick={() => toggleFavorite(key)}>{isFav ? '❤️' : '🤍'}</button>
                   </div>
                 </div>
-              </button>
+              </div>
             )
           })}
           
@@ -296,9 +266,10 @@ const CitySelector = ({ currentCity, currentCityLabel, cities, onSelect, isLoadi
               </p>
               
               <div className="add-modal-field">
-                <label>Location Name</label>
+                <label htmlFor="custom-location-name">Location Name</label>
                 <input
                   type="text"
+                  id="custom-location-name"
                   placeholder="e.g., My Cozy Cafe"
                   value={newLocationName}
                   onChange={(e) => setNewLocationName(e.target.value)}
@@ -307,9 +278,10 @@ const CitySelector = ({ currentCity, currentCityLabel, cities, onSelect, isLoadi
               </div>
               
               <div className="add-modal-field">
-                <label>YouTube URL or Video ID</label>
+                <label htmlFor="custom-location-url">YouTube URL or Video ID</label>
                 <input
                   type="text"
+                  id="custom-location-url"
                   placeholder="e.g., https://youtube.com/watch?v=..."
                   value={newLocationUrl}
                   onChange={(e) => setNewLocationUrl(e.target.value)}
@@ -555,6 +527,9 @@ const CitySelector = ({ currentCity, currentCityLabel, cities, onSelect, isLoadi
           background: var(--accent-soft);
           color: white;
         }
+
+        .city-select-button { flex: 1; min-width: 0; text-align: left; color: inherit; background: transparent; padding: 0; font-size: inherit; min-height: 32px; }
+        .city-btn-actions button { background: transparent; color: inherit; min-width: 32px; min-height: 32px; }
 
         .city-btn-inner {
             display: flex;

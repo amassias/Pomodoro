@@ -83,6 +83,7 @@ export default async function handler(req, res) {
 
     const method = (req.method || 'GET').toUpperCase();
     if (method !== 'GET' && method !== 'POST') {
+      res.setHeader('Allow', 'GET, POST');
       res.statusCode = 405;
       res.end(JSON.stringify({ error: 'Method not allowed' }));
       return;
@@ -96,9 +97,9 @@ export default async function handler(req, res) {
         .concat(parseVideoIds(req?.query?.ids))
     );
 
-    if (!requestedIds.length) {
+    if (!requestedIds.length || requestedIds.length > 200 || requestedIds.some(id => !/^[a-zA-Z0-9_-]{11}$/.test(id))) {
       res.statusCode = 400;
-      res.end(JSON.stringify({ error: 'Missing videoIds' }));
+      res.end(JSON.stringify({ error: 'Provide between 1 and 200 valid YouTube video IDs' }));
       return;
     }
 
@@ -115,7 +116,7 @@ export default async function handler(req, res) {
       url.searchParams.set('id', ids.join(','));
       url.searchParams.set('key', apiKey);
 
-      const response = await fetch(url);
+      const response = await fetch(url, { signal: AbortSignal.timeout(10_000) });
       if (!response.ok) {
         const text = await response.text().catch(() => '');
         res.statusCode = 502;

@@ -52,11 +52,12 @@ const FeedbackModal = ({ open, onClose, currentStreamId, currentStreamName }) =>
     setIsSubmitting(true);
 
     try {
+      if (!supabase) throw new Error('Feedback requires an online account service. Please try again later.');
       const session = await supabase.auth.getSession();
       const userId = session?.data?.session?.user?.id || null;
 
       const metadata = {
-        url: window.location.href,
+        url: `${window.location.origin}${window.location.pathname}`,
         userAgent: navigator.userAgent,
       };
 

@@ -2,6 +2,7 @@ export const storageKeys = {
   tasks: 'pomodoro-tasks',
   archivedTasks: 'pomodoro-archived-tasks',
   history: 'pomodoroHistory',
+  settings: 'pomodoro-settings',
   city: 'pomodoro-city',
 
   badYoutubeVideoIds: 'pomodoro-bad-youtube-video-ids',

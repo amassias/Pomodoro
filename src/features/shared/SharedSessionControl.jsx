@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSharedSession } from '../../providers/SharedSessionProvider';
 
 const SharedSessionControl = () => {
-  const { roomId, isHost, participantCount, connectionStatus, expiresAt, createRoom, leaveRoom, shareUrl, participants, messages, roomLocked, isReady, sendMessage, sendReaction, toggleReady, toggleRoomLock, kickParticipant } = useSharedSession();
+  const { isAvailable, roomId, isHost, participantCount, connectionStatus, expiresAt, createRoom, leaveRoom, shareUrl, participants, messages, roomLocked, isReady, sendMessage, sendReaction, toggleReady, toggleRoomLock, kickParticipant } = useSharedSession();
   const [copied, setCopied] = useState(false);
   const [chatText, setChatText] = useState('');
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -17,11 +17,12 @@ const SharedSessionControl = () => {
     }
   };
 
-  if (!roomId) return <button className="shared-session-create" onClick={createRoom}>Share session</button>;
+  if (!roomId) return <button className="shared-session-create" disabled={!isAvailable} title={!isAvailable ? 'Shared sessions require an online account service' : undefined} onClick={createRoom}>Share session</button>;
 
   return (
     <div className="shared-session" aria-label="Shared focus session">
       <span className={`shared-status ${connectionStatus}`}></span>
+      <span role="status">{connectionStatus === 'error' ? 'Connection unavailable' : connectionStatus === 'connecting' ? 'Connecting…' : connectionStatus === 'expired' ? 'Invite expired' : 'Connected'}</span>
       <strong>{isHost ? 'Hosting' : 'Joined'}</strong>
       <span>{participantCount} {participantCount === 1 ? 'person' : 'people'}</span>
       {expiresAt && <span title="Invite links expire automatically after four hours">Temporary room</span>}

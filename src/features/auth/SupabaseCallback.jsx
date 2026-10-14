@@ -11,27 +11,22 @@ const SupabaseCallback = () => {
 
     const run = async () => {
       try {
-        // For OAuth code flow with PKCE.
-        // If the URL doesn't contain a code, this will no-op / error, so we fall back.
-        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(
-          window.location.href
-        );
-
-        if (exchangeError) {
-          // If already signed in or no code present, we can still proceed.
-          // Keep the message only if it looks like a real failure.
-          const message = exchangeError?.message || String(exchangeError);
-          const looksBenign = /no code|code verifier|code challenge/i.test(message);
-          if (!looksBenign) {
-            setError(message);
-          }
+        if (!supabase) throw new Error('Account services are not configured.');
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('error')) throw new Error(params.get('error_description') || params.get('error'));
+        const code = params.get('code');
+        if (code) {
+          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) throw exchangeError;
+        } else {
+          const { data, error: sessionError } = await supabase.auth.getSession();
+          if (sessionError) throw sessionError;
+          if (!data.session) throw new Error('No sign-in session was returned. Please try again.');
         }
+        window.location.replace('/');
       } catch (err) {
         setError(err?.message || String(err));
-      } finally {
-        // Clean URL and go back to app root.
-        window.history.replaceState({}, document.title, '/');
-        window.location.replace('/');
+        window.history.replaceState({}, document.title, '/auth-callback');
       }
     };
 
@@ -40,8 +35,8 @@ const SupabaseCallback = () => {
 
   return (
     <div style={{ padding: '2rem', color: '#fff' }}>
-      <h2>Signing you in…</h2>
-      {error ? <p style={{ opacity: 0.8 }}>Error: {error}</p> : null}
+      <h2>{error ? 'Sign-in could not finish' : 'Signing you in…'}</h2>
+      {error ? <><p role="alert">{error}</p><a href="/">Back to your workspace</a></> : null}
     </div>
   );
 };

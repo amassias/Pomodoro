@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useUserData } from '../../providers/UserDataProvider.jsx';
 import { archiveTaskById } from '../../lib/tasks.js';
 import ArchiveDialog from './ArchiveDialog.jsx';
@@ -18,6 +18,13 @@ const TaskList = () => {
     const [editingSubtaskId, setEditingSubtaskId] = useState(null);
     const [subtaskEditText, setSubtaskEditText] = useState('');
     const dragTaskIdRef = useRef(null);
+    const latestTasksRef = useRef({ tasks, archivedTasks });
+    const completionTimersRef = useRef(new Map());
+    useEffect(() => { latestTasksRef.current = { tasks, archivedTasks }; }, [tasks, archivedTasks]);
+    useEffect(() => {
+        const timers = completionTimersRef.current;
+        return () => { for (const timeout of timers.values()) clearTimeout(timeout); timers.clear(); };
+    }, []);
 
     const closeArchive = useCallback(() => setShowArchive(false), []);
 
@@ -36,11 +43,14 @@ const TaskList = () => {
     const toggleTask = (id) => {
         const task = tasks.find(t => t.id === id);
         if (task && !task.completed) {
+            if (completionTimersRef.current.has(id)) return;
             setAnimatingTaskId(id);
-            setTimeout(() => {
+            const timeout = setTimeout(() => {
+                completionTimersRef.current.delete(id);
                 archiveTask(id);
                 setAnimatingTaskId(null);
             }, 400);
+            completionTimersRef.current.set(id, timeout);
             return;
         }
 
@@ -50,7 +60,9 @@ const TaskList = () => {
     };
 
     const archiveTask = (id) => {
-        const result = archiveTaskById(tasks, archivedTasks, id);
+        const latest = latestTasksRef.current;
+        const result = archiveTaskById(latest.tasks, latest.archivedTasks, id);
+        latestTasksRef.current = result;
         setTasks(result.tasks);
         setArchivedTasks(result.archivedTasks);
     };

@@ -27,3 +27,9 @@ describe('computeReportStats', () => {
     expect(computeReportStats(history, [], today).currentStreak).toBe(2);
   });
 });
+
+it('ignores empty and malformed history days instead of inventing a streak or crashing', () => {
+  const stats = computeReportStats({ '2026-09-22': [], '2026-09-21': [null], '2026-09-20': 'broken', '2026-09-19': [{ duration: 25 }] }, [], today);
+  expect(stats.currentStreak).toBe(0);
+  expect(stats.pomodorosCompleted).toBe(1);
+});

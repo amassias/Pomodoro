@@ -27,8 +27,9 @@ vi.mock('../../providers/UserDataProvider.jsx', () => ({
   }),
 }));
 
+afterEach(cleanup);
+
 describe('TaskList interactions', () => {
-  afterEach(cleanup);
 
   beforeEach(() => {
     mockData.tasks = [];
@@ -89,4 +90,37 @@ describe('TaskList interactions', () => {
     const { container } = render(<TaskList />);
     expect(await axe(container)).toHaveNoViolations();
   });
+});
+
+it('preserves a task added while another task is completing', async () => {
+  mockData.tasks = [{ id: 'first', text: 'First', completed: false, subtasks: [] }];
+  mockData.archivedTasks = [];
+  mockData.settings = {};
+  vi.spyOn(crypto, 'randomUUID').mockReturnValue('second');
+  const user = userEvent.setup();
+  render(<TaskList />);
+  await user.click(screen.getByRole('button', { name: 'Complete First' }));
+  await user.type(screen.getByPlaceholderText('Add a task...'), 'Second{Enter}');
+  await waitFor(() => expect(mockData.archivedTasks).toHaveLength(1), { timeout: 1000 });
+  expect(mockData.tasks.map(task => task.text)).toEqual(['Second']);
+});
+
+it('adds and renames subtasks, increases estimates and saves a reusable routine', async () => {
+  mockData.tasks = [{ id: 'parent', text: 'Plan', subtasks: [], estimatedPomodoros: 1 }];
+  mockData.archivedTasks = []; mockData.settings = {};
+  vi.spyOn(crypto, 'randomUUID').mockReturnValue('child');
+  vi.spyOn(window, 'prompt').mockReturnValue('Morning');
+  const user = userEvent.setup();
+  const view = render(<TaskList />);
+  await user.click(screen.getByRole('button', { name: 'Add subtask to Plan' }));
+  await user.type(screen.getByRole('textbox', { name: 'New subtask for Plan' }), 'Outline{Enter}');
+  await user.click(screen.getByRole('button', { name: 'Outline' }));
+  const name = screen.getByRole('textbox', { name: 'Rename subtask' });
+  await user.clear(name); await user.type(name, 'Draft{Enter}');
+  expect(mockData.tasks[0].subtasks[0].text).toBe('Draft');
+  await user.click(screen.getByRole('button', { name: 'Increase estimate for Plan' }));
+  expect(mockData.tasks[0].estimatedPomodoros).toBe(2);
+  view.rerender(<TaskList />);
+  await user.click(screen.getByRole('button', { name: 'Save routine' }));
+  expect(mockData.settings.routines[0]).toMatchObject({ name: 'Morning', tasks: [{ text: 'Plan', estimatedPomodoros: 2, subtasks: [{ text: 'Draft' }] }] });
 });

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { clearPkceValues, exchangeCodeForToken, getRedirectUri, loadPkceValues } from '../../lib/spotify';
 
 const postBack = (payload) => {
@@ -8,9 +8,12 @@ const postBack = (payload) => {
 };
 
 const SpotifyCallback = () => {
+    const ranRef = useRef(false);
     const [status, setStatus] = useState('Completing Spotify login...');
 
     useEffect(() => {
+        if (ranRef.current) return;
+        ranRef.current = true;
         const run = async () => {
             const params = new URLSearchParams(window.location.search);
             const code = params.get('code');

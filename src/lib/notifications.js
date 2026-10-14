@@ -7,8 +7,12 @@ export const requestNotificationPermission = async () => {
   if (Notification.permission === 'granted') return true;
   if (Notification.permission === 'denied') return false;
 
-  const result = await Notification.requestPermission();
-  return result === 'granted';
+  try {
+    const result = await Notification.requestPermission();
+    return result === 'granted';
+  } catch {
+    return false;
+  }
 };
 
 /**
@@ -21,8 +25,8 @@ export const showNotification = (title, options = {}) => {
 
   try {
     const notification = new Notification(title, {
-      icon: '/logos/pomodoro-192.png',
-      badge: '/logos/pomodoro-192.png',
+      icon: '/world-focus-icon.svg',
+      badge: '/world-focus-icon.svg',
       silent: true, // We already play our own alarm sound
       ...options,
     });

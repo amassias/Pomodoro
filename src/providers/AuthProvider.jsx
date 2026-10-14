@@ -12,6 +12,7 @@ export const AuthProvider = ({ children }) => {
 
     const init = async () => {
       try {
+        if (!supabase) return;
         const { data, error } = await supabase.auth.getSession();
         if (error) throw error;
         if (!mounted) return;
@@ -28,11 +29,11 @@ export const AuthProvider = ({ children }) => {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase?.auth.onAuthStateChange((_event, nextSession) => {
       if (!mounted) return;
       setSession(nextSession ?? null);
       setLoading(false);
-    });
+    }) ?? { data: { subscription: null } };
 
     return () => {
       mounted = false;
@@ -41,6 +42,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const value = useMemo(() => {
+    const unavailable = () => ({ data: null, error: new Error('Account services are not configured. Your local workspace is still available.') });
     const user = session?.user ?? null;
 
     return {
@@ -48,12 +50,15 @@ export const AuthProvider = ({ children }) => {
       session,
       user,
       signInWithPassword: async ({ email, password }) => {
+        if (!supabase) return unavailable();
         return supabase.auth.signInWithPassword({ email, password });
       },
       signUp: async ({ email, password }) => {
+        if (!supabase) return unavailable();
         return supabase.auth.signUp({ email, password });
       },
       signInWithOAuth: async ({ provider, redirectTo }) => {
+        if (!supabase) return unavailable();
         return supabase.auth.signInWithOAuth({
           provider,
           options: {
@@ -62,6 +67,7 @@ export const AuthProvider = ({ children }) => {
         });
       },
       signOut: async () => {
+        if (!supabase) return unavailable();
         return supabase.auth.signOut();
       },
     };

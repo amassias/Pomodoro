@@ -1,3 +1,4 @@
+import { normalizeHistory } from './userState';
 import { daysBetween } from './date';
 
 // Helper function to calculate max streak from history
@@ -273,7 +274,8 @@ export const ACHIEVEMENTS = [
 ];
 
 export const getUnlockedAchievements = (history) => {
-    return ACHIEVEMENTS.filter(achievement => achievement.check(history));
+    const safeHistory = normalizeHistory(history);
+    return ACHIEVEMENTS.filter(achievement => achievement.check(safeHistory));
 };
 
 export const getAchievementsByCategory = (categoryId) => {
