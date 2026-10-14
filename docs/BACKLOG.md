@@ -107,3 +107,4 @@ Les exigences anciennes « calendrier read/write », « verrou de salle imposé 
 Contrôle local final : lint sans erreur ni warning, suite de régression, build de production, budget de performance, audit npm sans vulnérabilité et installation propre du lockfile. La publication et la CI sont vérifiées après le push.
 
 - [x] QA — 68 tests dans 30 fichiers ; événements tardifs d’un ancien compte ignorés et transfert de durée/cycle entre hôtes couvert.
+- [x] Livraison — commit de correctifs `2eaa8a8` relu sur main distant ; [CI 38645900267 verte](https://github.com/amassias/Pomodoro/actions/runs/38645900267), Vercel production READY pour ce commit, API YouTube HTTP 200, 39 ressources offline HTTP 200 et zéro alerte Dependabot ouverte.
