@@ -26,7 +26,7 @@ const Timer = ({ settings, updateSettings }) => {
   // Timestamp-based timing to prevent drift in background tabs
   const endAtRef = useRef(initialSession?.endAt ?? null);
   const remainingMsRef = useRef(initialRemainingMs);
-  const restoredSessionRef = useRef(Boolean(initialSession));
+  const configuredMinutesRef = useRef(getModeMinutes(initialSession?.mode ?? 'focus', settings));
   const lastSharedActivityRef = useRef(null);
 
   // Keep refs in sync with state/props
@@ -74,29 +74,27 @@ const Timer = ({ settings, updateSettings }) => {
   // Request notification permission on first interaction
   const notifPermissionRequested = useRef(false);
 
-  // Stable toggle callback using functional update to avoid stale isActive
+  // Keep timing side effects outside React state updaters (which may run twice).
   const toggleTimer = useCallback(() => {
+    if (sharedLocked) return;
     playClickSound();
     // Ask for notification permission once on first start
     if (!notifPermissionRequested.current) {
       notifPermissionRequested.current = true;
       requestNotificationPermission();
     }
-    setIsActive(prev => {
-      if (!prev) {
-        // Starting: set end time based on remaining time
-        endAtRef.current = Date.now() + remainingMsRef.current;
-      } else {
-        // Pausing: save remaining time
-        remainingMsRef.current = Math.max(0, endAtRef.current - Date.now());
-        endAtRef.current = null;
-      }
-      return !prev;
-    });
-  }, [playClickSound]);
+    if (!isActive) {
+      endAtRef.current = Date.now() + remainingMsRef.current;
+    } else {
+      remainingMsRef.current = Math.max(0, endAtRef.current - Date.now());
+      endAtRef.current = null;
+    }
+    setIsActive(!isActive);
+  }, [playClickSound, sharedLocked, isActive]);
 
   // Stable reset callback using refs to access current mode/settings
   const resetTimer = useCallback(() => {
+    if (sharedLocked) return;
     setIsActive(false);
     const mins = getModeMinutes(modeRef.current, settingsRef.current);
     remainingMsRef.current = mins * 60 * 1000;
@@ -104,7 +102,7 @@ const Timer = ({ settings, updateSettings }) => {
     setMinutes(mins);
     setSeconds(0);
     clearTimerSession();
-  }, []);
+  }, [sharedLocked]);
 
   const addFiveMinutes = () => {
     const extra = 5 * 60 * 1000;
@@ -141,22 +139,19 @@ const Timer = ({ settings, updateSettings }) => {
   }, [toggleTimer, resetTimer]);
 
   useEffect(() => {
-    // Sync time when settings or mode change IF not active to prevent jumping
-    if (isActive) return;
-    if (restoredSessionRef.current) {
-      restoredSessionRef.current = false;
-      return;
-    }
     const mins = getModeMinutes(mode, settings);
+    // Only a changed duration resets an idle timer. Pause and audio settings
+    // must preserve the user's remaining time, including restored sessions.
+    if (mins === configuredMinutesRef.current) return;
+    configuredMinutesRef.current = mins;
+    if (isActive || sharedLocked) return;
     remainingMsRef.current = mins * 60 * 1000;
-
     const timeoutId = setTimeout(() => {
       setMinutes(mins);
       setSeconds(0);
     }, 0);
-
     return () => clearTimeout(timeoutId);
-  }, [settings, mode, isActive]);
+  }, [settings, mode, isActive, sharedLocked]);
 
   useEffect(() => {
     writeTimerSession({
@@ -384,6 +379,7 @@ const Timer = ({ settings, updateSettings }) => {
     setMode('focus');
     setIsActive(false);
     remainingMsRef.current = focusDuration * 60 * 1000;
+    endAtRef.current = null;
     setMinutes(focusDuration);
     setSeconds(0);
   };

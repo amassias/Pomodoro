@@ -63,3 +63,19 @@ This backlog separates the cinematic UX refresh from future product work. Value 
 - [ ] Calendar read/sync — Requires the application's Google/Microsoft OAuth credentials and consent configuration. Existing calendar actions create events only.
 - [ ] Enforced shared-room lock and durable social history — Requires a persistent room/message schema and Supabase policies; the current lock is a realtime host control for connected clients.
 - [ ] Native lock-screen widget — Requires a native mobile shell. The installable web app keeps the timer state, document title, notifications and optional vibration instead.
+
+## Reliability batch — 2026-10-14
+
+Scope: preserve the current product and repair observed session-control failures. These items refine earlier delivery claims; logic-only tests did not verify the full pause/resume interaction.
+
+| ID | Priority | Status | Problem | Acceptance criteria |
+| --- | --- | --- | --- | --- |
+| REL-01 | P0 | Done | Pausing or changing audio settings resets remaining time. | Start at 25:00, run 65 seconds, pause at 23:55, change audio settings, reload, resume at 23:55; Reset still returns to 25:00. |
+| REL-02 | P0 | Done | Global shortcuts interfere with controls, dialogs and modified/repeated keystrokes. | Space activates a focused button normally; inputs, selects, editable regions, open modal dialogs, modifier combinations and held keys never operate the global timer. Default Space works without a custom mapping. |
+| REL-03 | P1 | Done | Malformed running sessions can restore invalid deadlines. | Invalid/non-finite deadlines and remaining time are rejected; valid running and paused sessions still restore; unavailable storage never prevents rendering. |
+
+Engineering approach: behavior tests through the existing timer UI, keyboard hook and persistence interface; reproduce each failure before fixing it; keep changes local and avoid speculative abstractions. Sources: Matt Pocock's [TDD](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/SKILL.md) and [codebase design](https://github.com/mattpocock/skills/blob/main/skills/engineering/codebase-design/SKILL.md), inspected at commit `49dd158d1076134a641b33efb035946536778336`. No plugin installation is required for this batch.
+
+Validation: each reported failure reproduced by a failing regression test before the fix. Timer UI tests also cover changed idle/running durations and guest controls remaining locked against global timer events. The changes preserve existing layouts and integrations.
+
+Release checks: 39 tests pass across 13 files, including the pause/reload flow under React StrictMode; lint and the production build/performance budget pass. Browser validation confirms paused time survives reload. Guest timer event handlers now enforce the same lock as the visible buttons.

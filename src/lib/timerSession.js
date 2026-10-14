@@ -6,11 +6,11 @@ export const normalizeTimerSession = (value, now = Date.now()) => {
   if (!value || typeof value !== 'object' || !VALID_MODES.has(value.mode)) return null;
 
   const isActive = value.isActive === true;
-  const endAt = Number(value.endAt);
-  const storedRemaining = Number(value.remainingMs);
-  const remainingMs = isActive && Number.isFinite(endAt)
-    ? Math.max(0, endAt - now)
-    : Math.max(0, Number.isFinite(storedRemaining) ? storedRemaining : 0);
+  const endAt = value.endAt;
+  const storedRemaining = value.remainingMs;
+  if (isActive && (typeof endAt !== 'number' || !Number.isFinite(endAt) || endAt <= 0)) return null;
+  if (!isActive && (typeof storedRemaining !== 'number' || !Number.isFinite(storedRemaining))) return null;
+  const remainingMs = isActive ? Math.max(0, endAt - now) : Math.max(0, storedRemaining);
 
   if (remainingMs <= 0) return null;
 
@@ -22,25 +22,25 @@ export const normalizeTimerSession = (value, now = Date.now()) => {
   };
 };
 
-export const readTimerSession = (storage = globalThis.localStorage, now = Date.now()) => {
+export const readTimerSession = (storage, now = Date.now()) => {
   try {
-    return normalizeTimerSession(JSON.parse(storage.getItem(TIMER_SESSION_KEY)), now);
+    return normalizeTimerSession(JSON.parse((storage ?? globalThis.localStorage).getItem(TIMER_SESSION_KEY)), now);
   } catch {
     return null;
   }
 };
 
-export const writeTimerSession = (session, storage = globalThis.localStorage) => {
+export const writeTimerSession = (session, storage) => {
   try {
-    storage.setItem(TIMER_SESSION_KEY, JSON.stringify(session));
+    (storage ?? globalThis.localStorage).setItem(TIMER_SESSION_KEY, JSON.stringify(session));
   } catch {
     // Timer persistence must never block the timer.
   }
 };
 
-export const clearTimerSession = (storage = globalThis.localStorage) => {
+export const clearTimerSession = (storage) => {
   try {
-    storage.removeItem(TIMER_SESSION_KEY);
+    (storage ?? globalThis.localStorage).removeItem(TIMER_SESSION_KEY);
   } catch {
     // Ignore unavailable storage.
   }

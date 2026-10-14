@@ -31,3 +31,29 @@ describe('timer session persistence', () => {
     expect(storage.getItem(TIMER_SESSION_KEY)).toBeNull();
   });
 });
+
+
+describe('invalid persisted sessions', () => {
+  it('rejects running sessions without a finite positive deadline and paused sessions without numeric remaining time', () => {
+    for (const endAt of [undefined, null, 'invalid', Infinity, NaN]) {
+      expect(normalizeTimerSession({ mode: 'focus', isActive: true, endAt, remainingMs: 10_000 }, 0)).toBeNull();
+    }
+    for (const remainingMs of [Infinity, NaN, null, true, '1000']) {
+      expect(normalizeTimerSession({ mode: 'focus', isActive: false, remainingMs }, 0)).toBeNull();
+    }
+  });
+});
+
+
+it('continues safely when the browser refuses access to storage', () => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, get: () => { throw new Error('Access denied'); } });
+  try {
+    expect(readTimerSession()).toBeNull();
+    expect(() => writeTimerSession({ mode: 'focus' })).not.toThrow();
+    expect(() => clearTimerSession()).not.toThrow();
+  } finally {
+    if (original) Object.defineProperty(globalThis, 'localStorage', original);
+    else delete globalThis.localStorage;
+  }
+});

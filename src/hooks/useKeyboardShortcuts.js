@@ -4,12 +4,20 @@ import { useEffect } from 'react';
 export const useKeyboardShortcuts = ({ settings, setSettings, showSettings, setShowSettings }) => {
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Ignore if typing in an input
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
+      if (e.defaultPrevented || e.isComposing) return;
       if (e.key === 'Escape' && showSettings) {
         setShowSettings(false);
-      } else if (settings.shortcutsEnabled !== false && (e.code === settings.shortcutToggle || e.key.toLowerCase() === String(settings.shortcutToggle || 'Space').toLowerCase())) {
+        return;
+      }
+      if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+      if (showSettings || document.querySelector('[aria-modal="true"]')) return;
+      // Preserve native keyboard behavior on interactive and editable controls.
+      if (e.target instanceof Element && e.target.closest(
+        'input, textarea, select, button, a, [role="button"], [role="slider"], [role="combobox"], [contenteditable]:not([contenteditable="false"])'
+      )) return;
+
+      const toggleKey = String(settings.shortcutToggle || 'Space');
+      if (settings.shortcutsEnabled !== false && (e.code === toggleKey || e.key.toLowerCase() === toggleKey.toLowerCase())) {
         e.preventDefault();
         window.dispatchEvent(new CustomEvent('timer-toggle'));
       } else if (settings.shortcutsEnabled !== false && e.key.toLowerCase() === String(settings.shortcutReset || 'r').toLowerCase()) {
