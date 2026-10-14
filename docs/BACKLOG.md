@@ -117,3 +117,5 @@ Contrôle local final : lint sans erreur ni warning, suite de régression, build
 - [x] QA — Stockage bloqué/quota plein : fallback temporaire explicite, export disponible, reprise testée.
 - [x] QA — Calendrier daté au clic, ICS Unicode conforme au pliage ; sourdine réversible ; phases successives invité corrigées.
 - [x] QA — Dernier lot : 78 tests / 33 fichiers, lint, build, performance et audit npm réussis.
+
+- [x] Livraison — `7851d68` sur main, [CI verte](https://github.com/amassias/Pomodoro/actions/runs/38651479288), Vercel READY au même commit ; page publique et 39 ressources offline contrôlées.
