@@ -120,3 +120,15 @@ it('keeps the host duration and break cycle when a guest takes over', () => {
     expect(view.container.querySelector('.time-display').textContent).toBe('15:00');
   } finally { window.removeEventListener('pomodoroCompleted', complete); }
 });
+
+it('completes successive phases when following a host', () => {
+  shared.roomId='guest-phases';
+  shared.remoteTimerState={mode:'focus',isActive:true,endAt:Date.now()+60_000,remainingMs:60_000};
+  const props = { settings: {...settings, alarmRepeat: 0}, updateSettings: vi.fn() };
+  const view = render(<Timer {...props} />);
+  act(()=>vi.advanceTimersByTime(60_001));
+  shared.remoteTimerState={mode:'shortBreak',isActive:true,endAt:Date.now()+60_000,remainingMs:60_000};
+  view.rerender(<Timer {...props} />);
+  act(()=>vi.advanceTimersByTime(60_001));
+  expect(view.container.textContent).toContain('Short break paused');
+});

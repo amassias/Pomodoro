@@ -26,3 +26,12 @@ describe('calendar integrations', () => {
     expect(ics).toContain('SUMMARY:Focus: Roadmap');
   });
 });
+
+it('folds long Unicode fields and escapes carriage returns without introducing extra properties', () => {
+  const title='作業😀'.repeat(35)+'\r\nBEGIN:VEVENT';
+  const ics=buildIcs(createFocusCalendarEvent({taskName:title}),'unicode-test');
+  expect(ics.split('\r\n').every(line=>new TextEncoder().encode(line).length<=75)).toBe(true);
+  const unfolded=ics.replace(/\r\n[ \t]/g,'');
+  expect(unfolded).toContain('SUMMARY:Focus: '+title.replace('\r\n','\\n'));
+  expect(unfolded.match(/^BEGIN:VEVENT$/gm)).toHaveLength(1);
+});

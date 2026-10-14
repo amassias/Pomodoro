@@ -41,3 +41,14 @@ describe('global shortcuts', () => {
     expect(close).toHaveBeenCalledWith(false);
   });
 });
+
+it('mutes both sound channels together and restores the chosen volumes', () => {
+  const Volumes = () => {
+    const [settings,setSettings]=React.useState({alarmVolume:30,tickingVolume:0});
+    useKeyboardShortcuts({settings,setSettings,showSettings:false,setShowSettings:()=>{}});
+    return <p>Volumes {settings.alarmVolume}/{settings.tickingVolume}</p>;
+  };
+  render(<Volumes />);
+  fireEvent.keyDown(window,{key:'m'});expect(screen.getByText('Volumes 0/0')).toBeTruthy();
+  fireEvent.keyDown(window,{key:'m'});expect(screen.getByText('Volumes 30/0')).toBeTruthy();
+});

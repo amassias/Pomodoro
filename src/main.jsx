@@ -1,3 +1,4 @@
+import { browserLocalStorage as localStorage } from './lib/browserStorage';
 import React, { Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
 import ErrorBoundary from './components/ui/ErrorBoundary.jsx';

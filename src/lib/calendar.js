@@ -33,7 +33,24 @@ export const buildOutlookCalendarUrl = (event) => {
   return `https://outlook.office.com/calendar/0/deeplink/compose?${params}`;
 };
 
-const escapeIcs = (value) => String(value).replaceAll('\\', '\\\\').replaceAll('\n', '\\n').replaceAll(',', '\\,').replaceAll(';', '\\;');
+const escapeIcs = (value) => String(value).replaceAll('\\', '\\\\').replace(/\r\n|\r|\n/g, '\\n').replaceAll(',', '\\,').replaceAll(';', '\\;');
+
+// Fold at Unicode boundaries so each physical line stays within 75 UTF-8 octets.
+const foldIcsLine = (line) => {
+  const encoder = new TextEncoder();
+  let result = '', current = '', bytes = 0;
+  for (const character of line) {
+    const size = encoder.encode(character).length;
+    if (bytes + size > 75) {
+      result += current + '\r\n';
+      current = ' ';
+      bytes = 1;
+    }
+    current += character;
+    bytes += size;
+  }
+  return result + current;
+};
 
 export const buildIcs = (event, uid = crypto.randomUUID()) => [
   'BEGIN:VCALENDAR',
@@ -51,4 +68,4 @@ export const buildIcs = (event, uid = crypto.randomUUID()) => [
   'END:VEVENT',
   'END:VCALENDAR',
   '',
-].join('\r\n');
+].map(foldIcsLine).join('\r\n');

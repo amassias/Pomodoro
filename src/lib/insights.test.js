@@ -11,8 +11,8 @@ describe('weekly insights', () => {
     expect(getWeeklyComparison(history, new Date('2026-07-11T12:00:00'))).toEqual({ currentMinutes: 100, previousMinutes: 50, changePercent: 100 });
   });
 
-  it('handles a first active week without division by zero', () => {
-    expect(getWeeklyComparison({ '2026-07-06': [{ duration: 25 }] }, new Date('2026-07-11T12:00:00')).changePercent).toBe(100);
+  it('marks a first active week as having no percentage comparison baseline', () => {
+    expect(getWeeklyComparison({ '2026-07-06': [{ duration: 25 }] }, new Date('2026-07-11T12:00:00')).changePercent).toBeNull();
   });
 });
 

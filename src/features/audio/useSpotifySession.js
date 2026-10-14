@@ -1,3 +1,4 @@
+import { browserLocalStorage as localStorage } from '../../lib/browserStorage';
 import { useCallback, useEffect, useState } from 'react';
 import { getMe, isTokenExpired, refreshAccessToken } from '../../lib/spotify';
 import { scopedKey, storageKeys } from '../../lib/storage.js';

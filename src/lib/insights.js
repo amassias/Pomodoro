@@ -16,7 +16,7 @@ export const getWeeklyComparison = (history, now = new Date()) => {
 
   const currentMinutes = totalMinutesForRange(history, currentStart, currentEnd);
   const previousMinutes = totalMinutesForRange(history, previousStart, currentStart);
-  const changePercent = previousMinutes > 0 ? Math.round(((currentMinutes - previousMinutes) / previousMinutes) * 100) : currentMinutes > 0 ? 100 : 0;
+  const changePercent = previousMinutes > 0 ? Math.round(((currentMinutes - previousMinutes) / previousMinutes) * 100) : currentMinutes > 0 ? null : 0;
   return { currentMinutes, previousMinutes, changePercent };
 };
 

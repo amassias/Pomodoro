@@ -6,3 +6,7 @@ it('exports quoted task names and tolerates malformed timestamps and spreadsheet
   expect(csv).toContain('"Say ""hello"""');
   expect(csv).toContain('2026-10-14,25,');
 });
+
+it('does not label a legacy session with an unknown completion flag as failed', () => {
+  expect(generateCSV({ '2026-10-14': [{ duration: 25 }] })).toContain(',Unknown,');
+});

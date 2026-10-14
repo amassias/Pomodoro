@@ -33,3 +33,8 @@ it('ignores empty and malformed history days instead of inventing a streak or cr
   expect(stats.currentStreak).toBe(0);
   expect(stats.pomodorosCompleted).toBe(1);
 });
+
+it('keeps a current streak beyond 100 days', () => {
+  const history = Object.fromEntries(Array.from({ length: 101 }, (_, index) => [new Date(2026, 0, index + 1).toLocaleDateString('en-CA'), [{ duration: 25 }]]));
+  expect(computeReportStats(history, [], new Date(2026, 3, 11)).currentStreak).toBe(101);
+});

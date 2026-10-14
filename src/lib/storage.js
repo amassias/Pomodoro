@@ -1,3 +1,4 @@
+import { browserLocalStorage as localStorage } from './browserStorage';
 export const storageKeys = {
   tasks: 'pomodoro-tasks',
   archivedTasks: 'pomodoro-archived-tasks',

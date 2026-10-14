@@ -90,7 +90,7 @@ function App() {
               <span>Make this session count</span>
             </div>
           </div>
-          <div className={`sync-indicator ${syncStatus}`} title={`Data status: ${syncStatus}`} aria-label={`Data ${syncStatus}`}>{syncStatus === 'local' ? 'Local' : syncStatus}</div>
+          <div className={`sync-indicator ${syncStatus}`} title={`Data status: ${syncStatus}`} aria-label={`Data ${syncStatus}`}>{syncStatus === 'local' ? 'Local' : syncStatus === 'temporary' ? 'Temporary data' : syncStatus}</div>
           <div className="top-widget-area">
             <SharedSessionControl />
             <DailyProgress />
@@ -100,6 +100,7 @@ function App() {
           <span className="live-dot"></span>
           Live atmosphere
         </div>
+        {syncStatus === 'temporary' && <p role="status" className="storage-notice">Browser storage is unavailable. Your changes stay in this tab; export JSON from Insights before closing it.</p>}
         <main className="main-content">
           <div className="main-grid">
             {userDataLoading ? <div className="timer-container glass-panel" role="status">Loading your workspace…</div> : <Timer settings={settings} updateSettings={setSettings} />}

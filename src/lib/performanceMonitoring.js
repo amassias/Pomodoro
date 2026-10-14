@@ -1,3 +1,4 @@
+import { browserSessionStorage as sessionStorage } from './browserStorage';
 export const classifyThirdPartyResource = (url) => {
   if (/youtube\.com|youtube-nocookie\.com|googlevideo\.com|ytimg\.com/.test(url)) return 'youtube';
   if (/supabase\.(co|in)/.test(url)) return 'supabase';

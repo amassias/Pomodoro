@@ -295,3 +295,5 @@
   body:has(.bottom-bar.expanded) .lofi-player,
   body:has(.bottom-bar.expanded) .spotify-player-wrapper { visibility: hidden; }
 }
+
+.storage-notice { width: min(100%, 1180px); margin: 0.75rem 0 0; padding: 0.7rem 1rem; background: var(--surface-glass-strong, rgba(9,11,14,0.9)); border: 1px solid var(--glass-border); border-radius: 8px; color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; }

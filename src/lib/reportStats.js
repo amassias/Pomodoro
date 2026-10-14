@@ -22,7 +22,7 @@ export const computeReportStats = (pomodoroHistory, archivedTasks, today = new D
     weeklyData[`${dayName} ${dayNum}`] = dayMinutes / 60;
   });
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i <= Object.keys(history).length; i++) {
     const checkDate = new Date(today);
     checkDate.setDate(checkDate.getDate() - i);
     const dateStr = getLocalDateKey(checkDate);

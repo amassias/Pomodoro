@@ -1,3 +1,4 @@
+import { browserLocalStorage as localStorage } from '../lib/browserStorage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { readJson, removeKey, scopedKey, storageKeys, writeJson } from '../lib/storage';
@@ -122,13 +123,21 @@ export const UserDataProvider = ({ children }) => {
   const lastRemoteUpdatedAtRef = useRef(null);
   const skipNextPersistRef = useRef(false);
 
+  useEffect(() => {
+    const updateStorageStatus = event => {
+      if (!userId && event.detail?.kind === 'local') setSyncStatus(event.detail.persistent ? 'local' : 'temporary');
+    };
+    window.addEventListener('browser-storage-state', updateStorageStatus);
+    return () => window.removeEventListener('browser-storage-state', updateStorageStatus);
+  }, [userId]);
+
   // Load user state from DB (or guest state from localStorage).
   useEffect(() => {
     let cancelled = false;
 
     const loadGuest = () => {
       lastLoadedUserIdRef.current = null;
-      setSyncStatus('local');
+      setSyncStatus(localStorage.persistent ? 'local' : 'temporary');
       setLastSyncedAt(null);
       setTasks(normalizeTasks(readJson(storageKeys.tasks, [])));
       setArchivedTasks(normalizeArchivedTasks(readJson(storageKeys.archivedTasks, [])));

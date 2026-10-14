@@ -108,3 +108,12 @@ Contrôle local final : lint sans erreur ni warning, suite de régression, build
 
 - [x] QA — 68 tests dans 30 fichiers ; événements tardifs d’un ancien compte ignorés et transfert de durée/cycle entre hôtes couvert.
 - [x] Livraison — commit de correctifs `2eaa8a8` relu sur main distant ; [CI 38645900267 verte](https://github.com/amassias/Pomodoro/actions/runs/38645900267), Vercel production READY pour ce commit, API YouTube HTTP 200, 39 ressources offline HTTP 200 et zéro alerte Dependabot ouverte.
+
+- [x] QA — Profils/messages de salle normalisés ; les données mal formées ne font plus planter le workspace. Suite finale : 78 tests dans 33 fichiers.
+
+- [x] QA — Séries au-delà de 100 jours correctes ; export des anciens flags de fin inconnus sans les transformer en échec.
+- [x] QA — Semaine de référence vide : pas de hausse fictive de 100 %, message explicite de base absente.
+
+- [x] QA — Stockage bloqué/quota plein : fallback temporaire explicite, export disponible, reprise testée.
+- [x] QA — Calendrier daté au clic, ICS Unicode conforme au pliage ; sourdine réversible ; phases successives invité corrigées.
+- [x] QA — Dernier lot : 78 tests / 33 fichiers, lint, build, performance et audit npm réussis.

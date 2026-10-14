@@ -1,3 +1,4 @@
+import { browserLocalStorage } from './browserStorage';
 export const TIMER_SESSION_KEY = 'pomodoro-active-session-v1';
 
 const VALID_MODES = new Set(['focus', 'shortBreak', 'longBreak']);
@@ -26,7 +27,7 @@ export const normalizeTimerSession = (value, now = Date.now(), { allowExpired = 
 
 export const readTimerSession = (storage, now = Date.now(), options) => {
   try {
-    return normalizeTimerSession(JSON.parse((storage ?? globalThis.localStorage).getItem(TIMER_SESSION_KEY)), now, options);
+    return normalizeTimerSession(JSON.parse((storage ?? browserLocalStorage).getItem(TIMER_SESSION_KEY)), now, options);
   } catch {
     return null;
   }
@@ -34,7 +35,7 @@ export const readTimerSession = (storage, now = Date.now(), options) => {
 
 export const writeTimerSession = (session, storage) => {
   try {
-    (storage ?? globalThis.localStorage).setItem(TIMER_SESSION_KEY, JSON.stringify(session));
+    (storage ?? browserLocalStorage).setItem(TIMER_SESSION_KEY, JSON.stringify(session));
   } catch {
     // Timer persistence must never block the timer.
   }
@@ -42,7 +43,7 @@ export const writeTimerSession = (session, storage) => {
 
 export const clearTimerSession = (storage) => {
   try {
-    (storage ?? globalThis.localStorage).removeItem(TIMER_SESSION_KEY);
+    (storage ?? browserLocalStorage).removeItem(TIMER_SESSION_KEY);
   } catch {
     // Ignore unavailable storage.
   }

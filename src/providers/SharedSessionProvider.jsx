@@ -1,3 +1,4 @@
+import { browserLocalStorage as localStorage, browserSessionStorage as sessionStorage } from '../lib/browserStorage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
@@ -20,14 +21,32 @@ const readExpiryFromUrl = () => {
   return Number.isFinite(value) && value > Date.now() ? value : null;
 };
 
+const safeText = (value, fallback = '', limit = 40) => typeof value === 'string' ? value.slice(0, limit) : fallback;
+
 const defaultProfile = () => {
   const stored = sessionStorage.getItem('world-focus-profile');
   if (stored) {
-    try { return JSON.parse(stored); } catch { /* use generated profile */ }
+    try {
+      const profile = JSON.parse(stored);
+      if (typeof profile?.name === 'string' && typeof profile?.avatar === 'string') return { name: safeText(profile.name), avatar: safeText(profile.avatar, '🌱', 12) };
+    } catch { /* use generated profile */ }
   }
   const profile = { name: `Focus friend ${Math.floor(100 + Math.random() * 900)}`, avatar: ['🌱', '🍅', '🌙', '⚡', '🧠'][Math.floor(Math.random() * 5)] };
   sessionStorage.setItem('world-focus-profile', JSON.stringify(profile));
   return profile;
+};
+
+const normalizeMessage = message => {
+  if (!message || !['message', 'reaction', 'activity'].includes(message.type) || typeof message.text !== 'string') return null;
+  return {
+    id: safeText(message.id, crypto.randomUUID(), 128),
+    type: message.type,
+    text: safeText(message.text, '', 280),
+    senderId: safeText(message.senderId, '', 128),
+    senderName: safeText(message.senderName, 'Focus friend'),
+    senderAvatar: safeText(message.senderAvatar, '🌱', 12),
+    at: Number.isFinite(message.at) ? message.at : Date.now(),
+  };
 };
 
 const roomHistoryKey = (roomId) => `world-focus-room-history:${roomId}`;
@@ -36,7 +55,7 @@ const readRoomHistory = (roomId) => {
   if (!roomId) return [];
   try {
     const value = JSON.parse(localStorage.getItem(roomHistoryKey(roomId)) || '[]');
-    return Array.isArray(value) ? value.slice(-30) : [];
+    return Array.isArray(value) ? value.map(normalizeMessage).filter(Boolean).slice(-30) : [];
   } catch {
     return [];
   }
@@ -63,9 +82,11 @@ export const SharedSessionProvider = ({ children }) => {
 
   const appendMessage = useCallback((message) => {
     if (!roomId) return;
+    const normalized = normalizeMessage(message);
+    if (!normalized) return;
     setMessages((previous) => {
-      if (previous.some((item) => item.id === message.id)) return previous;
-      const next = [...previous, message].slice(-30);
+      if (previous.some((item) => item.id === normalized.id)) return previous;
+      const next = [...previous, normalized].slice(-30);
       try { localStorage.setItem(roomHistoryKey(roomId), JSON.stringify(next)); } catch { /* history remains available for this open session */ }
       return next;
     });
@@ -96,7 +117,7 @@ export const SharedSessionProvider = ({ children }) => {
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
         setParticipantCount(Math.max(1, Object.keys(state).length));
-        setParticipants(Object.entries(state).flatMap(([id, presences]) => presences.map((presence) => ({ id, ...presence }))));
+        setParticipants(Object.entries(state).flatMap(([id, presences]) => presences.map((presence) => ({ id, ...presence, name: safeText(presence.name, 'Focus friend'), avatar: safeText(presence.avatar, '🌱', 12) }))));
         const entries = Object.entries(state).sort(([left], [right]) => left.localeCompare(right));
         const hasHost = entries.some(([, presences]) => presences.some((presence) => presence.role === 'host'));
         if (!hasHost && entries[0]?.[0] === participantIdRef.current) {

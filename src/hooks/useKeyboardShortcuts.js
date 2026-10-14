@@ -23,11 +23,15 @@ export const useKeyboardShortcuts = ({ settings, setSettings, showSettings, setS
       } else if (settings.shortcutsEnabled !== false && e.key.toLowerCase() === String(settings.shortcutReset || 'r').toLowerCase()) {
         window.dispatchEvent(new CustomEvent('timer-reset'));
       } else if (settings.shortcutsEnabled !== false && e.key.toLowerCase() === String(settings.shortcutMute || 'm').toLowerCase()) {
-        // Toggle Mute: Toggle between 0 and defaults (70/50)
+        // Mute the group together, then restore the user's previous choices.
         setSettings(prev => {
-          const newAlarmVol = prev.alarmVolume === 0 ? 70 : 0;
-          const newTickVol = prev.tickingVolume === 0 ? 50 : 0;
-          return { ...prev, alarmVolume: newAlarmVol, tickingVolume: newTickVol };
+          const volume = (value, fallback) => Math.min(100, Math.max(0, Number.isFinite(Number(value)) ? Number(value) : fallback));
+          const alarmVolume = volume(prev.alarmVolume ?? 70, 70);
+          const tickingVolume = volume(prev.tickingVolume ?? 50, 50);
+          if (alarmVolume > 0 || tickingVolume > 0) return { ...prev, mutedSoundVolumes: { alarmVolume, tickingVolume }, alarmVolume: 0, tickingVolume: 0 };
+          const restoredAlarm = volume(prev.mutedSoundVolumes?.alarmVolume ?? 70, 70);
+          const restoredTick = volume(prev.mutedSoundVolumes?.tickingVolume ?? 50, 50);
+          return { ...prev, alarmVolume: restoredAlarm || restoredTick ? restoredAlarm : 70, tickingVolume: restoredAlarm || restoredTick ? restoredTick : 50 };
         });
       }
     };

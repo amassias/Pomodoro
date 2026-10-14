@@ -1,3 +1,4 @@
+import { browserLocalStorage as localStorage } from './browserStorage';
 const AUTH_ENDPOINT = "https://accounts.spotify.com/authorize";
 const TOKEN_ENDPOINT = "https://accounts.spotify.com/api/token";
 const PKCE_VERIFIER_KEY = "spotify_pkce_verifier";

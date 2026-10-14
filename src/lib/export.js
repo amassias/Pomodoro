@@ -8,8 +8,8 @@ export const generateCSV = (history) => {
       const parsedTimestamp = new Date(session.timestamp);
       const timestamp = session.timestamp && !Number.isNaN(parsedTimestamp.valueOf()) ? parsedTimestamp.toISOString() : date;
       let taskName = String(session.taskName || '-');
-      if (/^[\s]*[=+@-]/.test(taskName)) taskName = `'${taskName}`;
-      rows.push([date, session.duration, `"${taskName.replaceAll('"', '""')}"`, session.completed ? 'Yes' : 'No', timestamp]);
+      if (taskName !== '-' && /^[\s]*[=+@-]/.test(taskName)) taskName = `'${taskName}`;
+      rows.push([date, session.duration, `"${taskName.replaceAll('"', '""')}"`, session.completed === true ? 'Yes' : session.completed === false ? 'No' : 'Unknown', timestamp]);
     }
   }
   return rows.map(row => row.join(',')).join('\n');

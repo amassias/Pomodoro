@@ -201,6 +201,9 @@ const Timer = ({ settings, updateSettings }) => {
         ? Math.max(0, remoteTimerState.endAt - Date.now())
         : Math.max(0, Number(remoteTimerState.remainingMs) || 0);
       const totalSeconds = Math.ceil(remaining / 1000);
+      if (remoteTimerState.isActive && remaining > 0 && (remoteTimerState.endAt !== endAtRef.current || remoteTimerState.mode !== modeRef.current)) {
+        completionHandledRef.current = false;
+      }
       setMode(remoteTimerState.mode);
       setIsActive(Boolean(remoteTimerState.isActive && remaining > 0));
       endAtRef.current = remoteTimerState.isActive ? remoteTimerState.endAt : null;

@@ -324,8 +324,10 @@ const Report = () => {
             <div className="weekly-insight" role="status">
               <div><span>This week</span><strong>{(weeklyComparison.currentMinutes / 60).toFixed(1)}h</strong></div>
               <div><span>Previous week</span><strong>{(weeklyComparison.previousMinutes / 60).toFixed(1)}h</strong></div>
-              <p className={weeklyComparison.changePercent === 0 ? 'neutral' : weeklyComparison.changePercent > 0 ? 'positive' : 'negative'}>
-                {weeklyComparison.changePercent === 0
+              <p className={weeklyComparison.changePercent === null || weeklyComparison.changePercent === 0 ? 'neutral' : weeklyComparison.changePercent > 0 ? 'positive' : 'negative'}>
+                {weeklyComparison.changePercent === null
+                  ? 'No focus recorded last week'
+                  : weeklyComparison.changePercent === 0
                   ? 'Same as last week'
                   : `${weeklyComparison.changePercent > 0 ? '↑' : '↓'} ${Math.abs(weeklyComparison.changePercent)}% versus last week`}
               </p>
