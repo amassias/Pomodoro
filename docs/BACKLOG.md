@@ -98,9 +98,10 @@ La [matrice de contrôle](QA_2026-10-14.md) remplace les anciennes coches comme 
 | QA-10 | P1 | Fait | OAuth code seul, erreur explicite ; polling Spotify continu ; PKCE sûr ; callback sans double échange. |
 | QA-11 | P1 | Fait | Mode sans configuration Supabase vérifié dans un navigateur ; timer/tâches utilisables et partage indisponible expliqué. |
 | QA-12 | P1 | Fait | API YouTube bornée et validée ; succès/rejets testés. |
-| QA-13 | P1 | À valider avec le compte | Lecture Spotify Premium et connexion interactive personnelle Google/GitHub/email. Le service actif et les tests ne prouvent pas ces consentements. |
+| QA-13 | P1 | À valider avec le compte | Connexion interactive personnelle Google/GitHub/email. Le service actif et les tests ne prouvent pas ces consentements. |
 | QA-14 | P2 | Limite documentée | Conflits et modifications de compte offline : last-write-wins actuel ; fusion/file offline non implémentée. |
 | QA-15 | P2 | Limite documentée | Password-leak protection Supabase désactivée ; changement de configuration/éligibilité à décider. |
+| QA-16 | P2 | Optionnel — décision actée | Spotify reste une intégration optionnelle. Aucun test de lecture Spotify Premium n’est attendu pour clôturer la livraison, conformément à la décision utilisateur du 15 octobre 2026. |
 
 Les exigences anciennes « calendrier read/write », « verrou de salle imposé » et « widget natif » restent différées. Les liens de création calendrier, les salles coopératives et la PWA ont leur propre preuve, sans substitution de critères.
 
