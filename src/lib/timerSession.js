@@ -36,6 +36,7 @@ export const readTimerSession = (storage, now = Date.now(), options) => {
 export const writeTimerSession = (session, storage) => {
   try {
     (storage ?? browserLocalStorage).setItem(TIMER_SESSION_KEY, JSON.stringify(session));
+    if (!storage && typeof window !== 'undefined') window.webkit?.messageHandlers?.focusTimer?.postMessage(session);
   } catch {
     // Timer persistence must never block the timer.
   }
@@ -44,6 +45,7 @@ export const writeTimerSession = (session, storage) => {
 export const clearTimerSession = (storage) => {
   try {
     (storage ?? browserLocalStorage).removeItem(TIMER_SESSION_KEY);
+    if (!storage && typeof window !== 'undefined') window.webkit?.messageHandlers?.focusTimer?.postMessage({ mode: 'focus', isActive: false, remainingMs: 0 });
   } catch {
     // Ignore unavailable storage.
   }

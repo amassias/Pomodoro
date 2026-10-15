@@ -1,0 +1,87 @@
+.lofi-player {
+  position: fixed;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  left: 16px;
+  z-index: 50;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  padding: 12px;
+  border-radius: 12px;
+}
+.lofi-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.lofi-toolbar > div {
+  flex: 1;
+  min-width: 0;
+}
+.lofi-toolbar strong,
+.lofi-toolbar small {
+  display: block;
+}
+.lofi-toolbar small {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 3px;
+}
+.lofi-toolbar input {
+  width: 56px;
+  accent-color: var(--accent-color);
+}
+.lofi-player button,
+.lofi-player a {
+  font-size: 12px;
+  padding: 6px;
+  color: var(--text-secondary);
+  background: transparent;
+}
+.lofi-toolbar button {
+  border: 1px solid var(--text-muted);
+  border-radius: 8px;
+  color: var(--text-primary);
+}
+.lofi-sources {
+  margin-top: 4px;
+}
+.lofi-radio-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.lofi-video {
+  width: 100%;
+  height: 200px;
+  min-width: 200px;
+}
+.lofi-video iframe {
+  display: block;
+  width: 100%;
+  height: 200px;
+  border: 0;
+}
+.lofi-radio-panel p {
+  font-size: 12px;
+  margin: 0;
+}
+@media (max-width: 768px) {
+  .lofi-player {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 76px);
+    left: 12px;
+    max-width: calc(100vw - 24px);
+  }
+}
+
+.lofi-player button {
+  min-height: 44px;
+}
+.lofi-toolbar small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lofi-toolbar input {
+  min-height: 44px;
+}

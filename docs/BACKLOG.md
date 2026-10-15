@@ -1,5 +1,7 @@
 # World Focus product backlog
 
+État actuel : [livraison du 15 octobre 2026](DELIVERY_2026-10-15.md). Les sections datées précédentes restent des preuves historiques ; les blocages externes ci-dessous ne sont pas cochés comme terminés.
+
 This backlog separates the cinematic UX refresh from future product work. Value and effort use a relative High / Medium / Low scale.
 
 | Priority | Item | User value | Effort | Dependencies | Acceptance criteria |
@@ -60,9 +62,9 @@ This backlog separates the cinematic UX refresh from future product work. Value 
 
 ## Deliberately deferred platform work
 
-- [ ] Calendar read/sync — Requires the application's Google/Microsoft OAuth credentials and consent configuration. Existing calendar actions create events only.
-- [ ] Enforced shared-room lock and durable social history — Requires a persistent room/message schema and Supabase policies; the current lock is a realtime host control for connected clients.
-- [ ] Native lock-screen widget — Requires a native mobile shell. The installable web app keeps the timer state, document title, notifications and optional vibration instead.
+- [ ] Calendar activation — Google and Outlook read/write connectors implemented. Google client found and configured, Calendar API activated with approval; personal consent remains required. Microsoft app/client configuration is still required; the Entra console reached a sign-in timeout.
+- [x] Enforced shared-room lock and room history — Server RPC checks admission, expiry and host privileges. Messages persist for the four-hour room lifetime. Direct table access is revoked; live negative permission tests pass.
+- [ ] iPhone installation — SwiftUI shell, WidgetKit and ActivityKit implemented and checked with the Swift compiler. Full Xcode build requires the missing iOS 26.4 runtime; physical-device signing and App Group provisioning remain required.
 
 ## Reliability batch — 2026-10-14
 
@@ -94,16 +96,16 @@ La [matrice de contrôle](QA_2026-10-14.md) remplace les anciennes coches comme 
 | QA-06 | P0 | Fait | Zéro alerte npm ; audit ajouté en CI ; installation propre du lockfile réussie. |
 | QA-07 | P1 | Fait | Dialogues imbriqués, labels, switch audio, favoris clavier, visite guidée et graphique interactif corrigés. Tests DOM et axe. |
 | QA-08 | P1 | Fait | PWA précharge écrans et sons ; rechargement, tâche, réglages et Insights vérifiés hors ligne sur ordinateur et mobile. |
-| QA-09 | P1 | Fait | Radio sans URL signée périmée ; fallback de pluie local testé ; erreurs média ne bloquent pas le travail. |
+| QA-09 | P1 | Fait | Lecteur Lofi Girl officiel visible, direct actif vérifié et remplacement dynamique ; lecture réelle observée ; pluie locale disponible. |
 | QA-10 | P1 | Fait | OAuth code seul, erreur explicite ; polling Spotify continu ; PKCE sûr ; callback sans double échange. |
 | QA-11 | P1 | Fait | Mode sans configuration Supabase vérifié dans un navigateur ; timer/tâches utilisables et partage indisponible expliqué. |
 | QA-12 | P1 | Fait | API YouTube bornée et validée ; succès/rejets testés. |
 | QA-13 | P1 | À valider avec le compte | Connexion interactive personnelle Google/GitHub/email. Le service actif et les tests ne prouvent pas ces consentements. |
-| QA-14 | P2 | Limite documentée | Conflits et modifications de compte offline : last-write-wins actuel ; fusion/file offline non implémentée. |
-| QA-15 | P2 | Limite documentée | Password-leak protection Supabase désactivée ; changement de configuration/éligibilité à décider. |
+| QA-14 | P2 | Fait | File locale par compte, reprise après rechargement offline, sauvegarde atomique avec contrôle de révision et fusion à trois versions ; conflits de même champ résolus en faveur du changement local en attente. |
+| QA-15 | P2 | Bloqué par le forfait | Protection contre les mots de passe compromis réservée au forfait Pro, confirmé dans Supabase. Projet Free ; aucun achat effectué. |
 | QA-16 | P2 | Optionnel — décision actée | Spotify reste une intégration optionnelle. Aucun test de lecture Spotify Premium n’est attendu pour clôturer la livraison, conformément à la décision utilisateur du 15 octobre 2026. |
 
-Les exigences anciennes « calendrier read/write », « verrou de salle imposé » et « widget natif » restent différées. Les liens de création calendrier, les salles coopératives et la PWA ont leur propre preuve, sans substitution de critères.
+Les implémentations calendrier, verrou serveur et widget iPhone ont été reprises le 15 octobre. Leurs critères de fonctionnement et leurs prérequis externes sont distingués dans la matrice de livraison actuelle.
 
 Contrôle local final : lint sans erreur ni warning, suite de régression, build de production, budget de performance, audit npm sans vulnérabilité et installation propre du lockfile. La publication et la CI sont vérifiées après le push.
 
@@ -120,3 +122,19 @@ Contrôle local final : lint sans erreur ni warning, suite de régression, build
 - [x] QA — Dernier lot : 78 tests / 33 fichiers, lint, build, performance et audit npm réussis.
 
 - [x] Livraison — `7851d68` sur main, [CI verte](https://github.com/amassias/Pomodoro/actions/runs/38651479288), Vercel READY au même commit ; page publique et 39 ressources offline contrôlées.
+
+
+## Livraison du 15 octobre 2026
+
+- [x] Radio Lofi Girl officielle : remplacement du relais défaillant, vérification du direct actif et lecture réelle dans le navigateur.
+- [x] Synchronisation : file offline et contrôle atomique de révision, fusion des changements indépendants, tests de reprise après rechargement.
+- [x] Salles : admission, verrou, privilèges hôte, exclusion et messages contrôlés par le serveur ; sondes réelles annulées après test.
+- [x] Connecteurs Google et Outlook : lecture d’événements, choix d’un calendrier et création de blocs ; tokens limités à l’onglet.
+- [x] Client OAuth Google retrouvé dans le projet existant ; domaine de production déjà autorisé ; identifiant public configuré sur Vercel ; Calendar API activée après accord.
+- [x] Code iPhone : application SwiftUI, WidgetKit et Live Activity reliés au minuteur web ; vérification et édition de liens avec le compilateur Swift.
+- [ ] Connexion personnelle calendrier : consentement à effectuer ; API Google activée, application Microsoft à finaliser.
+- [ ] Widget sur appareil : runtime Xcode manquant, signature Apple et App Group requis.
+- [ ] Protection des mots de passe compromis : forfait Pro nécessaire.
+- [x] Spotify reste optionnel, sans test Premium attendu.
+
+- [x] Vérification locale du lot : 88 tests / 38 fichiers, lint, build, performance, audit npm sans vulnérabilité et vérification Swift réussis.

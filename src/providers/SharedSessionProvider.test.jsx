@@ -1,48 +1,70 @@
 // @vitest-environment jsdom
-import React from 'react';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { SharedSessionProvider, useSharedSession } from './SharedSessionProvider';
-const backend = vi.hoisted(() => ({ channels: [], callbacks: [] }));
-vi.mock('../lib/supabase', () => ({ supabase: {
-  channel: () => {
-    const channel = { handlers: {}, track: vi.fn(), send: vi.fn(), presenceState: () => ({}) };
-    channel.on = vi.fn((_type, filter, fn) => { channel.handlers[filter.event] = fn; return channel; });
-    channel.subscribe = fn => { backend.callbacks.push(fn); return channel; };
-    backend.channels.push(channel);
-    return channel;
+import React from "react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import {
+  SharedSessionProvider,
+  useSharedSession,
+} from "./SharedSessionProvider";
+const backend = vi.hoisted(() => ({ calls: [], locked: false, ready: false }));
+vi.mock("../lib/supabase", () => ({
+  supabase: {
+    rpc: async (_name, args) => {
+      backend.calls.push(args);
+      if (args.p_action === "ready") backend.ready = args.p_payload.ready;
+      if (args.p_action === "lock") backend.locked = args.p_payload.locked;
+      return {
+        data: {
+          isHost: true,
+          memberId: "me",
+          locked: backend.locked,
+          participants: [{ id: "me", name: "Me", ready: backend.ready }],
+          messages: [],
+          expiresAt: Date.now() + 10000,
+        },
+        error: null,
+      };
+    },
   },
-  removeChannel: vi.fn(),
-} }));
+}));
 const Harness = () => {
-  const room = useSharedSession();
-  return <><button onClick={room.createRoom}>Create</button><button onClick={room.toggleReady}>Ready</button><button onClick={room.leaveRoom}>Leave</button><p>{room.connectionStatus}</p><p>{room.isReady ? 'Ready now' : 'Not ready'}</p><p>Messages {room.messages.length}</p>{room.messages.map(message => <p key={message.id}>{message.text}</p>)}</>;
+  const r = useSharedSession();
+  return (
+    <>
+      <button onClick={r.createRoom}>Create</button>
+      <button onClick={r.toggleReady}>Ready</button>
+      <button onClick={r.toggleRoomLock}>Lock</button>
+      <button onClick={r.leaveRoom}>Leave</button>
+      <p>{r.connectionStatus}</p>
+      <p>{r.roomLocked ? "Locked" : "Open"}</p>
+      <p>{r.isReady ? "Ready now" : "Not ready"}</p>
+    </>
+  );
 };
-beforeEach(() => { sessionStorage.clear(); backend.channels=[]; backend.callbacks=[]; window.history.replaceState({}, '', '/'); });
-afterEach(cleanup);
-it('updates ready presence without reconnecting and clears room state on leave', async () => {
-  render(<SharedSessionProvider><Harness /></SharedSessionProvider>);
-  fireEvent.click(screen.getByText('Create'));
-  await waitFor(() => expect(backend.channels).toHaveLength(1));
-  const channel = backend.channels[0];
-  await act(async () => { await backend.callbacks[0]('SUBSCRIBED'); });
-  expect(screen.getByText('connected')).toBeTruthy();
-  fireEvent.click(screen.getByText('Ready'));
-  expect(screen.getByText('Ready now')).toBeTruthy();
-  expect(backend.channels).toHaveLength(1);
-  expect(channel.track).toHaveBeenLastCalledWith(expect.objectContaining({ ready: true, role: 'host' }));
-  fireEvent.click(screen.getByText('Leave'));
-  expect(screen.getByText('Not ready')).toBeTruthy();
-  expect(window.location.search).toBe('');
+beforeEach(() => {
+  backend.calls = [];
+  backend.locked = false;
+  backend.ready = false;
+  sessionStorage.clear();
+  window.history.replaceState({}, "", "/");
 });
-
-it('ignores malformed room messages so a peer cannot crash the workspace', async () => {
-  render(<SharedSessionProvider><Harness /></SharedSessionProvider>);
-  fireEvent.click(screen.getByText('Create'));
-  await waitFor(() => expect(backend.channels).toHaveLength(1));
-  const receive = backend.channels[0].handlers['room-event'];
-  act(() => receive({ payload: { id: 'bad', type: 'message', text: { invalid: true }, senderName: { invalid: true } } }));
-  expect(screen.getByText('Messages 0')).toBeTruthy();
-  act(() => receive({ payload: { id: 'valid', type: 'message', text: 'Ready to focus', senderName: 'Friend' } }));
-  expect(screen.getByText('Ready to focus')).toBeTruthy();
+afterEach(cleanup);
+it("uses admitted server state for ready, locking and leaving", async () => {
+  render(
+    <SharedSessionProvider>
+      <Harness />
+    </SharedSessionProvider>,
+  );
+  fireEvent.click(screen.getByText("Create"));
+  await screen.findByText("connected");
+  fireEvent.click(screen.getByText("Ready"));
+  await screen.findByText("Ready now");
+  fireEvent.click(screen.getByText("Lock"));
+  await screen.findByText("Locked");
+  expect(
+    backend.calls.some((c) => c.p_action === "lock" && c.p_payload.locked),
+  ).toBe(true);
+  fireEvent.click(screen.getByText("Leave"));
+  expect(screen.getByText("idle")).toBeTruthy();
+  expect(window.location.search).toBe("");
 });

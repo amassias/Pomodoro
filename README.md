@@ -36,7 +36,7 @@ https://github.com/user-attachments/assets/6097f47b-d045-44a1-a0e8-4547647c785d
 - **Focus timer** — Focus, Short break, and Long break modes with Classic, Deep 50, Flow 90, or custom presets.
 - **Live atmospheres** — Curated YouTube live views across cities, nature, and focus scenes; favorites, custom streams, temporary quarantine, and retry fallback.
 - **Session planning** — Tasks, due dates, estimated sessions, subtasks, routines, calendar blocks, and temporary shared rooms.
-- **Audio** — Built-in Lofi radio, locally generated rain as a fallback, or optional Spotify playback.
+- **Audio** — Official Lofi Girl YouTube radio with active-broadcast discovery, locally generated rain, or optional Spotify playback.
 - **Insights** — Total hours, completed sessions, streaks, 28-day consistency, period charts, achievements, and CSV/JSON export.
 - **Local-first** — Works without an account or Supabase configuration using browser persistence; guest settings and active sessions survive reload. After the first online load, the app shell, lazy views and sounds are available offline. Supabase sync is optional.
 
@@ -145,3 +145,7 @@ src/
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+## Latest delivery
+
+[Backlog and activation status](docs/BACKLOG.md) · [15 October implementation and checks](docs/DELIVERY_2026-10-15.md) · [iPhone app and widget setup](ios/README.md).

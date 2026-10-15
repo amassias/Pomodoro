@@ -29,3 +29,7 @@ dist-ssr
 
 # Claude Code local overrides (may contain personal tool permissions)
 .claude/settings.local.json
+
+# Xcode local build state
+ios/**/xcuserdata/
+ios/build/

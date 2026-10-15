@@ -292,8 +292,27 @@
     width: 100%;
   }
   /* The expanded atmosphere sheet must not be covered by the audio player */
-  body:has(.bottom-bar.expanded) .lofi-player,
   body:has(.bottom-bar.expanded) .spotify-player-wrapper { visibility: hidden; }
 }
 
 .storage-notice { width: min(100%, 1180px); margin: 0.75rem 0 0; padding: 0.7rem 1rem; background: var(--surface-glass-strong, rgba(9,11,14,0.9)); border: 1px solid var(--glass-border); border-radius: 8px; color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; }
+.calendar-connections { flex-basis:100%; max-width:440px; text-align:left; font-size:.8rem; }
+.calendar-connections summary { cursor:pointer; padding:.5rem; }
+.connected-calendar { margin:.6rem 0; border:1px solid var(--text-muted); border-radius:8px; padding:.75rem; }
+.connected-calendar label { display:grid; gap:.3rem; margin-bottom:.5rem; }
+.connected-calendar input,.connected-calendar select { width:100%; min-width:0; padding:.5rem; border-radius:6px; color:var(--text-primary); background:var(--bg-primary, #111418); border:1px solid var(--text-muted); }
+.connected-calendar ul { max-height:180px; overflow:auto; padding-left:1.2rem; }
+
+.connected-calendar button { min-height:44px; }
+
+/* Keep the official video visible without covering the focus controls. */
+.main-grid:has(.lofi-radio-panel) .lofi-player { position:relative; grid-column:1 / -1; width:340px; margin:1rem auto; left:auto; bottom:auto; align-self:end; }
+@media (min-width:1100px) {
+  .main-grid:has(.lofi-radio-panel) { width:min(100%,1180px); grid-template-columns:minmax(240px,1fr) minmax(280px,1.3fr) minmax(240px,1fr); }
+  .main-grid:has(.lofi-radio-panel) .lofi-player { grid-column:1; grid-row:1; width:100%; margin:0; }
+  .main-grid:has(.lofi-radio-panel) #focus-timer { grid-column:2; grid-row:1; }
+  .main-grid:has(.lofi-radio-panel) #focus-tasks { grid-column:3; grid-row:1; }
+}
+@media (max-width:768px) {
+  .app-container .main-grid .lofi-player { position:relative; grid-column:1; width:100%; max-width:100%; margin:0; left:auto; bottom:auto; }
+}

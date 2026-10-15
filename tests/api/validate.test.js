@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import handler from './validate';
+import handler from '../../api/youtube/validate.js';
 const response = () => ({ headers: {}, setHeader(k,v) { this.headers[k]=v; }, end(body) { this.body=JSON.parse(body); }, statusCode: 0 });
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 it('validates a mixed upstream response and deduplicates IDs', async () => {

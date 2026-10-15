@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSharedSession } from '../../providers/SharedSessionProvider';
 
 const SharedSessionControl = () => {
-  const { isAvailable, roomId, isHost, participantCount, connectionStatus, expiresAt, createRoom, leaveRoom, shareUrl, participants, messages, roomLocked, isReady, sendMessage, sendReaction, toggleReady, toggleRoomLock, kickParticipant } = useSharedSession();
+  const { isAvailable, error, roomId, isHost, participantCount, connectionStatus, expiresAt, createRoom, leaveRoom, shareUrl, participants, messages, roomLocked, isReady, sendMessage, sendReaction, toggleReady, toggleRoomLock, kickParticipant } = useSharedSession();
   const [copied, setCopied] = useState(false);
   const [chatText, setChatText] = useState('');
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -17,12 +17,13 @@ const SharedSessionControl = () => {
     }
   };
 
-  if (!roomId) return <button className="shared-session-create" disabled={!isAvailable} title={!isAvailable ? 'Shared sessions require an online account service' : undefined} onClick={createRoom}>Share session</button>;
+  if (!roomId) return <><button className="shared-session-create" disabled={!isAvailable} title={!isAvailable ? 'Shared sessions require an online account service' : undefined} onClick={createRoom}>Share session</button>{error && <span role="status">{error}</span>}</>;
 
   return (
     <div className="shared-session" aria-label="Shared focus session">
       <span className={`shared-status ${connectionStatus}`}></span>
       <span role="status">{connectionStatus === 'error' ? 'Connection unavailable' : connectionStatus === 'connecting' ? 'Connecting…' : connectionStatus === 'expired' ? 'Invite expired' : 'Connected'}</span>
+      {error && <span role="status">{error}</span>}
       <strong>{isHost ? 'Hosting' : 'Joined'}</strong>
       <span>{participantCount} {participantCount === 1 ? 'person' : 'people'}</span>
       {expiresAt && <span title="Invite links expire automatically after four hours">Temporary room</span>}
@@ -38,7 +39,7 @@ const SharedSessionControl = () => {
         <div className="shared-panel-heading"><strong>People</strong></div>
         <div className="participant-list">{participants.map(participant => <div key={`${participant.id}-${participant.phx_ref || participant.joinedAt}`}><span>{participant.avatar || '🙂'} {participant.name || 'Focus friend'} {participant.ready ? '✓' : ''}</span>{isHost && participant.role !== 'host' && <button onClick={() => kickParticipant(participant.id)}>Remove</button>}</div>)}</div>
         <div className="shared-reactions"><button onClick={() => sendReaction('👏')}>👏</button><button onClick={() => sendReaction('💪')}>💪</button><button onClick={() => sendReaction('☕')}>☕</button></div>
-        <div className="shared-messages" aria-live="polite">{messages.length === 0 ? <p className="shared-empty-history">No messages yet. Your room history stays here while the invite is active.</p> : messages.map(message => <p key={message.id}><span>{message.senderAvatar} {message.senderName}</span> {message.text}</p>)}</div>
+        <div className="shared-messages" aria-live="polite">{messages.length === 0 ? <p className="shared-empty-history">No messages yet. Messages are stored while the room is active.</p> : messages.map(message => <p key={message.id}><span>{message.senderAvatar} {message.senderName}</span> {message.text}</p>)}</div>
         <form onSubmit={(event) => { event.preventDefault(); sendMessage(chatText); setChatText(''); }}><input value={chatText} onChange={(event) => setChatText(event.target.value)} placeholder="Quiet message" maxLength="280" aria-label="Shared session message" /><button type="submit">Send</button></form>
       </div>}
     </div>

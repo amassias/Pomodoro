@@ -1,3 +1,4 @@
+import { cacheAccountState, readAccountCache, mergeAccountState, syncAccountState } from '../lib/accountSync';
 import { browserLocalStorage as localStorage } from '../lib/browserStorage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
@@ -119,6 +120,14 @@ export const UserDataProvider = ({ children }) => {
   const [settings, setSettings] = useState(() => mergeSettings({ defaults: getDefaultSettings({ userId: null }), persisted: readJson(storageKeys.settings, {}) }));
 
   const debounceRef = useRef(null);
+  const accountBaseRef = useRef(null);
+  const [syncRetry, setSyncRetry] = useState(0);
+  useEffect(() => {
+    const retry = () => setSyncRetry(n => n + 1);
+    window.addEventListener('online', retry);
+    const timer = window.setInterval(retry, 15000);
+    return () => { window.removeEventListener('online', retry); window.clearInterval(timer); };
+  }, []);
   const lastLoadedUserIdRef = useRef(null);
   const lastRemoteUpdatedAtRef = useRef(null);
   const skipNextPersistRef = useRef(false);
@@ -184,7 +193,13 @@ export const UserDataProvider = ({ children }) => {
           return;
         }
 
-        const row = await ensureRow(userId);
+        const cached = readAccountCache(userId);
+        let row;
+        try { row = await ensureRow(userId); }
+        catch (error) { if (!cached?.row) throw error; row = cached.row; }
+        if (cancelled) return;
+        accountBaseRef.current = row;
+        if (cached?.pending) row = mergeAccountState(cached.row, cached.pending, row);
         if (cancelled) return;
 
         // Optional one-time migration from guest localStorage → account.
@@ -325,52 +340,37 @@ export const UserDataProvider = ({ children }) => {
     writeJson(storageKeys.settings, publicSettings(settings));
   }, [userId, loading, settings]);
 
-  // Debounced DB persistence for logged-in users.
+  // Persist the queue before contacting the server. Never share it across accounts.
   useEffect(() => {
-    if (!userId) return;
-
-    // Avoid immediate write while we are still loading/initializing.
-    if (loading) return;
-
-    // If the auth user changed and we haven't loaded yet, skip.
-    if (lastLoadedUserIdRef.current !== userId) return;
-    if (skipNextPersistRef.current) {
-      skipNextPersistRef.current = false;
-      return;
-    }
-
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
+    if (!userId || loading || lastLoadedUserIdRef.current !== userId) return;
+    if (skipNextPersistRef.current) { skipNextPersistRef.current = false; return; }
+    let cancelled = false;
+    const payload = { user_id: userId, city: city || DEFAULT_CITY, tasks: normalizeTasks(tasks),
+      archived_tasks: normalizeArchivedTasks(archivedTasks), pomodoro_history: pomodoroHistory,
+      settings: sanitizeSettingsForDb(settings, { customLocations, favoriteCities }) };
+    if (Object.keys(payload).every(key => JSON.stringify(payload[key]) === JSON.stringify(accountBaseRef.current?.[key]))) return;
+    cacheAccountState(userId, accountBaseRef.current, payload);
     debounceRef.current = setTimeout(async () => {
+      if (!navigator.onLine) { setSyncStatus('offline — changes queued'); return; }
       setSyncStatus('syncing');
       try {
-        const result = await supabase
-          .from('user_state')
-          .upsert(
-            {
-              user_id: userId,
-              city: city || DEFAULT_CITY,
-              tasks: normalizeTasks(tasks),
-              archived_tasks: normalizeArchivedTasks(archivedTasks),
-              pomodoro_history:
-                pomodoroHistory && typeof pomodoroHistory === 'object' ? pomodoroHistory : {},
-              settings: sanitizeSettingsForDb(settings, { customLocations, favoriteCities }),
-            },
-            { onConflict: 'user_id' }
-          );
-        if (result.error) throw result.error;
-        setSyncStatus('synced');
-        setLastSyncedAt(new Date().toISOString());
+        const row = await syncAccountState(supabase, userId, accountBaseRef.current, payload);
+        if (cancelled) return;
+        accountBaseRef.current = row;
+        lastRemoteUpdatedAtRef.current = row.updated_at;
+        cacheAccountState(userId, row);
+        skipNextPersistRef.current = true;
+        setTasks(normalizeTasks(row.tasks)); setArchivedTasks(normalizeArchivedTasks(row.archived_tasks));
+        setPomodoroHistory(normalizeHistory(row.pomodoro_history)); setCity(row.city || DEFAULT_CITY);
+        setFavoriteCities(row.settings?._favoriteCities || []); setCustomLocations(row.settings?._customLocations || {});
+        setSettings(mergeSettings({ defaults: getDefaultSettings({ userId }), persisted: row.settings }));
+        setSyncStatus('synced'); setLastSyncedAt(row.updated_at);
       } catch (err) {
-        console.warn('Failed to persist user state', err);
-        setSyncStatus('error');
+        if (!cancelled) { console.warn('Changes retained for retry', err); setSyncStatus('offline — changes queued'); }
       }
     }, 600);
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [userId, loading, tasks, archivedTasks, pomodoroHistory, favoriteCities, customLocations, city, settings]);
+    return () => { cancelled = true; clearTimeout(debounceRef.current); };
+  }, [userId, loading, tasks, archivedTasks, pomodoroHistory, favoriteCities, customLocations, city, settings, syncRetry]);
 
   useEffect(() => {
     if (!userId || loading) return undefined;
@@ -378,6 +378,9 @@ export const UserDataProvider = ({ children }) => {
     const channel = supabase.channel(`user-state-sync:${userId}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'user_state', filter: `user_id=eq.${userId}` }, ({ new: row }) => {
         if (cancelled || !row?.updated_at || row.updated_at === lastRemoteUpdatedAtRef.current) return;
+        if (readAccountCache(userId)?.pending) return;
+        accountBaseRef.current = row;
+        cacheAccountState(userId, row);
         lastLoadedUserIdRef.current = userId;
         lastRemoteUpdatedAtRef.current = row.updated_at;
         skipNextPersistRef.current = true;

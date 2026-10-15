@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><title>Calendar connection</title>
+  <p>Completing calendar connection… You can close this window.</p>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const result = {
+      type: "calendar-oauth",
+      state: params.get("state"),
+      code: params.get("code"),
+    };
+    history.replaceState(null, "", location.pathname);
+    if (window.opener) {
+      window.opener.postMessage(result, location.origin);
+      window.close();
+    }
+  </script>
+</html>

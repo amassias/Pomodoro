@@ -1,264 +1,246 @@
-import { browserLocalStorage as localStorage, browserSessionStorage as sessionStorage } from '../lib/browserStorage';
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { supabase } from '../lib/supabase';
-
+import { browserSessionStorage as storage } from "../lib/browserStorage";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { supabase } from "../lib/supabase";
 const SharedSessionContext = createContext(null);
-const ROOM_PATTERN = /^[a-z0-9]{8}$/;
-const ROOM_KEY_PATTERN = /^[a-z0-9]{16}$/;
-
-const readRoomFromUrl = () => {
-  const value = new URLSearchParams(window.location.search).get('room')?.toLowerCase() || '';
-  return ROOM_PATTERN.test(value) ? value : null;
+const fromUrl = () => {
+  const p = new URLSearchParams(location.search);
+  return /^[a-z0-9]{8}$/.test(p.get("room") || "") &&
+    /^[a-z0-9]{16,128}$/.test(p.get("roomKey") || "")
+    ? { id: p.get("room"), key: p.get("roomKey") }
+    : null;
 };
-
-const readRoomKeyFromUrl = () => {
-  const value = new URLSearchParams(window.location.search).get('roomKey')?.toLowerCase() || '';
-  return ROOM_KEY_PATTERN.test(value) ? value : 'public-session';
-};
-
-const readExpiryFromUrl = () => {
-  const value = Number(new URLSearchParams(window.location.search).get('expires'));
-  return Number.isFinite(value) && value > Date.now() ? value : null;
-};
-
-const safeText = (value, fallback = '', limit = 40) => typeof value === 'string' ? value.slice(0, limit) : fallback;
-
-const defaultProfile = () => {
-  const stored = sessionStorage.getItem('world-focus-profile');
-  if (stored) {
-    try {
-      const profile = JSON.parse(stored);
-      if (typeof profile?.name === 'string' && typeof profile?.avatar === 'string') return { name: safeText(profile.name), avatar: safeText(profile.avatar, '🌱', 12) };
-    } catch { /* use generated profile */ }
-  }
-  const profile = { name: `Focus friend ${Math.floor(100 + Math.random() * 900)}`, avatar: ['🌱', '🍅', '🌙', '⚡', '🧠'][Math.floor(Math.random() * 5)] };
-  sessionStorage.setItem('world-focus-profile', JSON.stringify(profile));
-  return profile;
-};
-
-const normalizeMessage = message => {
-  if (!message || !['message', 'reaction', 'activity'].includes(message.type) || typeof message.text !== 'string') return null;
-  return {
-    id: safeText(message.id, crypto.randomUUID(), 128),
-    type: message.type,
-    text: safeText(message.text, '', 280),
-    senderId: safeText(message.senderId, '', 128),
-    senderName: safeText(message.senderName, 'Focus friend'),
-    senderAvatar: safeText(message.senderAvatar, '🌱', 12),
-    at: Number.isFinite(message.at) ? message.at : Date.now(),
-  };
-};
-
-const roomHistoryKey = (roomId) => `world-focus-room-history:${roomId}`;
-
-const readRoomHistory = (roomId) => {
-  if (!roomId) return [];
+const profileForTab = () => {
   try {
-    const value = JSON.parse(localStorage.getItem(roomHistoryKey(roomId)) || '[]');
-    return Array.isArray(value) ? value.map(normalizeMessage).filter(Boolean).slice(-30) : [];
+    const p = JSON.parse(storage.getItem("world-focus-profile"));
+    if (typeof p?.name === "string")
+      return {
+        name: p.name.slice(0, 40),
+        avatar: typeof p.avatar === "string" ? p.avatar.slice(0, 12) : "🌱",
+      };
   } catch {
-    return [];
+    /* new profile */
   }
+  const p = {
+    name: `Focus friend ${Math.floor(100 + Math.random() * 900)}`,
+    avatar: "🌱",
+  };
+  storage.setItem("world-focus-profile", JSON.stringify(p));
+  return p;
 };
-
 export const SharedSessionProvider = ({ children }) => {
-  const [roomId, setRoomId] = useState(readRoomFromUrl);
-  const [roomKey, setRoomKey] = useState(readRoomKeyFromUrl);
-  const [expiresAt, setExpiresAt] = useState(readExpiryFromUrl);
-  const [participantCount, setParticipantCount] = useState(1);
-  const [connectionStatus, setConnectionStatus] = useState(roomId ? 'connecting' : 'idle');
-  const [remoteTimerState, setRemoteTimerState] = useState(null);
-  const [participants, setParticipants] = useState([]);
-  const [messages, setMessages] = useState(() => readRoomHistory(readRoomFromUrl()));
-  const [roomLocked, setRoomLocked] = useState(false);
-  const [isReady, setIsReady] = useState(false);
-  const [profile] = useState(defaultProfile);
-  const [isHost, setIsHost] = useState(() => Boolean(roomId && sessionStorage.getItem(`world-focus-host:${roomId}`)));
-  const isHostRef = useRef(isHost);
-  useEffect(() => { isHostRef.current = isHost; }, [isHost]);
-  const channelRef = useRef(null);
-  const latestTimerStateRef = useRef(null);
-  const participantIdRef = useRef(sessionStorage.getItem('world-focus-participant-id') || crypto.randomUUID());
-
-  const appendMessage = useCallback((message) => {
-    if (!roomId) return;
-    const normalized = normalizeMessage(message);
-    if (!normalized) return;
-    setMessages((previous) => {
-      if (previous.some((item) => item.id === normalized.id)) return previous;
-      const next = [...previous, normalized].slice(-30);
-      try { localStorage.setItem(roomHistoryKey(roomId), JSON.stringify(next)); } catch { /* history remains available for this open session */ }
-      return next;
-    });
-  }, [roomId]);
-
+  const [room, setRoom] = useState(fromUrl);
+  const [profile] = useState(profileForTab);
+  const [snapshot, setSnapshot] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState(
+    room ? "connecting" : "idle",
+  );
+  const [error, setError] = useState("");
+  const member = useRef(
+    storage.getItem("world-focus-room-member") || crypto.randomUUID(),
+  );
+  const latest = useRef(null);
+  const epoch = useRef(0);
+  const requestChain = useRef(Promise.resolve());
   useEffect(() => {
-    sessionStorage.setItem('world-focus-participant-id', participantIdRef.current);
+    storage.setItem("world-focus-room-member", member.current);
   }, []);
-
-  useEffect(() => {
-    if (!roomId) return undefined;
-    if (!supabase) {
-      const timeoutId = window.setTimeout(() => setConnectionStatus('error'), 0);
-      return () => window.clearTimeout(timeoutId);
-    }
-
-    if (!expiresAt && roomKey !== 'public-session') {
-      const timeoutId = window.setTimeout(() => setConnectionStatus('expired'), 0);
-      return () => window.clearTimeout(timeoutId);
-    }
-
-    const channel = supabase.channel(`focus-room:${roomId}:${roomKey}`, {
-      config: { presence: { key: participantIdRef.current }, broadcast: { self: false } },
-    });
-    channelRef.current = channel;
-
-    channel
-      .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState();
-        setParticipantCount(Math.max(1, Object.keys(state).length));
-        setParticipants(Object.entries(state).flatMap(([id, presences]) => presences.map((presence) => ({ id, ...presence, name: safeText(presence.name, 'Focus friend'), avatar: safeText(presence.avatar, '🌱', 12) }))));
-        const entries = Object.entries(state).sort(([left], [right]) => left.localeCompare(right));
-        const hasHost = entries.some(([, presences]) => presences.some((presence) => presence.role === 'host'));
-        if (!hasHost && entries[0]?.[0] === participantIdRef.current) {
-          sessionStorage.setItem(`world-focus-host:${roomId}`, 'true');
-          setIsHost(true);
-        }
-      })
-      .on('broadcast', { event: 'timer-state' }, ({ payload }) => {
-        if (!isHostRef.current && ['focus', 'shortBreak', 'longBreak'].includes(payload?.mode) && Number.isFinite(payload.remainingMs) && payload.remainingMs >= 0 && (!payload.isActive || Number.isFinite(payload.endAt))) setRemoteTimerState(payload);
-      })
-      .on('broadcast', { event: 'request-state' }, () => {
-        if (isHostRef.current && latestTimerStateRef.current) {
-          channel.send({ type: 'broadcast', event: 'timer-state', payload: latestTimerStateRef.current });
-        }
-      })
-      .on('broadcast', { event: 'room-event' }, ({ payload }) => {
-        if (!payload?.type) return;
-        if (payload.type === 'message' || payload.type === 'reaction' || payload.type === 'activity') {
-          appendMessage({ id: payload.id || crypto.randomUUID(), ...payload, at: payload.at || Date.now() });
-        }
-        if (payload.type === 'lock') setRoomLocked(Boolean(payload.locked));
-        if (payload.type === 'kick' && payload.targetId === participantIdRef.current) window.dispatchEvent(new Event('leave-shared-room'));
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          setConnectionStatus('connected');
-          await channel.track({ role: isHostRef.current ? 'host' : 'guest', joinedAt: new Date().toISOString(), ...profile, ready: false });
-          if (!isHostRef.current) channel.send({ type: 'broadcast', event: 'request-state', payload: {} });
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          setConnectionStatus('error');
-        }
+  const call = useCallback(
+    async (action, payload = {}, target = room) => {
+      if (!supabase || !target) throw new Error("Room service unavailable.");
+      const { data, error: failure } = await supabase.rpc("focus_room", {
+        p_action: action,
+        p_id: target.id,
+        p_key: target.key,
+        p_member: member.current,
+        p_profile: profile,
+        p_payload: payload,
       });
-
-    return () => {
-      channelRef.current = null;
-      supabase.removeChannel(channel);
-    };
-  }, [appendMessage, expiresAt, profile, roomId, roomKey]);
-
-  useEffect(() => {
-    if (connectionStatus !== 'connected' || !channelRef.current) return;
-    channelRef.current.track({ role: isHost ? 'host' : 'guest', joinedAt: new Date().toISOString(), ...profile, ready: isReady });
-  }, [connectionStatus, isHost, isReady, profile]);
-
-  const publishTimerState = useCallback((timerState) => {
-    latestTimerStateRef.current = timerState;
-    if (!isHost || !channelRef.current) return;
-    channelRef.current.send({ type: 'broadcast', event: 'timer-state', payload: timerState });
-  }, [isHost]);
-
-  const sendRoomEvent = useCallback((payload) => {
-    if (!channelRef.current) return;
-    const event = { ...payload, id: crypto.randomUUID(), at: Date.now(), senderId: participantIdRef.current, senderName: profile.name, senderAvatar: profile.avatar };
-    if (event.type === 'message' || event.type === 'reaction' || event.type === 'activity') appendMessage(event);
-    channelRef.current.send({ type: 'broadcast', event: 'room-event', payload: event });
-  }, [appendMessage, profile]);
-
-  const sendMessage = useCallback((text) => {
-    if (text?.trim()) sendRoomEvent({ type: 'message', text: text.trim().slice(0, 280) });
-  }, [sendRoomEvent]);
-
-  const sendReaction = useCallback((emoji) => sendRoomEvent({ type: 'reaction', text: emoji }), [sendRoomEvent]);
-
-  const toggleReady = useCallback(() => setIsReady((value) => !value), []);
-
-  const toggleRoomLock = useCallback(() => {
-    if (!isHost) return;
-    sendRoomEvent({ type: 'lock', locked: !roomLocked });
-    setRoomLocked(!roomLocked);
-  }, [isHost, roomLocked, sendRoomEvent]);
-
-  const kickParticipant = useCallback((targetId) => {
-    if (isHost && targetId !== participantIdRef.current) sendRoomEvent({ type: 'kick', targetId });
-  }, [isHost, sendRoomEvent]);
-
-  const createRoom = useCallback(() => {
-    if (!supabase) return;
-    const nextRoomId = crypto.randomUUID().replaceAll('-', '').slice(0, 8);
-    const nextRoomKey = crypto.randomUUID().replaceAll('-', '').slice(0, 16);
-    const nextExpiry = Date.now() + 4 * 60 * 60 * 1000;
-    sessionStorage.setItem(`world-focus-host:${nextRoomId}`, 'true');
-    const url = new URL(window.location.href);
-    url.searchParams.set('room', nextRoomId);
-    url.searchParams.set('roomKey', nextRoomKey);
-    url.searchParams.set('expires', String(nextExpiry));
-    window.history.pushState({}, '', url);
-    setIsHost(true);
-    setRoomId(nextRoomId);
-    setRoomKey(nextRoomKey);
-    setExpiresAt(nextExpiry);
-    setMessages([]);
-    setConnectionStatus('connecting');
-  }, []);
-
+      if (failure) throw failure;
+      return data;
+    },
+    [profile, room],
+  );
   const leaveRoom = useCallback(() => {
-    if (roomId) sessionStorage.removeItem(`world-focus-host:${roomId}`);
-    const url = new URL(window.location.href);
-    url.searchParams.delete('room');
-    url.searchParams.delete('roomKey');
-    url.searchParams.delete('expires');
-    window.history.pushState({}, '', url);
-    setRoomId(null);
-    setRoomKey('public-session');
-    setExpiresAt(null);
-    setIsHost(false);
-    setParticipants([]);
-    setMessages([]);
-    setRoomLocked(false);
-    setIsReady(false);
-    setRemoteTimerState(null);
-    setParticipantCount(1);
-    setConnectionStatus('idle');
-  }, [roomId]);
-
+    const old = room;
+    epoch.current++;
+    setRoom(null);
+    setSnapshot(null);
+    setError("");
+    setConnectionStatus("idle");
+    latest.current = null;
+    const url = new URL(location.href);
+    for (const k of ["room", "roomKey", "expires"]) url.searchParams.delete(k);
+    history.replaceState({}, "", url);
+    if (old) call("leave", {}, old).catch(() => {});
+  }, [call, room]);
+  const update = useCallback((data) => {
+    setSnapshot(data);
+    setConnectionStatus("connected");
+    setError("");
+  }, []);
   useEffect(() => {
-    window.addEventListener('leave-shared-room', leaveRoom);
-    return () => window.removeEventListener('leave-shared-room', leaveRoom);
-  }, [leaveRoom]);
-
-  useEffect(() => {
-    if (!roomId || !expiresAt) return undefined;
-    const delay = Math.max(0, expiresAt - Date.now());
-    const timeoutId = window.setTimeout(leaveRoom, delay);
-    return () => window.clearTimeout(timeoutId);
-  }, [expiresAt, leaveRoom, roomId]);
-
+    if (!room) return;
+    let cancelled = false;
+    let inFlight = false;
+    const current = ++epoch.current;
+    const poll = async (action = "snapshot") => {
+      if (inFlight) return;
+      inFlight = true;
+      try {
+        const data = await call(action);
+        if (!cancelled && epoch.current === current) update(data);
+      } catch (failure) {
+        if (!cancelled) {
+          setError(failure.message);
+          setConnectionStatus("error");
+        }
+      } finally {
+        inFlight = false;
+      }
+    };
+    poll("join");
+    const timer = setInterval(() => poll(), 3000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [call, room, update]);
+  const perform = useCallback(
+    (action, payload) => {
+      const current = epoch.current;
+      requestChain.current = requestChain.current
+        .catch(() => {})
+        .then(() => call(action, payload))
+        .then((data) => {
+          if (epoch.current === current) update(data);
+        })
+        .catch((failure) => {
+          if (epoch.current === current) setError(failure.message);
+        });
+      return requestChain.current;
+    },
+    [call, update],
+  );
+  const createRoom = useCallback(async () => {
+    if (!supabase) return;
+    setConnectionStatus("connecting");
+    const next = {
+      id: crypto.randomUUID().replaceAll("-", "").slice(0, 8),
+      key: crypto.randomUUID().replaceAll("-", ""),
+    };
+    try {
+      const data = await call("create", {}, next);
+      setRoom(next);
+      update(data);
+      const url = new URL(location.href);
+      url.searchParams.set("room", next.id);
+      url.searchParams.set("roomKey", next.key);
+      history.replaceState({}, "", url);
+    } catch (failure) {
+      setError(failure.message);
+      setConnectionStatus("error");
+    }
+  }, [call, update]);
+  const publishTimerState = useCallback(
+    (timer) => {
+      const signature = JSON.stringify([
+        timer.mode,
+        timer.isActive,
+        timer.endAt,
+        timer.isActive ? null : timer.remainingMs,
+        timer.durationMs,
+        timer.completedFocusSessions,
+      ]);
+      if (snapshot?.isHost && latest.current !== signature) {
+        latest.current = signature;
+        perform("timer", timer);
+      }
+    },
+    [perform, snapshot?.isHost],
+  );
+  const sendRoomEvent = useCallback(
+    (payload) => {
+      if (payload?.text?.trim()) return perform("message", payload);
+    },
+    [perform],
+  );
+  const sendMessage = useCallback(
+    (text) => sendRoomEvent({ type: "message", text: text.trim() }),
+    [sendRoomEvent],
+  );
+  const sendReaction = useCallback(
+    (text) => sendRoomEvent({ type: "reaction", text }),
+    [sendRoomEvent],
+  );
+  const toggleReady = useCallback(
+    () =>
+      perform("ready", {
+        ready: !snapshot?.participants?.find((p) => p.id === snapshot.memberId)
+          ?.ready,
+      }),
+    [perform, snapshot],
+  );
+  const toggleRoomLock = useCallback(
+    () => perform("lock", { locked: !snapshot?.locked }),
+    [perform, snapshot?.locked],
+  );
+  const kickParticipant = useCallback(
+    (targetId) => perform("kick", { targetId }),
+    [perform],
+  );
   const shareUrl = useMemo(() => {
-    if (!roomId) return null;
-    const url = new URL(window.location.href);
-    url.searchParams.set('room', roomId);
-    url.searchParams.set('roomKey', roomKey);
-    if (expiresAt) url.searchParams.set('expires', String(expiresAt));
-    return url.toString();
-  }, [expiresAt, roomId, roomKey]);
-
-  const value = useMemo(() => ({ isAvailable: Boolean(supabase), roomId, isHost, participantCount, connectionStatus, expiresAt, remoteTimerState, participants, messages, roomLocked, isReady, profile, publishTimerState, createRoom, leaveRoom, shareUrl, sendMessage, sendReaction, toggleReady, toggleRoomLock, kickParticipant, sendRoomEvent }), [roomId, isHost, participantCount, connectionStatus, expiresAt, remoteTimerState, participants, messages, roomLocked, isReady, profile, publishTimerState, createRoom, leaveRoom, shareUrl, sendMessage, sendReaction, toggleReady, toggleRoomLock, kickParticipant, sendRoomEvent]);
-  return <SharedSessionContext.Provider value={value}>{children}</SharedSessionContext.Provider>;
+    if (!room) return null;
+    const url = new URL(location.href);
+    url.searchParams.set("room", room.id);
+    url.searchParams.set("roomKey", room.key);
+    return url.href;
+  }, [room]);
+  const value = {
+    isAvailable: Boolean(supabase),
+    roomId: room?.id || null,
+    isHost: snapshot?.isHost || false,
+    participantCount: snapshot?.participants?.length || 1,
+    connectionStatus,
+    error,
+    expiresAt: snapshot?.expiresAt,
+    remoteTimerState: snapshot?.timer,
+    participants: snapshot?.participants || [],
+    messages: snapshot?.messages || [],
+    roomLocked: snapshot?.locked || false,
+    isReady:
+      snapshot?.participants?.find((p) => p.id === snapshot.memberId)?.ready ||
+      false,
+    profile,
+    publishTimerState,
+    createRoom,
+    leaveRoom,
+    shareUrl,
+    sendMessage,
+    sendReaction,
+    toggleReady,
+    toggleRoomLock,
+    kickParticipant,
+    sendRoomEvent,
+  };
+  return (
+    <SharedSessionContext.Provider value={value}>
+      {children}
+    </SharedSessionContext.Provider>
+  );
 };
-
 export const useSharedSession = () => {
   const context = useContext(SharedSessionContext);
-  if (!context) throw new Error('useSharedSession must be used within SharedSessionProvider');
+  if (!context)
+    throw new Error(
+      "useSharedSession must be used within SharedSessionProvider",
+    );
   return context;
 };

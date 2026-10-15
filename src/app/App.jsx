@@ -105,6 +105,7 @@ function App() {
           <div className="main-grid">
             {userDataLoading ? <div className="timer-container glass-panel" role="status">Loading your workspace…</div> : <Timer settings={settings} updateSettings={setSettings} />}
             <TaskList />
+            {settings.musicProvider !== 'spotify' && <Suspense fallback={null}><LofiPlayer /></Suspense>}
           </div>
         </main>
 
@@ -159,9 +160,7 @@ function App() {
             playing={false}
             uri={settings.spotifySelectedPlaylistUri}
           />
-        ) : (
-          <LofiPlayer />
-        )}
+        ) : null}
       </Suspense>
 
       {showSettings && (
