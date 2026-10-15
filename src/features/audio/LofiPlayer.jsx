@@ -1,17 +1,26 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRainAudio } from "./useRainAudio";
 import { loadYouTubeIframeApi } from "../../lib/youtubePlayer";
+import lofiGirlImg from "../../assets/lofi-girl.webp";
 import "./LofiPlayer.css";
 
 // Resolve a currently live broadcast; official website links can also expire.
 const LofiPlayer = () => {
+  const [isDragging, setIsDragging] = useState(false);
   const [source, setSource] = useState("radio");
   const [open, setOpen] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [error, setError] = useState(false);
   const [retry, setRetry] = useState(0);
-  const [broadcast, setBroadcast] = useState(null);
+
   const [volume, setVolume] = useState(50);
+  const cardRef = useRef(null);
+  const isDraggingRef = useRef(false);
+  const positionRef = useRef({ x: 0, y: 0 });
+  const pendingPositionRef = useRef({ x: 0, y: 0 });
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const activePointerIdRef = useRef(null);
+  const animationFrameRef = useRef(null);
   const host = useRef(null);
   const player = useRef(null);
   const resume = useRef(false);
@@ -46,7 +55,7 @@ const LofiPlayer = () => {
     ])
       .then(([YT, data]) => {
         if (cancelled || !host.current) return;
-        setBroadcast(data);
+
         const node = document.createElement("div");
         host.current.appendChild(node);
         player.current = new YT.Player(node, {
@@ -55,7 +64,7 @@ const LofiPlayer = () => {
           videoId: data.videoId,
           playerVars: {
             autoplay: 0,
-            controls: 1,
+            controls: 0,
             playsinline: 1,
             origin: window.location.origin,
           },
@@ -122,6 +131,62 @@ const LofiPlayer = () => {
     };
   }, [source, play, stop]);
 
+  const handlePointerDown = (event) => {
+    if (event.button !== 0 || event.target.closest('.player-controls') || event.target.closest('.volume-mini') || event.target.closest('button')) return;
+    event.preventDefault();
+    isDraggingRef.current = true;
+    activePointerIdRef.current = event.pointerId;
+    setIsDragging(true);
+    dragOffsetRef.current = {
+      x: event.clientX - positionRef.current.x,
+      y: event.clientY - positionRef.current.y
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const paintPendingPosition = useCallback(() => {
+    const nextPosition = pendingPositionRef.current;
+    positionRef.current = nextPosition;
+    if (cardRef.current) {
+      cardRef.current.style.transform = `translate3d(${nextPosition.x}px, ${nextPosition.y}px, 0)`;
+    }
+    animationFrameRef.current = null;
+  }, []);
+
+  const handlePointerMove = useCallback((event) => {
+    if (!isDraggingRef.current || event.pointerId !== activePointerIdRef.current) return;
+    pendingPositionRef.current = {
+      x: event.clientX - dragOffsetRef.current.x,
+      y: event.clientY - dragOffsetRef.current.y
+    };
+    if (!animationFrameRef.current) {
+      animationFrameRef.current = requestAnimationFrame(paintPendingPosition);
+    }
+  }, [paintPendingPosition]);
+
+  const handlePointerUp = useCallback((event) => {
+    if (event.pointerId !== activePointerIdRef.current) return;
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+      paintPendingPosition();
+    }
+    isDraggingRef.current = false;
+    activePointerIdRef.current = null;
+    setIsDragging(false);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }, [paintPendingPosition]);
+
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
+
   const startRain = async () => {
     resume.current = false;
     player.current?.pauseVideo();
@@ -156,91 +221,36 @@ const LofiPlayer = () => {
     else player.current?.playVideo();
   };
   return (
-    <section className="lofi-player glass-panel" aria-label="Focus audio">
-      <div className="lofi-toolbar">
-        <div>
-          <strong>{source === "radio" ? "Lofi Girl" : "Rain ambience"}</strong>
-          <small>
-            {source === "radio"
-              ? broadcast?.title || "Official YouTube radio"
-              : "Generated on your device"}
-          </small>
+    <section ref={cardRef} className={`lofi-player glass-panel ${isDragging ? "is-dragging" : ""}`} aria-label="Focus audio"
+      onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp}>
+      <div className="art-container">
+        <img src={lofiGirlImg} alt="Lofi Girl" className="album-art" draggable="false" />
+      </div>
+      <div className="track-info">
+        <div className="track-name">{source === "radio" ? "Lofi Girl" : "Rain ambience"}</div>
+        <div className={`track-artist ${error ? "error" : ""}`} role={error ? "status" : undefined}>
+          {error ? "Stream unavailable — retry" : source === "radio" ? "Lofi Radio" : "Generated on your device"}
         </div>
-        <button
-          onClick={toggle}
-          aria-label={`${playing ? "Pause" : "Play"} ${source}`}
-        >
-          {playing ? "Pause" : "Play"}
+        {error && source === "radio" && <button className="audio-fallback-btn" onClick={startRain}>Try rain ambience</button>}
+        {source === "rain" && <button className="audio-fallback-btn" onClick={() => {
+          stop(); setPlaying(false); setSource("radio"); setOpen(true); setError(false);
+        }}>Retry radio</button>}
+      </div>
+      <div className="player-controls">
+        <div className="volume-mini">
+          <input aria-label="Audio volume" type="range" min="0" max="100" value={volume}
+            onChange={(e) => setVolume(Number(e.target.value))} className="volume-slider" />
+        </div>
+        <button className="play-btn" onClick={() => {
+          if (error && source === "radio") { setError(false); setRetry(n => n + 1); }
+          toggle();
+        }} aria-label={`${playing ? "Pause" : "Play"} ${source}`} title={playing ? "Pause" : "Play"}>
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            {playing ? <><rect x="6" y="5" width="4" height="14" /><rect x="14" y="5" width="4" height="14" /></> : <path d="M8 5v14l11-7z" transform="translate(-0.75 0)" />}
+          </svg>
         </button>
-        <input
-          aria-label="Audio volume"
-          type="range"
-          min="0"
-          max="100"
-          value={volume}
-          onChange={(e) => setVolume(Number(e.target.value))}
-        />
       </div>
-      {open && source === "radio" && (
-        <div className="lofi-radio-panel">
-          <div ref={host} className="lofi-video" />
-          <a
-            href={
-              broadcast
-                ? `https://www.youtube.com/watch?v=${broadcast.videoId}`
-                : "https://www.youtube.com/@LofiGirl/live"
-            }
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open official stream
-          </a>
-          <button
-            onClick={() => {
-              resume.current = false;
-              setOpen(false);
-              setPlaying(false);
-            }}
-          >
-            Close radio
-          </button>
-          {error && (
-            <p role="status">
-              Radio unavailable. Retry, open YouTube, or use rain.
-            </p>
-          )}
-          {error && (
-            <button
-              onClick={() => {
-                setError(false);
-                setRetry((n) => n + 1);
-              }}
-            >
-              Retry radio
-            </button>
-          )}
-        </div>
-      )}
-      <div className="lofi-sources">
-        {source === "radio" ? (
-          <button onClick={startRain}>Rain ambience</button>
-        ) : (
-          <button
-            onClick={() => {
-              stop();
-              setPlaying(false);
-              setSource("radio");
-              setOpen(true);
-              setError(false);
-            }}
-          >
-            Lofi Girl radio
-          </button>
-        )}
-        {source === "rain" && error && (
-          <span role="status">Audio unavailable. Try again.</span>
-        )}
-      </div>
+      {open && source === "radio" && <div ref={host} className="lofi-audio-host" hidden aria-hidden="true" inert />}
     </section>
   );
 };

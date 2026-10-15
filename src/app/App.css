@@ -292,6 +292,7 @@
     width: 100%;
   }
   /* The expanded atmosphere sheet must not be covered by the audio player */
+  body:has(.bottom-bar.expanded) .lofi-player,
   body:has(.bottom-bar.expanded) .spotify-player-wrapper { visibility: hidden; }
 }
 
@@ -305,14 +306,3 @@
 
 .connected-calendar button { min-height:44px; }
 
-/* Keep the official video visible without covering the focus controls. */
-.main-grid:has(.lofi-radio-panel) .lofi-player { position:relative; grid-column:1 / -1; width:340px; margin:1rem auto; left:auto; bottom:auto; align-self:end; }
-@media (min-width:1100px) {
-  .main-grid:has(.lofi-radio-panel) { width:min(100%,1180px); grid-template-columns:minmax(240px,1fr) minmax(280px,1.3fr) minmax(240px,1fr); }
-  .main-grid:has(.lofi-radio-panel) .lofi-player { grid-column:1; grid-row:1; width:100%; margin:0; }
-  .main-grid:has(.lofi-radio-panel) #focus-timer { grid-column:2; grid-row:1; }
-  .main-grid:has(.lofi-radio-panel) #focus-tasks { grid-column:3; grid-row:1; }
-}
-@media (max-width:768px) {
-  .app-container .main-grid .lofi-player { position:relative; grid-column:1; width:100%; max-width:100%; margin:0; left:auto; bottom:auto; }
-}

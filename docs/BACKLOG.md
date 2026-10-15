@@ -96,7 +96,7 @@ La [matrice de contrôle](QA_2026-10-14.md) remplace les anciennes coches comme 
 | QA-06 | P0 | Fait | Zéro alerte npm ; audit ajouté en CI ; installation propre du lockfile réussie. |
 | QA-07 | P1 | Fait | Dialogues imbriqués, labels, switch audio, favoris clavier, visite guidée et graphique interactif corrigés. Tests DOM et axe. |
 | QA-08 | P1 | Fait | PWA précharge écrans et sons ; rechargement, tâche, réglages et Insights vérifiés hors ligne sur ordinateur et mobile. |
-| QA-09 | P1 | Fait | Lecteur Lofi Girl officiel visible, direct actif vérifié et remplacement dynamique ; lecture réelle observée ; pluie locale disponible. |
+| QA-09 | P1 | Fait | Lecteur compact Lofi Girl restauré : pochette, lecture/pause et volume, sans vidéo affichée ; direct actif et pluie locale conservés. |
 | QA-10 | P1 | Fait | OAuth code seul, erreur explicite ; polling Spotify continu ; PKCE sûr ; callback sans double échange. |
 | QA-11 | P1 | Fait | Mode sans configuration Supabase vérifié dans un navigateur ; timer/tâches utilisables et partage indisponible expliqué. |
 | QA-12 | P1 | Fait | API YouTube bornée et validée ; succès/rejets testés. |
@@ -140,3 +140,10 @@ Contrôle local final : lint sans erreur ni warning, suite de régression, build
 - [x] Vérification locale du lot : 88 tests / 38 fichiers, lint, build, performance, audit npm sans vulnérabilité et vérification Swift réussis.
 
 - [x] Livraison : `fbf98e6` poussé sur main ; [CI web + compilation iPhone verte](https://github.com/amassias/Pomodoro/actions/runs/38701468104), Vercel READY au même commit ; radio HTTP 200, callback calendrier HTTP 200, ancienne route de test HTTP 404 et 39 ressources offline HTTP 200.
+
+### Correction du lecteur — 15 octobre 2026
+
+- [x] Retour à la carte compacte d’origine et à sa position en bas à gauche sur ordinateur.
+- [x] Suppression du panneau vidéo visible et des commandes YouTube dans l’interface ; lecture de la radio pilotée par les commandes compactes.
+- [x] Pochette, déplacement de la carte, lecture/pause, volume et pause pendant l’alarme conservés.
+- [x] Vérification navigateur : lecture puis pause de la radio ; présentation ordinateur et mobile. Tests : 88 réussis, lint et build réussis.

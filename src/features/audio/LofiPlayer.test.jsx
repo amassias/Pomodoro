@@ -30,7 +30,7 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
-it("uses the official visible YouTube player and pauses it for alarms", async () => {
+it("keeps the radio compact with artwork and pauses its audio for alarms", async () => {
   let options;
   const player = {
     playVideo: vi.fn(),
@@ -48,6 +48,8 @@ it("uses the official visible YouTube player and pauses it for alarms", async ()
     },
   });
   render(<LofiPlayer />);
+  expect(screen.getByAltText("Lofi Girl")).toBeTruthy();
+  expect(screen.queryByRole("link", { name: "Open official stream" })).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Play radio" }));
   await waitFor(() => expect(options?.videoId).toBe("rFZHOHl-L8A"));
   act(() => options.events.onReady({ target: player }));
@@ -56,13 +58,14 @@ it("uses the official visible YouTube player and pauses it for alarms", async ()
   expect(player.pauseVideo).toHaveBeenCalled();
   act(() => window.dispatchEvent(new Event("timer-alarm-end")));
   expect(player.playVideo).toHaveBeenCalledTimes(2);
-  expect(
-    screen.getByRole("link", { name: "Open official stream" }).href,
-  ).toContain("rFZHOHl-L8A");
+  expect(document.querySelector(".lofi-audio-host").hidden).toBe(true);
+  expect(screen.queryByText("Close radio")).toBeNull();
 });
 it("offers rain without a network and lets the user pause it", async () => {
+  fetch.mockRejectedValueOnce(new Error("Offline"));
   render(<LofiPlayer />);
-  fireEvent.click(screen.getByRole("button", { name: "Rain ambience" }));
+  fireEvent.click(screen.getByRole("button", { name: "Play radio" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Try rain ambience" }));
   expect(
     await screen.findByRole("button", { name: "Pause rain" }),
   ).toBeTruthy();
