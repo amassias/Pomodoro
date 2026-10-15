@@ -64,7 +64,7 @@ This backlog separates the cinematic UX refresh from future product work. Value 
 
 - [ ] Calendar activation — Google and Outlook read/write connectors implemented. Google client found and configured, Calendar API activated with approval; personal consent remains required. Microsoft app/client configuration is still required; the Entra console reached a sign-in timeout.
 - [x] Enforced shared-room lock and room history — Server RPC checks admission, expiry and host privileges. Messages persist for the four-hour room lifetime. Direct table access is revoked; live negative permission tests pass.
-- [ ] iPhone installation — SwiftUI shell, WidgetKit and ActivityKit implemented and checked with the Swift compiler. Full Xcode build requires the missing iOS 26.4 runtime; physical-device signing and App Group provisioning remain required.
+- [ ] iPhone installation — SwiftUI shell, WidgetKit and ActivityKit implemented and checked with the Swift compiler. Full unsigned Xcode build passed on the macOS CI runner. Physical-device signing and App Group provisioning remain required; the local Xcode runtime is still missing.
 
 ## Reliability batch — 2026-10-14
 
@@ -133,8 +133,10 @@ Contrôle local final : lint sans erreur ni warning, suite de régression, build
 - [x] Client OAuth Google retrouvé dans le projet existant ; domaine de production déjà autorisé ; identifiant public configuré sur Vercel ; Calendar API activée après accord.
 - [x] Code iPhone : application SwiftUI, WidgetKit et Live Activity reliés au minuteur web ; vérification et édition de liens avec le compilateur Swift.
 - [ ] Connexion personnelle calendrier : consentement à effectuer ; API Google activée, application Microsoft à finaliser.
-- [ ] Widget sur appareil : runtime Xcode manquant, signature Apple et App Group requis.
+- [ ] Widget sur appareil : compilation Xcode complète validée en CI ; signature Apple, App Group et installation sur iPhone restent requis.
 - [ ] Protection des mots de passe compromis : forfait Pro nécessaire.
 - [x] Spotify reste optionnel, sans test Premium attendu.
 
 - [x] Vérification locale du lot : 88 tests / 38 fichiers, lint, build, performance, audit npm sans vulnérabilité et vérification Swift réussis.
+
+- [x] Livraison : `fbf98e6` poussé sur main ; [CI web + compilation iPhone verte](https://github.com/amassias/Pomodoro/actions/runs/38701468104), Vercel READY au même commit ; radio HTTP 200, callback calendrier HTTP 200, ancienne route de test HTTP 404 et 39 ressources offline HTTP 200.
